@@ -56,6 +56,7 @@ static const char *keywords[NUMKEYS] =
     "accuracy",
     "dummy",
     "direction",
+    "surfxyz",
 };
 
 typedef struct voxel_s
@@ -151,6 +152,7 @@ typedef struct input_s
     atom_t dumatom;
     int dummy;
     int direction;
+    int surfxyz;
 } input_t;
 
 typedef struct list_s

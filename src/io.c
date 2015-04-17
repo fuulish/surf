@@ -366,6 +366,10 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             {
                 inppar->direction = atoi ( value );
             }
+            else if ((keywords[key] == "surfxyz"))
+            {
+                inppar->surfxyz = atoi ( value );
+            }
             else if ((keywords[key] == "dummy"))
             {
                 real conv = 1.;
@@ -712,6 +716,7 @@ void set_input_defaults(input_t * inppar)
     assign_atom_parameters ( "symbol", "Du", &(inppar->dumatom) );
     inppar->dummy = 0;
     inppar->direction = 2;
+    inppar->surfxyz = 0;
 
     int i;
     for ( i=0; i<DIM; i++ )

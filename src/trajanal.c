@@ -192,29 +192,49 @@ void tanalize ( input_t * inppar )
 
             get_2d_representation_ils ( &surface, surf_2d_up, surf_2d_down, inppar->surfacecutoff, newsurf, surf_up_inds, surf_down_inds, direction );
 
-#ifdef DEBUG
-            FILE *fsxyzlo, *fsxyzup;
+            if ( inppar->surfxyz ) {
+                FILE *fsxyzlo, *fsxyzup;
 
-            sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surflo.xyz");
-            fsxyzlo = fopen(&tmp[0], "w");;
+                sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surflo.xyz");
+                fsxyzlo = fopen(&tmp[0], "w");;
 
-            sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surfup.xyz");
-            fsxyzup = fopen(&tmp[0], "w");;
+                sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surfup.xyz");
+                fsxyzup = fopen(&tmp[0], "w");;
 
-            fprintf ( fsxyzlo, "%i\n\n", surface.n[0]*surface.n[1] );
-            fprintf ( fsxyzup, "%i\n\n", surface.n[0]*surface.n[1] );
+                if ( inppar->surfxyz > 1 ) {
+                    fprintf ( fsxyzlo, "%i\n\n", surface.n[0]*surface.n[1]+surface.natoms );
+                    fprintf ( fsxyzup, "%i\n\n", surface.n[0]*surface.n[1]+surface.natoms );
+                }
+                else {
+                    fprintf ( fsxyzlo, "%i\n\n", surface.n[0]*surface.n[1] );
+                    fprintf ( fsxyzup, "%i\n\n", surface.n[0]*surface.n[1] );
+                }
 
-            int g, h;
+                int a, k;
 
-            for ( g=0; g<surface.n[0]; g++ )
-                for ( h=0; h<surface.n[1]; h++ ) {
-                    fprintf ( fsxyzlo, "S %21.10f %21.10f %21.10f\n", BOHR * g * surface.boxv[0][0], BOHR * h * surface.boxv[1][1], BOHR * surf_2d_down[g][h] );
-                    fprintf ( fsxyzup, "S %21.10f %21.10f %21.10f\n", BOHR * g * surface.boxv[0][0], BOHR * h * surface.boxv[1][1], BOHR * surf_2d_up[g][h] );
+                if ( inppar->surfxyz > 1 )
+                    for ( a=0; a<surface.natoms; a++ ) {
+                        fprintf ( fsxyzlo, "    %s", surface.atoms[a].symbol );
+                        fprintf ( fsxyzup, "    %s", surface.atoms[a].symbol );
+                        for ( k=0; k<DIM; k++ ) {
+                            fprintf ( fsxyzlo, "    %21.10f", surface.atoms[a].coords[k]*BOHR );
+                            fprintf ( fsxyzup, "    %21.10f", surface.atoms[a].coords[k]*BOHR );
+                        }
+                        fprintf ( fsxyzlo, "\n");
+                        fprintf ( fsxyzup, "\n");
+                    }
+
+                int g, h;
+
+                for ( g=0; g<surface.n[0]; g++ )
+                    for ( h=0; h<surface.n[1]; h++ ) {
+                        fprintf ( fsxyzlo, "S %21.10f %21.10f %21.10f\n", BOHR * g * surface.boxv[0][0], BOHR * h * surface.boxv[1][1], BOHR * surf_2d_down[g][h] );
+                        fprintf ( fsxyzup, "S %21.10f %21.10f %21.10f\n", BOHR * g * surface.boxv[0][0], BOHR * h * surface.boxv[1][1], BOHR * surf_2d_up[g][h] );
+                }
+
+                fclose ( fsxyzlo );
+                fclose ( fsxyzup );
             }
-
-            fclose ( fsxyzlo );
-            fclose ( fsxyzup );
-#endif
 
             // check here, this needs to be done for all of the solute atoms, not just assume that there is only one
             get_distance_to_surface ( &disthi, &distlo, &inthi, &intlo, &surface, surf_2d_up, surf_2d_down, atoms, refmask, nref, natoms, inppar->pbc, inppar->output, opref, 2, inppar->surfacecutoff );

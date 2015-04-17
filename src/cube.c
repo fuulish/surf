@@ -642,10 +642,17 @@ void get_distance_to_surface ( real * disthi, real * distlo, int * inthi, int * 
     minx = 0;
     miny = 0;
 
+    find_minimum_2d_real (&minx, &miny, lodi, k, l );
     *distlo = lodi[minx][miny];
 
     minz = surf_2d_down[minx][miny] / surface->boxv[2][2];
     *intlo = get_index ( surface->n, minx, miny, minz );
+
+    find_minimum_2d_real (&minx, &miny, updi, k, l );
+    *disthi = updi[minx][miny];
+
+    minz = surf_2d_up[minx][miny] / surface->boxv[2][2];
+    *inthi = get_index ( surface->n, minx, miny, minz );
 
 #ifdef DEBUG
     fprintf ( fsxyzlo, "%i\n\n", 2+natoms );
@@ -658,15 +665,7 @@ void get_distance_to_surface ( real * disthi, real * distlo, int * inthi, int * 
         fprintf ( fsxyzlo, "%s %21.10f %21.10f %21.10f\n", atoms[m].symbol, BOHR * atoms[m].coords[0], BOHR * atoms[m].coords[1], BOHR * atoms[m].coords[2] );
 
     fclose ( fsxyzlo );
-#endif
 
-    find_minimum_2d_real (&minx, &miny, updi, k, l );
-    *disthi = updi[minx][miny];
-
-    minz = surf_2d_up[minx][miny] / surface->boxv[2][2];
-    *inthi = get_index ( surface->n, minx, miny, minz );
-
-#ifdef DEBUG
     fprintf ( fsxyzup, "%i\n\n", 2+natoms );
     fprintf ( fsxyzup, "S %21.10f %21.10f %21.10f\n", BOHR * minx * surface->boxv[0][0], BOHR * miny * surface->boxv[1][1], BOHR * surf_2d_up[minx][miny] );
     fprintf ( fsxyzup, "P %21.10f %21.10f %21.10f\n", BOHR * com[0], BOHR * com[1], BOHR * com[2] );
