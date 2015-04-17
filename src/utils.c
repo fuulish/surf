@@ -428,3 +428,10 @@ void bubble_sort_ints(int indices[], int nindices)
     // check here, why don't we use pointers?
     return;
 }
+
+void cross_product_3d ( real * c, real * a, real * b )
+{
+    c[0] = a[1]*b[2] - a[2]*b[1];
+    c[1] = a[2]*b[0] - a[0]*b[2];
+    c[2] = a[0]*b[1] - a[1]*b[0];
+}

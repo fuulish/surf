@@ -325,7 +325,7 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
 
 #ifndef OLDSURF
 
-    printf("We are using the optimized, but not debugged version of the code!!!\n", trplzt);
+    // printf("We are using the optimized, but not debugged version of the code!!!\n", trplzt);
 
     real tmpdst;
     int k;
@@ -521,7 +521,7 @@ void get_2d_representation_ils ( cube_t * surface, real ** surf_2d_up, real ** s
                 if ( k == 0 )
                     lower = baseind + surface->n[2] - 1;
                 else if ( k == surface->n[2] - 1 )
-                    lower = baseind;
+                    upper = baseind;
 
                 tmpdt[0] = surface->voxels[lower].data - surfcut;
                 tmpdt[1] = surface->voxels[crrnt].data - surfcut;

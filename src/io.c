@@ -345,6 +345,10 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             {
                 inppar->resolution = atof(value);
             }
+            else if ((keywords[key] == "profileres"))
+            {
+                inppar->profileres = atof(value);
+            }
             else if ((keywords[key] == "xdrread"))
             {
 #ifdef XDRCAP
@@ -708,6 +712,7 @@ void set_input_defaults(input_t * inppar)
     strcpy(inppar->trajectory, EMPTY);
     inppar->trajmode = 0;
     inppar->resolution = 0.1 / BOHR;
+    inppar->profileres = 0.1 / BOHR;
     inppar->xdrread = 0;
     inppar->othercenter = 0;
     inppar->rprof_num = 0;

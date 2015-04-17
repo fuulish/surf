@@ -98,6 +98,8 @@ void tanalize ( input_t * inppar )
             printf("XDR file and xyz file do not contain the same number of atoms\nNot continuing\n");
             exit ( 1 );
         }
+
+        fclose ( fxmol );
             
     }
     else {
@@ -136,8 +138,9 @@ void tanalize ( input_t * inppar )
 
     real *densproflo;
     real *densprofhi;
+    real mxdim;
     int ndprof;
-    real drdprof = inppar->resolution;
+    real drdprof = inppar->profileres;
 
     if ( inppar->tasknum == SURFDENSPROF ) {
 
@@ -149,10 +152,9 @@ void tanalize ( input_t * inppar )
              return; // MISSING_INPUT_PARAM;
         }
 
-        real mx;
-        mx = find_maximum_1d_real ( &mini, inppar->pbc, DIM );
+        mxdim = find_maximum_1d_real ( &mini, inppar->pbc, DIM );
 
-        ndprof = ( int ) ( mx / inppar->resolution );
+        ndprof = ( int ) ( mxdim / inppar->profileres );
 
         densproflo = ( real * ) calloc ( ndprof, sizeof(real) );
         densprofhi = ( real * ) calloc ( ndprof, sizeof(real) );
@@ -218,13 +220,16 @@ void tanalize ( input_t * inppar )
             get_2d_representation_ils ( &surface, surf_2d_up, surf_2d_down, inppar->surfacecutoff, newsurf, surf_up_inds, surf_down_inds, direction );
 
             if ( inppar->surfxyz ) {
-                FILE *fsxyzlo, *fsxyzup;
+                FILE *fsxyzlo, *fsxyzup, *fsxyzal;
 
                 sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surflo.xyz");
                 fsxyzlo = fopen(&tmp[0], "w");;
 
                 sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surfup.xyz");
                 fsxyzup = fopen(&tmp[0], "w");;
+
+                sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surface.xyz");
+                fsxyzal = fopen(&tmp[0], "w");;
 
                 if ( inppar->surfxyz > 1 ) {
                     fprintf ( fsxyzlo, "%i\n\n", surface.n[0]*surface.n[1]+surface.natoms );
@@ -257,8 +262,28 @@ void tanalize ( input_t * inppar )
                         fprintf ( fsxyzup, "S %21.10f %21.10f %21.10f\n", BOHR * g * surface.boxv[0][0], BOHR * h * surface.boxv[1][1], BOHR * surf_2d_up[g][h] );
                 }
 
+                if ( inppar->surfxyz > 2 ) {
+                    fprintf ( fsxyzal, "%i\n\n", 2*surface.n[0]*surface.n[1]+surface.natoms );
+
+                    for ( a=0; a<surface.natoms; a++ ) {
+                        fprintf ( fsxyzal, "    %s", surface.atoms[a].symbol );
+                        for ( k=0; k<DIM; k++ ) {
+                            fprintf ( fsxyzal, "    %21.10f", surface.atoms[a].coords[k]*BOHR );
+                        }
+
+                        fprintf ( fsxyzal, "\n");
+                    }
+                    for ( g=0; g<surface.n[0]; g++ )
+                        for ( h=0; h<surface.n[1]; h++ ) {
+                            fprintf ( fsxyzal, "S %21.10f %21.10f %21.10f\n", BOHR * g * surface.boxv[0][0], BOHR * h * surface.boxv[1][1], BOHR * surf_2d_down[g][h] );
+                            fprintf ( fsxyzal, "S %21.10f %21.10f %21.10f\n", BOHR * g * surface.boxv[0][0], BOHR * h * surface.boxv[1][1], BOHR * surf_2d_up[g][h] );
+                        }
+                }
+
+
                 fclose ( fsxyzlo );
                 fclose ( fsxyzup );
+                fclose ( fsxyzal );
             }
 
             if ( inppar->tasknum == SURFDENSPROF ) {
@@ -268,8 +293,8 @@ void tanalize ( input_t * inppar )
 
                     get_distance_to_surface ( &disthi, &distlo, &inthi, &intlo, &surface, surf_2d_up, surf_2d_down, atoms, &(refmask[r]), 1, natoms, inppar->pbc, inppar->output, opref, 2, inppar->surfacecutoff );
 
-                    densproflo[ ( int ) floor ( distlo / inppar->resolution ) ] += 1.;
-                    densprofhi[ ( int ) floor ( disthi / inppar->resolution ) ] += 1.;
+                    densproflo[ ( int ) floor ( distlo / inppar->profileres ) ] += 1.;
+                    densprofhi[ ( int ) floor ( disthi / inppar->profileres ) ] += 1.;
                 }
             }
             else {
@@ -305,11 +330,29 @@ void tanalize ( input_t * inppar )
             free ( surface.voxels );
         }
 
+        printf("%4.2f %% done\r", (real) counter / ntot * 100.);
+        fflush(stdout);
+
+        counter++;
+
     }
     printf("%4.2f %% done\n", (real) counter / ntot * 100.);
 
-
     if ( ( inppar->tasknum == SURFDENSPROF ) && ( inppar->output ) ) {
+
+        real factor, partdens, norm;
+
+        if ( inppar->periodic ) {
+            partdens = (real) nref / ( inppar->pbc[0] * inppar->pbc[1] * inppar->pbc[2]);
+            factor = (real) counter * nref / (real) ndprof; // * inppar->profileres;
+        }
+        else {
+            factor = (real) nref * (real) counter;
+        }
+
+        printf("particle density:     %21.10f\n", partdens);
+        printf("normalization factor: %21.10f\n", factor);
+
         FILE *dprofhi;
         FILE *dproflo;
         char tmp[MAXSTRLEN];
@@ -321,8 +364,11 @@ void tanalize ( input_t * inppar )
         dproflo = fopen(&tmp[0], "w");
 
         for ( i=0; i<ndprof; i++ ) {
-            fprintf ( dprofhi, "%21.10f %21.10f\n", i*drdprof, densproflo[i]);
-            fprintf ( dproflo, "%21.10f %21.10f\n", i*drdprof, densprofhi[i]);
+
+            norm = factor;
+
+            fprintf ( dprofhi, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof, densproflo[i], densproflo[i] / norm);
+            fprintf ( dproflo, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof, densprofhi[i], densprofhi[i] / norm);
         }
 
         fclose ( dprofhi );
@@ -330,6 +376,10 @@ void tanalize ( input_t * inppar )
 
     }
 
+    if ( inppar->tasknum == SURFDENSPROF ) {
+        free ( densprofhi );
+        free ( densproflo );
+    }
     free(mask);
     free(refmask);
     free(atoms);

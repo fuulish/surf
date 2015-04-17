@@ -51,6 +51,7 @@ static const char *keywords[NUMKEYS] =
     "trajectory",
     "refmask",
     "resolution",
+    "profileres",
     "xdrread",
     "ignorefirst",
     "accuracy",
@@ -144,6 +145,7 @@ typedef struct input_s
     char trajectory[MAXSTRLEN];
     int trajmode;
     real resolution;
+    real profileres;
     int xdrread;
     int gnrfrst;
     int othercenter;
