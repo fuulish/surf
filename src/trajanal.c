@@ -134,6 +134,31 @@ void tanalize ( input_t * inppar )
     for ( i=0; i<nref; i++ )
         refatoms[i] = atoms[refmask[i]];
 
+    real *densproflo;
+    real *densprofhi;
+    int ndprof;
+    real drdprof = inppar->resolution;
+
+    if ( inppar->tasknum == SURFDENSPROF ) {
+
+        int mini;
+
+        if ( ! ( inppar->pbcset ) ) {
+             print_error ( MISSING_INPUT_PARAM, "pbc" );
+             // check here, need to introduce return value for tanalize
+             return; // MISSING_INPUT_PARAM;
+        }
+
+        real mx;
+        mx = find_maximum_1d_real ( &mini, inppar->pbc, DIM );
+
+        ndprof = ( int ) ( mx / inppar->resolution );
+
+        densproflo = ( real * ) calloc ( ndprof, sizeof(real) );
+        densprofhi = ( real * ) calloc ( ndprof, sizeof(real) );
+
+    }
+
     // real origin[DIM];
     // real boxv[DIM][DIM];
 
@@ -164,7 +189,7 @@ void tanalize ( input_t * inppar )
             xmolreader(fxmol, snapsize, i, atoms, natoms);
         }
 
-        if ( inppar->tasknum == SURFDIST ) {
+        if ( ( inppar->tasknum == SURFDIST ) || ( inppar->tasknum == SURFDENSPROF ) ) {
 
             // FU| check here, still need surface area determination
 
@@ -236,8 +261,21 @@ void tanalize ( input_t * inppar )
                 fclose ( fsxyzup );
             }
 
-            // check here, this needs to be done for all of the solute atoms, not just assume that there is only one
-            get_distance_to_surface ( &disthi, &distlo, &inthi, &intlo, &surface, surf_2d_up, surf_2d_down, atoms, refmask, nref, natoms, inppar->pbc, inppar->output, opref, 2, inppar->surfacecutoff );
+            if ( inppar->tasknum == SURFDENSPROF ) {
+
+                int r;
+                for ( r=0; r<nref; r++ ) {
+
+                    get_distance_to_surface ( &disthi, &distlo, &inthi, &intlo, &surface, surf_2d_up, surf_2d_down, atoms, &(refmask[r]), 1, natoms, inppar->pbc, inppar->output, opref, 2, inppar->surfacecutoff );
+
+                    densproflo[ ( int ) floor ( distlo / inppar->resolution ) ] += 1.;
+                    densprofhi[ ( int ) floor ( disthi / inppar->resolution ) ] += 1.;
+                }
+            }
+            else {
+                // check here, this needs to be done for all of the solute atoms, not just assume that there is only one
+                get_distance_to_surface ( &disthi, &distlo, &inthi, &intlo, &surface, surf_2d_up, surf_2d_down, atoms, refmask, nref, natoms, inppar->pbc, inppar->output, opref, 2, inppar->surfacecutoff );
+            }
 
 #ifdef DEBUG
             char funame[MAXSTRLEN];
@@ -271,7 +309,25 @@ void tanalize ( input_t * inppar )
     printf("%4.2f %% done\n", (real) counter / ntot * 100.);
 
 
-    if ( inppar->output ) {
+    if ( ( inppar->tasknum == SURFDENSPROF ) && ( inppar->output ) ) {
+        FILE *dprofhi;
+        FILE *dproflo;
+        char tmp[MAXSTRLEN];
+
+        sprintf(tmp, "%s%s", inppar->outputprefix, "densprof_hi.dat");
+        dprofhi = fopen(&tmp[0], "w");
+
+        sprintf(tmp, "%s%s", inppar->outputprefix, "densprof_lo.dat");
+        dproflo = fopen(&tmp[0], "w");
+
+        for ( i=0; i<ndprof; i++ ) {
+            fprintf ( dprofhi, "%21.10f %21.10f\n", i*drdprof, densproflo[i]);
+            fprintf ( dproflo, "%21.10f %21.10f\n", i*drdprof, densprofhi[i]);
+        }
+
+        fclose ( dprofhi );
+        fclose ( dproflo );
+
     }
 
     free(mask);

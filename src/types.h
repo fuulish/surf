@@ -180,6 +180,7 @@ typedef enum runtype_e
     SURFDIST,
     DENSPROF,
     TOPOLOGY,
+    SURFDENSPROF,
 
 } runtype_t;
 

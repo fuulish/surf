@@ -1359,6 +1359,8 @@ int assign_task ( char * task )
         return SURFDIST;
     else if ( strstr ( task, "topology" ) != NULL )
         return TOPOLOGY;
+    else if ( strstr ( task, "surface_density_profile" ) != NULL )
+        return SURFDENSPROF;
     else
         return SURFDIST;
 }
