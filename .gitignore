@@ -43,7 +43,7 @@ config.h
 config.status
 src/.deps/
 src/Makefile
-src/ccube
+src/surf
 stamp-h1
 autom4te.cache
 
