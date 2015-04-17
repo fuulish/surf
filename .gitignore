@@ -47,3 +47,4 @@ src/surf
 stamp-h1
 autom4te.cache
 
+tests/0_
