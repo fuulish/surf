@@ -593,6 +593,7 @@ void get_2d_representation_ils ( cube_t * surface, real ** surf_2d_up, real ** s
         surf_down_inds[cnt_down] = -1;
     }
 
+    free ( dx );
     free ( xvals );
     free ( proint );
     free ( interp );

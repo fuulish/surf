@@ -70,7 +70,7 @@ int main (int argc, char *argv[])
 
     t = clock();
 
-    printf("-----------------------------------------\n\n");
+    printf("-----------------------------------------\n");
     printf("Total cpu time:      %4.2f s\n", ((float)t)/CLOCKS_PER_SEC);
     printf("-----------------------------------------\n\n");
 

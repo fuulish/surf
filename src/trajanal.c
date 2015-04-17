@@ -258,8 +258,10 @@ void tanalize ( input_t * inppar )
     free(refmask);
     free(atoms);
 
+    if ( ! ( inppar->xdrread ) )
+        fclose ( fxmol );
 #ifdef XDRCAP
-    if ( inppar->xdrread )
+    else if ( inppar->xdrread )
         xdrfile_close ( xd_read );
 #endif
 
