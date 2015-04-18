@@ -92,8 +92,8 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_surf_OBJECTS = surf-errors.$(OBJEXT) surf-atom_param.$(OBJEXT) \
 	surf-utils.$(OBJEXT) surf-io.$(OBJEXT) surf-cube.$(OBJEXT) \
-	surf-molmanipul.$(OBJEXT) surf-trajanal.$(OBJEXT) \
-	surf-main.$(OBJEXT)
+	surf-surf.$(OBJEXT) surf-molmanipul.$(OBJEXT) \
+	surf-trajanal.$(OBJEXT) surf-main.$(OBJEXT)
 surf_OBJECTS = $(am_surf_OBJECTS)
 surf_LDADD = $(LDADD)
 surf_LINK = $(CCLD) $(surf_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
@@ -241,7 +241,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-surf_SOURCES = errors.c atom_param.c utils.c io.c cube.c molmanipul.c trajanal.c main.c
+surf_SOURCES = errors.c atom_param.c utils.c io.c cube.c surf.c molmanipul.c trajanal.c main.c
 surf_CFLAGS = -O2 -ffast-math -finline-functions #-Wall
 all: all-am
 
@@ -336,6 +336,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/surf-io.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/surf-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/surf-molmanipul.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/surf-surf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/surf-trajanal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/surf-utils.Po@am__quote@
 
@@ -422,6 +423,20 @@ surf-cube.obj: cube.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cube.c' object='surf-cube.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(surf_CFLAGS) $(CFLAGS) -c -o surf-cube.obj `if test -f 'cube.c'; then $(CYGPATH_W) 'cube.c'; else $(CYGPATH_W) '$(srcdir)/cube.c'; fi`
+
+surf-surf.o: surf.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(surf_CFLAGS) $(CFLAGS) -MT surf-surf.o -MD -MP -MF $(DEPDIR)/surf-surf.Tpo -c -o surf-surf.o `test -f 'surf.c' || echo '$(srcdir)/'`surf.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/surf-surf.Tpo $(DEPDIR)/surf-surf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='surf.c' object='surf-surf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(surf_CFLAGS) $(CFLAGS) -c -o surf-surf.o `test -f 'surf.c' || echo '$(srcdir)/'`surf.c
+
+surf-surf.obj: surf.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(surf_CFLAGS) $(CFLAGS) -MT surf-surf.obj -MD -MP -MF $(DEPDIR)/surf-surf.Tpo -c -o surf-surf.obj `if test -f 'surf.c'; then $(CYGPATH_W) 'surf.c'; else $(CYGPATH_W) '$(srcdir)/surf.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/surf-surf.Tpo $(DEPDIR)/surf-surf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='surf.c' object='surf-surf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(surf_CFLAGS) $(CFLAGS) -c -o surf-surf.obj `if test -f 'surf.c'; then $(CYGPATH_W) 'surf.c'; else $(CYGPATH_W) '$(srcdir)/surf.c'; fi`
 
 surf-molmanipul.o: molmanipul.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(surf_CFLAGS) $(CFLAGS) -MT surf-molmanipul.o -MD -MP -MF $(DEPDIR)/surf-molmanipul.Tpo -c -o surf-molmanipul.o `test -f 'molmanipul.c' || echo '$(srcdir)/'`molmanipul.c

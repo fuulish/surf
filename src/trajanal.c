@@ -26,6 +26,7 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include "utils.h"
 #include "atom_param.h"
 #include "cube.h"
+#include "surf.h"
 #include "molmanipul.h"
 #include "trajanal.h"
 #include "time.h"
@@ -189,7 +190,7 @@ int tanalize ( input_t * inppar )
 
 #ifdef OPTSURF
     if ( ( inppar->tasknum == SURFDIST ) || ( inppar->tasknum == SURFDENSPROF ) )
-        printf("Using the optimized surface routine.\nIt is about 20+ times faster, but not debugged yet.\nAll tests so far give identical numerical results to older version!\n");
+        printf("Using the optimized surface routine.\nIt is about 20+ times faster, but not debugged yet.\nAll tests so far give identical numerical results to older, naive version!\n\n");
 #endif
 
     for ( i=inppar->start; i<inppar->stop; i += inppar->stride )

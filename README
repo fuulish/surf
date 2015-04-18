@@ -11,6 +11,11 @@ so run
     make
     make install ('installed' under <SURF>/bin)
 
+    For latest, optimized surface calculation add the flad -DOPTSURF to CFLAGS.
+    It is about an order of magnitude faster, and gave for all tested systems numerically 
+    identical results to the naive version of the code.
+    It is not completely debugged, yet.
+
 possible input options:
 (have to be given in lower case (I know, I know) then ' = ' and then input value (see also tests directory))
 

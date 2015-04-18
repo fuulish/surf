@@ -12,3 +12,4 @@ mask = atoms 8
 output = normal
 surfxyz = 3
 profileres = 0.5
+oprefix = out_
