@@ -61,3 +61,4 @@ void arr2arr_div ( real * arrout, real * arrinp, int len );
 void bubble_sort_ints(int indices[], int nindices);
 void cross_product_3d ( real * c, real * a, real * b );
 real dot_product_nd ( real * a, real * b, int len );
+void get_index_triple ( int *i, real* coords, real *pbc, real *resolution, int periodic );

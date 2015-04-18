@@ -327,9 +327,84 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
 
     // printf("We are using the optimized, but not debugged version of the code!!!\n", trplzt);
 
-    real tmpdst;
+    real mxdst;
+    int mxvox;
+    int mx[DIM];
+    int mn[DIM];
     int k;
+    int wrki, wrkj, wrkk;
+    int index[DIM];
+    int tmpndx;
+    real resarr[DIM];
+    real tmpdst;
     real cutshft = prefactor * exp( sqr( trplzt ) / (mttsqzeta));
+
+    for ( k=0; k<DIM; k++ )
+        resarr[k] = resolution;
+
+    mxdst = trplzt + resolution;
+    mxvox = mxdst / resolution;
+
+#ifdef OPTSURF
+    if ( periodic ) {
+
+        for ( a=0; a<natoms; a++ ) {
+
+            // get index of voxel where atom is sitting
+            //
+            get_index_triple ( index, &(atoms[mask[a]].coords[0]), pbc, resarr, periodic );
+
+            // then determine mni, mxi, ... and so on
+
+            for ( k=0; k<DIM; k++ ) {
+                mn[k] = index[k] - mxvox;
+                mx[k] = index[k] + mxvox;
+            }
+
+            // printf("atom #%i\n", a);
+
+            for ( i=mn[0]; i<mx[0]; i++ )
+                for ( j=mn[1]; j<mx[1]; j++ )
+                    for ( k=mn[2]; k<mx[2]; k++ ) {
+
+                        if ( i < 0 )
+                            wrki = i + surface.n[0];
+                        else if ( i >= surface.n[0] )
+                            wrki = i - surface.n[0];
+                        else
+                            wrki = i;
+
+                        if ( j < 0 )
+                            wrkj = j + surface.n[1];
+                        else if ( j >= surface.n[1] )
+                            wrkj = j - surface.n[1];
+                        else
+                            wrkj = j;
+
+                        if ( k < 0 )
+                            wrkk = k + surface.n[2];
+                        else if ( k >= surface.n[2] )
+                            wrkk = k - surface.n[2];
+                        else
+                            wrkk = k;
+
+                        tmpndx = get_index ( surface.n, wrki, wrkj, wrkk );
+
+                        // printf("%i %i %i %i\n", wrki, wrkj, wrkk, tmpndx);
+
+                        distance = get_distance_periodic ( &(surface.voxels[tmpndx].coords[0]), &(atoms[mask[a]].coords[0]), pbc );
+
+                        if ( distance > trplzt )
+                            continue;
+
+                        surface.voxels[tmpndx].data += prefactor * exp( sqr( distance ) / (mttsqzeta));
+                        surface.voxels[tmpndx].data -= cutshft;
+
+                    }
+        }
+    }
+
+#else
 
     if ( periodic ) {
 #ifdef OPENMP
@@ -375,17 +450,23 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     else {
 #ifdef OPENMP
 #pragma omp parallel for default(none) \
-    private(i,j,a,distance,skip) shared(surface,atoms,nactive,actatoms,prefactor,mttsqzeta,pbc,maxdist,cubedge,periodic)
+    private(i,j,a,distance,skip) shared(surface,atoms,nactive,actatoms,prefactor,mttsqzeta,pbc,maxdist,cubedge,periodic,cutshft,trplzt)
 #endif
         for ( i=0; i<surface.nvoxels; i++)
         {
             for ( a=0; a<nactive; a++ ) {
                 distance = get_distance ( &(surface.voxels[i].coords[0]), &(atoms[actatoms[a]].coords[0]) );
+
+                if ( distance > trplzt )
+                    continue;
+
                 surface.voxels[i].data += prefactor * exp( sqr( distance ) / (mttsqzeta));
+                surface.voxels[i].data -= cutshft;
 
             }
         }
     }
+#endif
 #endif
 
 #ifdef OLDSURF

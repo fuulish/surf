@@ -187,6 +187,11 @@ int tanalize ( input_t * inppar )
     int frwrd = inppar->start + 1;
     char * htw = "w";
 
+#ifdef OPTSURF
+    if ( ( inppar->tasknum == SURFDIST ) || ( inppar->tasknum == SURFDENSPROF ) )
+        printf("Using the optimized surface routine.\nIt is about 20+ times faster, but not debugged yet.\nAll tests so far give identical numerical results to older version!\n");
+#endif
+
     for ( i=inppar->start; i<inppar->stop; i += inppar->stride )
     {
         /* read snapshot */
