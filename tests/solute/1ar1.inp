@@ -1,0 +1,14 @@
+task = surface_distribution
+structure = 1AR1_solv.xyz
+trajectory = 1AR1_solv.xyz
+xdrread = 0
+batch = 0 1 1
+pbc = ANG 25 25 25
+periodic = 1
+direction = 2
+resolution = 1.89
+refmask = atoms 8
+mask = atoms 8
+output = normal
+surfxyz = 3
+profileres = 0.5

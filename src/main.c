@@ -36,7 +36,7 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 int main (int argc, char *argv[])
 {
     input_t inppar;
-    int t;
+    int t, error;
 
     // printf("You are running SURF version SURF_VERSION_MAJOR.SURF_VERSION_MINOR\n");
     set_input_defaults(&inppar);
@@ -65,7 +65,7 @@ int main (int argc, char *argv[])
         parse_input_file(&inppar, inppar.inpfile);
 
     if  ( ( inppar.batchmode ) && ( inppar.trajmode ) ) {
-        tanalize(&inppar);
+        error = tanalize(&inppar);
     }
 
     t = clock();
@@ -74,6 +74,6 @@ int main (int argc, char *argv[])
     printf("Total cpu time:      %4.2f s\n", ((float)t)/CLOCKS_PER_SEC);
     printf("-----------------------------------------\n\n");
 
-    return 0;
+    return error;
 }
 

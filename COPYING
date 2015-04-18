@@ -632,7 +632,7 @@ state the exclusion of warranty; and each file should have at least
 the "copyright" line and a pointer to where the full notice is found.
 
     Program SURF that calculates the instantaneous liquid interface according to J. Phys. Chem. B, 2010, 114 (5), pp 1954–1958.
-    Copyright (C) 2015 Frank Uhlig
+    Copyright (C) 2015 Frank Uhlig (uhlig.frank@gmail.com)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

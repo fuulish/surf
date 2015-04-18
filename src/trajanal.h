@@ -19,4 +19,4 @@ You should have received a copy of the GNU General Public License
 along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-void tanalize (input_t * inppar);
+int tanalize (input_t * inppar);

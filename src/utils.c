@@ -435,3 +435,14 @@ void cross_product_3d ( real * c, real * a, real * b )
     c[1] = a[2]*b[0] - a[0]*b[2];
     c[2] = a[0]*b[1] - a[1]*b[0];
 }
+
+real dot_product_nd ( real * a, real * b, int len )
+{
+    int i;
+    real c = ZERO;
+
+    for ( i=0; i<len; i++ )
+        c += a[i]*b[i];
+
+    return c;
+}

@@ -41,7 +41,7 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 int tstart;
 int tstop;
 
-void tanalize ( input_t * inppar )
+int tanalize ( input_t * inppar )
 {
     int snapsize;
     XDRFILE * xd_read;
@@ -149,10 +149,17 @@ void tanalize ( input_t * inppar )
         if ( ! ( inppar->pbcset ) ) {
              print_error ( MISSING_INPUT_PARAM, "pbc" );
              // check here, need to introduce return value for tanalize
-             return; // MISSING_INPUT_PARAM;
+             return MISSING_INPUT_PARAM;
         }
 
-        mxdim = find_maximum_1d_real ( &mini, inppar->pbc, DIM );
+        // mxdim = find_maximum_1d_real ( &mini, inppar->pbc, DIM );
+        // just use the information given by the 'direction' keyword
+
+        mxdim = ZERO;
+        for ( i=0; i<DIM; i++ )
+            mxdim += sqr ( inppar->pbc[i] );
+
+        mxdim = sqrt ( mxdim );
 
         ndprof = ( int ) ( mxdim / inppar->profileres );
 
@@ -219,6 +226,7 @@ void tanalize ( input_t * inppar )
 
             get_2d_representation_ils ( &surface, surf_2d_up, surf_2d_down, inppar->surfacecutoff, newsurf, surf_up_inds, surf_down_inds, direction );
 
+            // use function write_combined_xmol
             if ( inppar->surfxyz ) {
                 FILE *fsxyzlo, *fsxyzup, *fsxyzal;
 
@@ -343,8 +351,19 @@ void tanalize ( input_t * inppar )
         real factor, partdens, norm;
 
         if ( inppar->periodic ) {
+            real slicevol;
+            real fctr;
+
+            slicevol = ONE;
+            for ( i=0; i<DIM; i++ )
+                if ( inppar->direction != i )
+                    slicevol *= inppar->pbc[i];
+
             partdens = (real) nref / ( inppar->pbc[0] * inppar->pbc[1] * inppar->pbc[2]);
-            factor = (real) counter * nref / (real) ndprof; // * inppar->profileres;
+            factor = (real) counter * partdens * slicevol * drdprof;
+
+            // the one below gives almost the same value
+            // fctr = (real) counter * nref / (real) ndprof; // * inppar->profileres;
         }
         else {
             factor = (real) nref * (real) counter;
@@ -391,5 +410,5 @@ void tanalize ( input_t * inppar )
         xdrfile_close ( xd_read );
 #endif
 
-    return;
+    return 0;
 }
