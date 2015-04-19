@@ -293,7 +293,7 @@ display cuestart   0.500000
 display cueend     10.000000
 display cuedensity 0.320000
 display cuemode    Exp2
-mol new 0_instant-surface.cube type cube first 0 last -1 step 1 filebonds 1 autobonds 1 waitfor all
+mol new out_0_instant-surface.cube type cube first 0 last -1 step 1 filebonds 1 autobonds 1 waitfor all
 mol delrep 0 top
 mol representation Licorice 0.300000 10.000000 30.000000
 mol color Type
@@ -398,7 +398,7 @@ mol clipplane color  5 2 top {0.5 0.5 0.5 }
 mol clipplane normal 5 2 top {0.0 0.0 1.0}
 mol clipplane status 5 2 top {0}
 mol showrep top 2 0
-mol rename top 0_instant-surface.cube
+mol rename top out_0_instant-surface.cube
 set viewpoints([molinfo top]) {{{1 0 0 -23.6604} {0 1 0 -20.9422} {0 0 1 -49.6808} {0 0 0 1}} {{0.998641 -0.052022 -0.00203489 0} {0.00984144 0.150257 0.988593 0} {-0.0511233 -0.987274 0.150564 0} {0 0 0 1}} {{0.0255784 0 0 0} {0 0.0255784 0 0} {0 0 0.0255784 0} {0 0 0 1}} {{1 0 0 0} {0 1 0 0} {0 0 1 0} {0 0 0 1}}}
 lappend viewplist [molinfo top]
 set topmol [molinfo top]
