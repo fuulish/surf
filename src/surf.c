@@ -439,38 +439,42 @@ void get_2d_representation_ils ( cube_t * surface, real ** surf_2d_up, real ** s
                 else if ( k == surface->n[2] - 1 )
                     upper = baseind;
 
-                tmpdt[0] = surface->voxels[lower].data - surfcut;
-                tmpdt[1] = surface->voxels[crrnt].data - surfcut;
-                tmpdt[2] = surface->voxels[upper].data - surfcut;
+                tmpdt[0] = surface->voxels[lower].data;
+                tmpdt[1] = surface->voxels[crrnt].data;
+                tmpdt[2] = surface->voxels[upper].data;
 
-                if ( ( tmpdt[0] > 0 ) && ( tmpdt[2] < 0 ) ) {
+                // carefully check here again the assignment of the surface direction
+                // maybe use a tri-linear interpolation (but i don't think it's actually needed
+                // and substitute the stupid zeros by surfcut, that should work equally well
+
+                if ( ( tmpdt[0] > surfcut ) && ( tmpdt[2] < surfcut ) ) {
                     fndsrf = crrnt;
                     // surfup = 1;
                     surfdown++;
 
-                    if ( tmpdt[1] >= 0 ) {
-                        t = lerp_to_t ( tmpdt[1], tmpdt[2], ZERO );
+                    if ( tmpdt[1] >= surfcut ) {
+                        t = lerp_to_t ( tmpdt[1], tmpdt[2], surfcut );
                         tfin = t;
                     }
 
-                    if ( tmpdt[1] < 0 ) {
-                        t = lerp_to_t ( tmpdt[0], tmpdt[1], ZERO );
+                    if ( tmpdt[1] < surfcut ) {
+                        t = lerp_to_t ( tmpdt[0], tmpdt[1], surfcut );
                         tfin = t - 1;
                     }
                 }
 
-                else if ( ( tmpdt[0] < 0 ) && ( tmpdt[2] > 0 ) ) {
+                else if ( ( tmpdt[0] < surfcut ) && ( tmpdt[2] > surfcut ) ) {
                     fndsrf = crrnt;
                     // surfdown++;
                     surfup = 1;
 
-                    if ( tmpdt[1] >= 0 ) {
-                        t = lerp_to_t ( tmpdt[0], tmpdt[1], ZERO );
+                    if ( tmpdt[1] >= surfcut ) {
+                        t = lerp_to_t ( tmpdt[0], tmpdt[1], surfcut );
                         tfin = t - 1;
                     }
 
-                    if ( tmpdt[1] < 0 ) {
-                        t = lerp_to_t ( tmpdt[1], tmpdt[2], ZERO );
+                    if ( tmpdt[1] < surfcut ) {
+                        t = lerp_to_t ( tmpdt[1], tmpdt[2], surfcut );
                         tfin = t;
                     }
 
@@ -520,7 +524,9 @@ void get_distance_to_surface ( real * disthi, real * distlo, int * inthi, int * 
     int k, l;
     real ** lodi;
     real ** updi;
+    real * dx;
 
+    dx = get_box_volels(surface);
     lodi = allocate_matrix_real_2d ( surface->n[0], surface->n[1] );
     updi = allocate_matrix_real_2d ( surface->n[0], surface->n[1] );
 
@@ -532,8 +538,10 @@ void get_distance_to_surface ( real * disthi, real * distlo, int * inthi, int * 
     for ( k=0; k<surface->n[0]; k++ )
         for ( l=0; l<surface->n[1]; l++ ) {
             /*check here, if these are really the centers of the voxels...*/
-            spos[0] = k * surface->boxv[0][0];
-            spos[1] = l * surface->boxv[1][1];
+            /*yes, please do that*/
+
+            spos[0] = k * dx[0];
+            spos[1] = l * dx[1];
 
             spos[2] = surf_2d_down[k][l];
             lodi[k][l] = get_distance_periodic ( spos, com, pbc );
@@ -558,17 +566,25 @@ void get_distance_to_surface ( real * disthi, real * distlo, int * inthi, int * 
     minx = 0;
     miny = 0;
 
-    find_minimum_2d_real (&minx, &miny, lodi, k, l );
+    find_minimum_2d_real (&minx, &miny, lodi, surface->n[0], surface->n[1] );
     *distlo = lodi[minx][miny];
 
-    minz = surf_2d_down[minx][miny] / surface->boxv[2][2];
+    // maybe make the below dependent on whether we are above/below the surface
+    minz = (int) floor ( ( surf_2d_down[minx][miny] - surface->origin[2] ) / dx[2] );
     *intlo = get_index ( surface->n, minx, miny, minz );
 
-    find_minimum_2d_real (&minx, &miny, updi, k, l );
+    if ( surf_2d_down[minx][miny] < com[2] )
+        *distlo *= -1;
+
+    find_minimum_2d_real (&minx, &miny, updi, surface->n[0], surface->n[1] );
     *disthi = updi[minx][miny];
 
-    minz = surf_2d_up[minx][miny] / surface->boxv[2][2];
+    minz = (int) ceil ( ( surf_2d_up[minx][miny] - surface->origin[2] ) / dx[2] );
     *inthi = get_index ( surface->n, minx, miny, minz );
+
+    // check here for possible mishabs that could happen (not sure, there might be some spurious cases here (check here))
+    if ( surf_2d_up[minx][miny] > com[2] )
+        *disthi *= -1;
 
 #ifdef DEBUG
     fprintf ( fsxyzlo, "%i\n\n", 2+natoms );
@@ -606,4 +622,6 @@ void get_distance_to_surface ( real * disthi, real * distlo, int * inthi, int * 
 
         write_matrix_real_2d_to_file_w_cont_spacing ( fdname, surf_2d_down, surface->n[0], surface->n[1], &(surface->origin[0]), surface->boxv[0][0], surface->boxv[1][1] );
     }
+
+    free ( dx );
 }

@@ -33,3 +33,4 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #define MAXSTRLEN 100000
 #define UNAVAIL 0.
 #define UNOBTAINABLE -2468.13579
+#define HELLO printf("HELLO THERE!\n")

@@ -227,6 +227,20 @@ real get_distance_periodic (real * coord1, real * coord2, real * pbc)
     return distance;
 }
 
+real get_distance_vector_periodic (real * dist, real * coord1, real * coord2, real * pbc)
+{
+    int i;
+    real distance = ZERO;
+    real rxij;
+
+    for ( i=0; i<DIM; i++ ) {
+        rxij = coord1[i] - coord2[i];
+        rxij -= pbc[i] * roundf( rxij / pbc[i] );
+
+        dist[i] = rxij;
+    }
+}
+
 real get_distance_periodic_1d (real coord1, real coord2, real pbc)
 {
     real distance = ZERO;
@@ -460,4 +474,17 @@ void get_index_triple ( int *i, real* coords, real *pbc, real *resolution, int p
             i[k] = n - i[k];
         }
     }
+}
+
+void periodify_indices ( int * out, int * nvx, int * in, int len)
+{
+    int k;
+
+    for ( k=0; k<len; k++ )
+        if ( in[k] < 0 )
+            out[k] = in[k] + nvx[0];
+        else if ( in[k] >= nvx[0] )
+            out[k] = in[k] - nvx[0];
+        else
+            out[k] = in[k];
 }

@@ -303,12 +303,22 @@ int tanalize ( input_t * inppar )
             if ( inppar->tasknum == SURFDENSPROF ) {
 
                 int r;
+                signed int indhi, indlo;
+                int hndprof = ndprof / 2.;
+
                 for ( r=0; r<nref; r++ ) {
 
                     get_distance_to_surface ( &disthi, &distlo, &inthi, &intlo, &surface, surf_2d_up, surf_2d_down, atoms, &(refmask[r]), 1, natoms, inppar->pbc, inppar->output, opref, 2, inppar->surfacecutoff );
 
-                    densproflo[ ( int ) floor ( distlo / inppar->profileres ) ] += 1.;
-                    densprofhi[ ( int ) floor ( disthi / inppar->profileres ) ] += 1.;
+                    indhi = ( int ) floor ( disthi / inppar->profileres );
+                    indlo = ( int ) floor ( distlo / inppar->profileres );
+
+                    periodify_indices ( &indhi, &ndprof, &indhi, 1 );
+                    periodify_indices ( &indlo, &ndprof, &indlo, 1 );
+
+                    densproflo[ indlo ] += 1.;
+                    densprofhi[ indhi ] += 1.;
+
                 }
             }
             else {
