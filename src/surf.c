@@ -202,26 +202,9 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
                 for ( j=mn[1]; j<mx[1]; j++ )
                     for ( k=mn[2]; k<mx[2]; k++ ) {
 
-                        if ( i < 0 )
-                            wrki = i + surface.n[0];
-                        else if ( i >= surface.n[0] )
-                            wrki = i - surface.n[0];
-                        else
-                            wrki = i;
-
-                        if ( j < 0 )
-                            wrkj = j + surface.n[1];
-                        else if ( j >= surface.n[1] )
-                            wrkj = j - surface.n[1];
-                        else
-                            wrkj = j;
-
-                        if ( k < 0 )
-                            wrkk = k + surface.n[2];
-                        else if ( k >= surface.n[2] )
-                            wrkk = k - surface.n[2];
-                        else
-                            wrkk = k;
+                        periodify_indices ( &wrki, &(surface.n[0]), &i, 1 );
+                        periodify_indices ( &wrkj, &(surface.n[1]), &j, 1 );
+                        periodify_indices ( &wrkk, &(surface.n[2]), &k, 1 );
 
                         tmpndx = get_index ( surface.n, wrki, wrkj, wrkk );
 
