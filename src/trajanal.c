@@ -161,7 +161,8 @@ int tanalize ( input_t * inppar )
 
         mxdim = sqrt ( mxdim );
 
-        ndprof = ( int ) ( mxdim / inppar->profileres );
+        // we want to use both above and below surface
+        ndprof = 2 * ( int ) ( mxdim / inppar->profileres );
 
         densprof = ( real * ) calloc ( ndprof, sizeof(real) );
 
@@ -273,9 +274,9 @@ int tanalize ( input_t * inppar )
 
                     ind = ( int ) floor ( dstnc / inppar->profileres );
 
-                    periodify_indices ( &ind, &ndprof, &ind, 1 );
+                    // periodify_indices ( &ind, &ndprof, &ind, 1 );
 
-                    densprof[ ind ] += 1.;
+                    densprof[ hndprof + ind ] += 1.;
 
                 }
             }
@@ -347,11 +348,12 @@ int tanalize ( input_t * inppar )
         sprintf(tmp, "%s%s", inppar->outputprefix, "densprof.dat");
         fdprof = fopen(&tmp[0], "w");
 
-        for ( i=0; i<ndprof; i++ ) {
+        int hndprof = ndprof / 2;
+        for ( i=-hndprof; i<hndprof; i++ ) {
 
             norm = factor;
 
-            fprintf ( fdprof, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof, densprof[i], densprof[i] / norm);
+            fprintf ( fdprof, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof, densprof[i+hndprof], densprof[i+hndprof] / norm);
         }
 
         fclose ( fdprof );
