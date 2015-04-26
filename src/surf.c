@@ -363,55 +363,58 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     return surface;
 }
 
-void get_2d_representation_ils ( cube_t * surface, real ** surf_2d_up, real ** surf_2d_down, real surfcut, int newsurf, int * surf_up_inds, int * surf_down_inds, int direction )
+real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface, real surfcut, int newsurf, int * surf_inds )
 {
-    int i, j, k;
+    int i, j, k, l;
     int baseind;
     int upper, lower;
     int cnt_up = 0;
     int cnt_down = 0;
+    int direction;
     /* check here, and pass these values in function call or so */
     /* for now take a tenth of the whole surface-direction */
-    int nproint = surface->n[direction] / 10;
 
     /* then interpolate to a hundresth of that spacing */
-    int ninterp = nproint * 100;
 
-    real * proint;
-    real * interp;
-    real * xvals;
     real * dx;
+    real tmpsrf;
 
     dx = get_box_volels(surface);
 #ifdef DEBUG
     printf("volume element: %f\n", dx[direction]);
 #endif
 
-    xvals = ( real * ) malloc ( nproint * sizeof ( real ) );
-    proint = ( real * ) malloc ( nproint * sizeof ( real ) );
-    interp = ( real * ) malloc ( ninterp * sizeof ( real ) );
-
-    if ( newsurf ) {
-        surf_up_inds = ( int * ) malloc ( ( surface->nvoxels + 1 ) * sizeof ( int ) );
-        surf_down_inds = ( int * ) malloc ( ( surface->nvoxels + 1 ) * sizeof ( int ) );
-    }
+    if ( newsurf )
+        surf_inds = ( int * ) malloc ( ( surface->nvoxels + 1 ) * sizeof ( int ) );
 
     int crrnt, fndsrf;
     real tmpdt[DIM];
     real t, tfin;
+    real **surfpts;
+    real dblsrfct = 2. * surfcut;
+
+    // we'll assume every point could be a point at the surface and sort out things later on
+    // we'll make no division between upper and lower surface, because it's bullshit anyways
+
+    *nsurf = 0;
+
+    surfpts = (real **) malloc ( DIM * sizeof ( real *) );
+    int *tmpdir = ( int * ) malloc ( surface->nvoxels * sizeof ( int ) );
+
+    for ( i=0; i<DIM; i++ )
+        surfpts[i] = (real *) malloc ( surface->nvoxels * sizeof ( real ) );
 
     int surfup, surfdown;
 
     for ( i=0; i<surface->n[0]; i++ )
         for ( j=0; j<surface->n[1]; j++ ) {
-            surfup = 0;
-            surfdown = 0;
+
+            baseind = surface->n[2] * ( j + surface->n[1] * i);
             for ( k=0; k<surface->n[2]; k++ ) {
 
                 fndsrf = 0;
 
-                baseind = surface->n[2] * ( j + surface->n[1] * i);
-
+                // defines indices for z-search (this is fine)
                 crrnt = baseind + k;
 
                 upper = crrnt + 1;
@@ -419,90 +422,171 @@ void get_2d_representation_ils ( cube_t * surface, real ** surf_2d_up, real ** s
 
                 if ( k == 0 )
                     lower = baseind + surface->n[2] - 1;
-                else if ( k == surface->n[2] - 1 )
+                else if ( k == ( surface->n[2] - 1 ) )
                     upper = baseind;
 
                 tmpdt[0] = surface->voxels[lower].data;
                 tmpdt[1] = surface->voxels[crrnt].data;
                 tmpdt[2] = surface->voxels[upper].data;
 
+                // this will get all the fricking surface points
+                // if ( ( tmpdt[2] + tmpdt[0] ) < dblsrfct ) {
+                //     fndsrf = 1;
+                //     direction = 0;
+                // }
+
+                if ( ( ( tmpdt[2] > surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] < surfcut ) ) ||
+                ( ( tmpdt[2] < surfcut ) && (tmpdt[1] < surfcut) &&  ( tmpdt[0] > surfcut ) ) ) {
+                    fndsrf = 1;
+                    direction = 2;
+                }
+
+                // defines indices for y-search
+                if ( ! ( fndsrf ) ) {
+                    crrnt = baseind + k;
+
+                    upper = get_index ( surface->n, i, (j+1), k );
+                    lower = get_index ( surface->n, i, (j-1), k );
+
+                    if ( j == 0 )
+                        lower = get_index ( surface->n, i, surface->n[1]-1, k );
+                    else if ( j == ( surface->n[1] - 1 ) )
+                        upper = get_index ( surface->n, i, 0, k );
+
+                    tmpdt[0] = surface->voxels[lower].data;
+                    tmpdt[1] = surface->voxels[crrnt].data;
+                    tmpdt[2] = surface->voxels[upper].data;
+
+                    // if ( ( tmpdt[2] + tmpdt[0] ) < dblsrfct ) {
+                    //     fndsrf = 1;
+                    //     direction = 1;
+                    // }
+
+                    if ( ( ( tmpdt[2] > surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] < surfcut ) ) ||
+                    ( ( tmpdt[2] < surfcut ) && (tmpdt[1] < surfcut) &&  ( tmpdt[0] > surfcut ) ) ) {
+                        fndsrf = 1;
+                        direction = 1;
+                    }
+                }
+
+                // defines indices for x-search
+                if ( ! ( fndsrf ) ) {
+                    crrnt = baseind + k;
+
+                    upper = get_index ( surface->n, (i+1), j, k );
+                    lower = get_index ( surface->n, (i-1), j, k );
+
+                    if ( i == 0 )
+                        lower = get_index ( surface->n, surface->n[0]-1, j, k );
+                    else if ( i == ( surface->n[0] - 1 ) )
+                        upper = get_index ( surface->n, 0, j, k );
+
+                    tmpdt[0] = surface->voxels[lower].data;
+                    tmpdt[1] = surface->voxels[crrnt].data;
+                    tmpdt[2] = surface->voxels[upper].data;
+
+                    // if ( ( tmpdt[2] + tmpdt[0] ) < dblsrfct ) {
+                    //     fndsrf = 1;
+                    //     direction = 2;
+                    // }
+
+                    if ( ( ( tmpdt[2] > surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] < surfcut ) ) ||
+                    ( ( tmpdt[2] < surfcut ) && (tmpdt[1] < surfcut) &&  ( tmpdt[0] > surfcut ) ) ) {
+                        fndsrf = 1;
+                        direction = 0;
+                    }
+                }
+
                 // carefully check here again the assignment of the surface direction
                 // maybe use a tri-linear interpolation (but i don't think it's actually needed
                 // and substitute the stupid zeros by surfcut, that should work equally well
 
-                if ( ( tmpdt[0] > surfcut ) && ( tmpdt[2] < surfcut ) ) {
-                    fndsrf = crrnt;
-                    // surfup = 1;
-                    surfdown++;
-
-                    if ( tmpdt[1] >= surfcut ) {
-                        t = lerp_to_t ( tmpdt[1], tmpdt[2], surfcut );
-                        tfin = t;
-                    }
-
-                    if ( tmpdt[1] < surfcut ) {
-                        t = lerp_to_t ( tmpdt[0], tmpdt[1], surfcut );
-                        tfin = t - 1;
-                    }
-                }
-
-                else if ( ( tmpdt[0] < surfcut ) && ( tmpdt[2] > surfcut ) ) {
-                    fndsrf = crrnt;
-                    // surfdown++;
-                    surfup = 1;
-
-                    if ( tmpdt[1] >= surfcut ) {
-                        t = lerp_to_t ( tmpdt[0], tmpdt[1], surfcut );
-                        tfin = t - 1;
-                    }
-
-                    if ( tmpdt[1] < surfcut ) {
-                        t = lerp_to_t ( tmpdt[1], tmpdt[2], surfcut );
-                        tfin = t;
-                    }
-
-                }
-
                 if ( fndsrf ) {
-                    if ( surfdown == 1 ) {
 
-                        surf_2d_down[i][j] = surface->voxels[crrnt].coords[direction] + tfin * dx[direction];
+                    if ( ( tmpdt[0] > surfcut ) && ( tmpdt[2] < surfcut ) ) {
+                        fndsrf = crrnt;
+                        // surfup = 1;
+                        surfup++;
 
-                        /* check here and insert vertical interpolation */
-                        if ( newsurf ) {
-                            surf_up_inds[cnt_up] = lower;
-                            cnt_up++;
+                        // change the operators below (< and >=) check here for validity
+                        if ( tmpdt[2] < surfcut ) {
+                            t = lerp_to_t ( tmpdt[1], tmpdt[2], surfcut );
+                            tfin = t;
+                        }
+
+                        if ( tmpdt[0] >= surfcut ) {
+                            t = lerp_to_t ( tmpdt[0], tmpdt[1], surfcut );
+                            tfin = t - 1;
+                        }
+                    }
+
+                    else if ( ( tmpdt[0] < surfcut ) && ( tmpdt[2] > surfcut ) ) {
+                        fndsrf = crrnt;
+                        // surfdown++;
+                        surfdown = 1;
+
+                        if ( tmpdt[2] >= surfcut ) {
+                            t = lerp_to_t ( tmpdt[0], tmpdt[1], surfcut );
+                            tfin = t - 1;
+                        }
+
+                        if ( tmpdt[0] < surfcut ) {
+                            t = lerp_to_t ( tmpdt[1], tmpdt[2], surfcut );
+                            tfin = t;
                         }
 
                     }
-                    else if ( surfup )
+                    // for now interpolate only in the direction that the surface is actually present
+                    // printf("direction: %i\n", direction);
+                    tmpsrf = surface->voxels[crrnt].coords[direction] + tfin * dx[direction];
+                    tmpdir[*nsurf] = direction;
 
-                        surf_2d_up[i][j] = surface->voxels[crrnt].coords[direction] + tfin * dx[direction];
+                    for ( l=0; l<DIM; l++ ) {
+                        if ( l == direction )
+                            surfpts[l][*nsurf] = tmpsrf;
+                        else
+                            surfpts[l][*nsurf] = surface->voxels[crrnt].coords[l];
+                    }
 
-                        if ( newsurf ) {
-                            surf_down_inds[cnt_down] = upper;
-                            cnt_down++;
-                        }
+                    (*nsurf)++;
 
-                        // we could eually put this statement at the beginning of the loop
-                        surfup = 0;
+                    // /* check here and insert vertical interpolation */
+                    // if ( newsurf )
+                    //     surf_inds[*nsurf] = lower;
+
                 }
 
             }
         }
 
-    if ( newsurf ) {
-        surf_up_inds[cnt_up] = -1;
-        surf_down_inds[cnt_down] = -1;
+    // if ( newsurf )
+    //     surf_inds[*nsurf] = -1;
+
+    real ** finalsurf;
+
+    // check here and insert allocate_matrix_real_2d (also above);
+    finalsurf = ( real ** ) malloc ( *nsurf * sizeof ( real * ) );
+    *drctn =  ( int * ) malloc ( *nsurf * sizeof ( int ) );
+
+    for ( i=0; i<*nsurf; i++ ) {
+        finalsurf[i] = ( real * ) malloc ( DIM * sizeof ( real ) );
+
+        for ( k=0; k<DIM; k++ )
+            finalsurf[i][k] = surfpts[k][i];
     }
 
+    for ( i=0; i<DIM; i++ )
+        free ( surfpts[i] );
+
+    free ( surfpts );
+    free ( tmpdir );
+
     free ( dx );
-    free ( xvals );
-    free ( proint );
-    free ( interp );
+
+    return finalsurf;
 }
 
-void get_distance_to_surface ( real * disthi, real * distlo, int * inthi, int * intlo, cube_t * surface, real ** surf_2d_up, real ** surf_2d_down, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, int direction, real surfcut )
+real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int * direction, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut )
 {
     int k, l;
     real ** lodi;
@@ -510,30 +594,16 @@ void get_distance_to_surface ( real * disthi, real * distlo, int * inthi, int * 
     real * dx;
 
     dx = get_box_volels(surface);
-    lodi = allocate_matrix_real_2d ( surface->n[0], surface->n[1] );
-    updi = allocate_matrix_real_2d ( surface->n[0], surface->n[1] );
+    real * dsts = ( real * ) malloc ( nsurf * sizeof ( real ) );
 
     real spos[DIM];
     real com[DIM];
+    real dstnc;
 
     get_center_of_mass ( com, atoms, refmask, nref);
 
-    for ( k=0; k<surface->n[0]; k++ )
-        for ( l=0; l<surface->n[1]; l++ ) {
-            /*check here, if these are really the centers of the voxels...*/
-            /*yes, please do that*/
-
-            spos[0] = k * dx[0];
-            spos[1] = l * dx[1];
-
-            spos[2] = surf_2d_down[k][l];
-            lodi[k][l] = get_distance_periodic ( spos, com, pbc );
-
-            spos[2] = surf_2d_up[k][l];
-            updi[k][l] = get_distance_periodic ( spos, com, pbc );
-        }
-
-    int minx, miny, minz;
+    for ( k=0; k<nsurf; k++ )
+        dsts[k] = get_distance_periodic ( surfpts[k], com, pbc );
 
 #ifdef DEBUG
     FILE *fsxyzlo, *fsxyzup;
@@ -546,65 +616,30 @@ void get_distance_to_surface ( real * disthi, real * distlo, int * inthi, int * 
     fsxyzup = fopen(&tmp[0], "a");;
 #endif
 
-    minx = 0;
-    miny = 0;
+    int min = 0;
 
-    find_minimum_2d_real (&minx, &miny, lodi, surface->n[0], surface->n[1] );
-    *distlo = lodi[minx][miny];
+    dstnc = find_minimum_1d_real (&min, dsts, nsurf );
 
-    // maybe make the below dependent on whether we are above/below the surface
-    minz = (int) floor ( ( surf_2d_down[minx][miny] - surface->origin[2] ) / dx[2] );
-    *intlo = get_index ( surface->n, minx, miny, minz );
+    // now it's more difficult to check whether in- or outside of bulk (because we don't know the direction of the surface at that point, unless we safe it maybe)
+    // that's why we have the direction array now
 
-    if ( surf_2d_down[minx][miny] < com[2] )
-        *distlo *= -1;
+    // if ( surf_2d_down[minx][miny] > com[2] )
+    //     *distlo *= -1;
 
-    find_minimum_2d_real (&minx, &miny, updi, surface->n[0], surface->n[1] );
-    *disthi = updi[minx][miny];
-
-    minz = (int) ceil ( ( surf_2d_up[minx][miny] - surface->origin[2] ) / dx[2] );
-    *inthi = get_index ( surface->n, minx, miny, minz );
-
-    // check here for possible mishabs that could happen (not sure, there might be some spurious cases here (check here))
-    if ( surf_2d_up[minx][miny] > com[2] )
-        *disthi *= -1;
-
-#ifdef DEBUG
-    fprintf ( fsxyzlo, "%i\n\n", 2+natoms );
-    fprintf ( fsxyzlo, "S %21.10f %21.10f %21.10f\n", BOHR * minx * surface->boxv[0][0], BOHR * miny * surface->boxv[1][1], BOHR * surf_2d_down[minx][miny] );
-    fprintf ( fsxyzlo, "P %21.10f %21.10f %21.10f\n", BOHR * com[0], BOHR * com[1], BOHR * com[2] );
-
-    int m;
-
-    for ( m=0; m<natoms; m++ )
-        fprintf ( fsxyzlo, "%s %21.10f %21.10f %21.10f\n", atoms[m].symbol, BOHR * atoms[m].coords[0], BOHR * atoms[m].coords[1], BOHR * atoms[m].coords[2] );
-
-    fclose ( fsxyzlo );
-
-    fprintf ( fsxyzup, "%i\n\n", 2+natoms );
-    fprintf ( fsxyzup, "S %21.10f %21.10f %21.10f\n", BOHR * minx * surface->boxv[0][0], BOHR * miny * surface->boxv[1][1], BOHR * surf_2d_up[minx][miny] );
-    fprintf ( fsxyzup, "P %21.10f %21.10f %21.10f\n", BOHR * com[0], BOHR * com[1], BOHR * com[2] );
-
-    for ( m=0; m<natoms; m++ )
-        fprintf ( fsxyzup, "%s %21.10f %21.10f %21.10f\n", atoms[m].symbol, BOHR * atoms[m].coords[0], BOHR * atoms[m].coords[1], BOHR * atoms[m].coords[2] );
-
-    fclose ( fsxyzup );
-#endif
-
-    free_matrix_real_2d ( lodi, surface->n[0] );
-    free_matrix_real_2d ( updi, surface->n[0] );
-
-    if ( output > 1 ) {
-        char funame[MAXSTRLEN];
-        sprintf( funame, "%s%s", opref, "2dsurf-up.dat");
-
-        write_matrix_real_2d_to_file_w_cont_spacing ( funame, surf_2d_up, surface->n[0], surface->n[1], &(surface->origin[0]), surface->boxv[0][0], surface->boxv[1][1] );
-
-        char fdname[MAXSTRLEN];
-        sprintf( fdname, "%s%s", opref, "2dsurf-down.dat");
-
-        write_matrix_real_2d_to_file_w_cont_spacing ( fdname, surf_2d_down, surface->n[0], surface->n[1], &(surface->origin[0]), surface->boxv[0][0], surface->boxv[1][1] );
-    }
-
+    free ( dsts );
     free ( dx );
+
+    return dstnc;
+
+//     if ( output > 1 ) {
+//         char funame[MAXSTRLEN];
+//         sprintf( funame, "%s%s", opref, "2dsurf-up.dat");
+//
+//         write_matrix_real_2d_to_file_w_cont_spacing ( funame, surf_2d_up, surface->n[0], surface->n[1], &(surface->origin[0]), surface->boxv[0][0], surface->boxv[1][1] );
+//
+//         char fdname[MAXSTRLEN];
+//         sprintf( fdname, "%s%s", opref, "2dsurf-down.dat");
+//
+//         write_matrix_real_2d_to_file_w_cont_spacing ( fdname, surf_2d_down, surface->n[0], surface->n[1], &(surface->origin[0]), surface->boxv[0][0], surface->boxv[1][1] );
+//     }
 }

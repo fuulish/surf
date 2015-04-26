@@ -137,8 +137,7 @@ int tanalize ( input_t * inppar )
     for ( i=0; i<nref; i++ )
         refatoms[i] = atoms[refmask[i]];
 
-    real *densproflo;
-    real *densprofhi;
+    real *densprof;
     real mxdim;
     int ndprof;
     real drdprof = inppar->profileres;
@@ -164,8 +163,7 @@ int tanalize ( input_t * inppar )
 
         ndprof = ( int ) ( mxdim / inppar->profileres );
 
-        densproflo = ( real * ) calloc ( ndprof, sizeof(real) );
-        densprofhi = ( real * ) calloc ( ndprof, sizeof(real) );
+        densprof = ( real * ) calloc ( ndprof, sizeof(real) );
 
     }
 
@@ -213,8 +211,7 @@ int tanalize ( input_t * inppar )
             real fake_origin[DIM];
             real fake_boxv[DIM][DIM];
             real disthi, distlo;
-            real **surf_2d_up, **surf_2d_down;
-            int * surf_up_inds, * surf_down_inds;
+            int * surf_inds;
             int inthi, intlo;
             char tmp[MAXSTRLEN];
 
@@ -223,119 +220,69 @@ int tanalize ( input_t * inppar )
 
             surface = instant_surface_periodic ( mask, atoms, natoms, inppar->zeta, inppar->surfacecutoff, inppar->output, opref, inppar->pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
 
-            surf_2d_up = allocate_matrix_real_2d ( surface.n[0], surface.n[1] );
-            surf_2d_down = allocate_matrix_real_2d ( surface.n[0], surface.n[1] );
-
             /* check here, and remove hard-coded surface direction */
-            int direction = 2;
+            int * direction;
             int newsurf = 0;
+            int nsurf = 0;
 
-            get_2d_representation_ils ( &surface, surf_2d_up, surf_2d_down, inppar->surfacecutoff, newsurf, surf_up_inds, surf_down_inds, direction );
+            real ** surfpts;
+
+            surfpts = get_2d_representation_ils ( &nsurf, &direction, &surface, inppar->surfacecutoff, newsurf, surf_inds );
 
             // use function write_combined_xmol
             if ( inppar->surfxyz ) {
-                FILE *fsxyzlo, *fsxyzup, *fsxyzal;
-
-                sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surflo.xyz");
-                fsxyzlo = fopen(&tmp[0], "w");;
-
-                sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surfup.xyz");
-                fsxyzup = fopen(&tmp[0], "w");;
+                FILE *fsxyzal;
 
                 sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surface.xyz");
                 fsxyzal = fopen(&tmp[0], "w");;
 
-                if ( inppar->surfxyz > 1 ) {
-                    fprintf ( fsxyzlo, "%i\n\n", surface.n[0]*surface.n[1]+surface.natoms );
-                    fprintf ( fsxyzup, "%i\n\n", surface.n[0]*surface.n[1]+surface.natoms );
-                }
-                else {
-                    fprintf ( fsxyzlo, "%i\n\n", surface.n[0]*surface.n[1] );
-                    fprintf ( fsxyzup, "%i\n\n", surface.n[0]*surface.n[1] );
-                }
+                int a, g, k;
 
-                int a, k;
+                fprintf ( fsxyzal, "%i\n\n", surface.natoms+nsurf );
 
-                if ( inppar->surfxyz > 1 )
-                    for ( a=0; a<surface.natoms; a++ ) {
-                        fprintf ( fsxyzlo, "    %s", surface.atoms[a].symbol );
-                        fprintf ( fsxyzup, "    %s", surface.atoms[a].symbol );
-                        for ( k=0; k<DIM; k++ ) {
-                            fprintf ( fsxyzlo, "    %21.10f", surface.atoms[a].coords[k]*BOHR );
-                            fprintf ( fsxyzup, "    %21.10f", surface.atoms[a].coords[k]*BOHR );
-                        }
-                        fprintf ( fsxyzlo, "\n");
-                        fprintf ( fsxyzup, "\n");
+                for ( a=0; a<surface.natoms; a++ ) {
+                    fprintf ( fsxyzal, "    %s", surface.atoms[a].symbol );
+                    for ( k=0; k<DIM; k++ ) {
+                        fprintf ( fsxyzal, "    %21.10f", surface.atoms[a].coords[k]*BOHR );
                     }
 
-                int g, h;
-
-                for ( g=0; g<surface.n[0]; g++ )
-                    for ( h=0; h<surface.n[1]; h++ ) {
-                        fprintf ( fsxyzlo, "S %21.10f %21.10f %21.10f\n", BOHR * g * surface.boxv[0][0], BOHR * h * surface.boxv[1][1], BOHR * surf_2d_down[g][h] );
-                        fprintf ( fsxyzup, "S %21.10f %21.10f %21.10f\n", BOHR * g * surface.boxv[0][0], BOHR * h * surface.boxv[1][1], BOHR * surf_2d_up[g][h] );
+                    fprintf ( fsxyzal, "\n");
                 }
 
-                if ( inppar->surfxyz > 2 ) {
-                    fprintf ( fsxyzal, "%i\n\n", 2*surface.n[0]*surface.n[1]+surface.natoms );
-
-                    for ( a=0; a<surface.natoms; a++ ) {
-                        fprintf ( fsxyzal, "    %s", surface.atoms[a].symbol );
-                        for ( k=0; k<DIM; k++ ) {
-                            fprintf ( fsxyzal, "    %21.10f", surface.atoms[a].coords[k]*BOHR );
-                        }
-
-                        fprintf ( fsxyzal, "\n");
+                for ( g=0; g<nsurf; g++ ) {
+                    fprintf(fsxyzal, "%5s", "S");
+                    for ( k=0; k<DIM; k++ ) {
+                        fprintf ( fsxyzal, "    %21.10f", BOHR * surfpts[g][k]);
                     }
-                    for ( g=0; g<surface.n[0]; g++ )
-                        for ( h=0; h<surface.n[1]; h++ ) {
-                            fprintf ( fsxyzal, "S %21.10f %21.10f %21.10f\n", BOHR * g * surface.boxv[0][0], BOHR * h * surface.boxv[1][1], BOHR * surf_2d_down[g][h] );
-                            fprintf ( fsxyzal, "S %21.10f %21.10f %21.10f\n", BOHR * g * surface.boxv[0][0], BOHR * h * surface.boxv[1][1], BOHR * surf_2d_up[g][h] );
-                        }
+                    fprintf( fsxyzal, "\n" );
                 }
 
-
-                fclose ( fsxyzlo );
-                fclose ( fsxyzup );
                 fclose ( fsxyzal );
             }
 
+            real dstnc;
             if ( inppar->tasknum == SURFDENSPROF ) {
 
                 int r;
-                signed int indhi, indlo;
+                signed int ind;
                 int hndprof = ndprof / 2.;
 
                 for ( r=0; r<nref; r++ ) {
 
-                    get_distance_to_surface ( &disthi, &distlo, &inthi, &intlo, &surface, surf_2d_up, surf_2d_down, atoms, &(refmask[r]), 1, natoms, inppar->pbc, inppar->output, opref, 2, inppar->surfacecutoff );
+                    dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, atoms, &(refmask[r]), 1, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff );
 
-                    indhi = ( int ) floor ( disthi / inppar->profileres );
-                    indlo = ( int ) floor ( distlo / inppar->profileres );
+                    ind = ( int ) floor ( dstnc / inppar->profileres );
 
-                    periodify_indices ( &indhi, &ndprof, &indhi, 1 );
-                    periodify_indices ( &indlo, &ndprof, &indlo, 1 );
+                    periodify_indices ( &ind, &ndprof, &ind, 1 );
 
-                    densproflo[ indlo ] += 1.;
-                    densprofhi[ indhi ] += 1.;
+                    densprof[ ind ] += 1.;
 
                 }
             }
             else {
                 // check here, this needs to be done for all of the solute atoms, not just assume that there is only one
-                get_distance_to_surface ( &disthi, &distlo, &inthi, &intlo, &surface, surf_2d_up, surf_2d_down, atoms, refmask, nref, natoms, inppar->pbc, inppar->output, opref, 2, inppar->surfacecutoff );
+                dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, atoms, refmask, nref, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff );
             }
-
-#ifdef DEBUG
-            char funame[MAXSTRLEN];
-            sprintf ( funame, "%s%s.dat", opref, "2dsurfup" );
-            write_matrix_real_2d_to_file_w_cont_spacing ( funame, surf_2d_up, surface.n[0], surface.n[1], &(surface.origin[0]), surface.boxv[0][0], surface.boxv[1][1] );
-             sprintf ( funame, "%s%s.dat", opref, "2dsurfdown" );
-             write_matrix_real_2d_to_file_w_cont_spacing ( funame, surf_2d_down, surface.n[0], surface.n[1], &(surface.origin[0]), surface.boxv[0][0], surface.boxv[1][1] );
-#endif
-
-            free_matrix_real_2d ( surf_2d_up, surface.n[0] );
-            free_matrix_real_2d ( surf_2d_down, surface.n[0] );
 
             /* check here, and move stuff for refinement box creation somewhere else */
         
@@ -350,6 +297,12 @@ int tanalize ( input_t * inppar )
             fclose ( fsdist );
             htw = "a";
 
+            int k;
+            for ( k=0; k<nsurf; k++ )
+                free ( surfpts[k] );
+
+            free ( surfpts );
+            free ( direction );
             free ( surface.atoms );
             free ( surface.voxels );
         }
@@ -388,33 +341,26 @@ int tanalize ( input_t * inppar )
         printf("particle density:     %21.10f\n", partdens);
         printf("normalization factor: %21.10f\n", factor);
 
-        FILE *dprofhi;
-        FILE *dproflo;
+        FILE *fdprof;
         char tmp[MAXSTRLEN];
 
-        sprintf(tmp, "%s%s", inppar->outputprefix, "densprof_hi.dat");
-        dprofhi = fopen(&tmp[0], "w");
-
-        sprintf(tmp, "%s%s", inppar->outputprefix, "densprof_lo.dat");
-        dproflo = fopen(&tmp[0], "w");
+        sprintf(tmp, "%s%s", inppar->outputprefix, "densprof.dat");
+        fdprof = fopen(&tmp[0], "w");
 
         for ( i=0; i<ndprof; i++ ) {
 
             norm = factor;
 
-            fprintf ( dprofhi, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof, densproflo[i], densproflo[i] / norm);
-            fprintf ( dproflo, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof, densprofhi[i], densprofhi[i] / norm);
+            fprintf ( fdprof, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof, densprof[i], densprof[i] / norm);
         }
 
-        fclose ( dprofhi );
-        fclose ( dproflo );
+        fclose ( fdprof );
 
     }
 
-    if ( inppar->tasknum == SURFDENSPROF ) {
-        free ( densprofhi );
-        free ( densproflo );
-    }
+    if ( inppar->tasknum == SURFDENSPROF )
+        free ( densprof );
+
     free(mask);
     free(refmask);
     free(atoms);

@@ -60,6 +60,23 @@ void put_zeros_int_2d ( int ** data, int len1, int len2 )
             data[i][j] = ZERO;
 }
 
+// real * allocate_matrix_real_1d ( int dim )
+// {
+//     int i;
+//     real * mat;
+//
+//     mat = (real *) malloc (dim * sizeof(real));
+//
+//     return mat;
+// }
+//
+// void free_matrix_real_1d ( real * mat )
+// {
+//     int i;
+//
+//     free ( mat );
+// }
+
 real ** allocate_matrix_real_2d ( int dim1, int dim2 )
 {
     int i;
@@ -103,7 +120,7 @@ void free_matrix_int_2d ( int ** mat, int dim1 )
     free(mat);
 }
 
-// void qsort_real_indices ( 
+// void qsort_real_indices (
 
 int find_minimum_d(real * values, int * mask)
 {
