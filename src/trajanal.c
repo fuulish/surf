@@ -76,7 +76,7 @@ int tanalize ( input_t * inppar )
     /* read initial snapshot to get structure */
 
     char text[MAXSTRLEN];
-    
+
     if ( inppar->xdrread ) {
         int result_xtc;
         int natoms_xtc;
@@ -101,7 +101,7 @@ int tanalize ( input_t * inppar )
         }
 
         fclose ( fxmol );
-            
+
     }
     else {
         fxmol = fopen(&inppar->trajectory[0], "r");
@@ -189,7 +189,7 @@ int tanalize ( input_t * inppar )
 
 #ifdef OPTSURF
     if ( ( inppar->tasknum == SURFDIST ) || ( inppar->tasknum == SURFDENSPROF ) )
-        printf("Using the optimized surface routine.\nIt is about 20+ times faster, but not debugged yet.\nAll tests so far give identical numerical results to older, naive version!\n\n");
+        printf("Using the optimized surface routine.\nIt is about an order of magnitude faster, but not completely debugged yet.\nAll tests so far give identical numerical results to older, naive version!\n\n");
 #endif
 
     for ( i=inppar->start; i<inppar->stop; i += inppar->stride )
@@ -278,25 +278,41 @@ int tanalize ( input_t * inppar )
 
                     densprof[ hndprof + ind ] += 1.;
 
+                    if ( inppar->output ) {
+                        sprintf(tmp, "%s%s", inppar->outputprefix, "surfdist.dat");
+                        fsdist = fopen(&tmp[0], htw);
+
+                        if ( strncmp ( htw, "w", 1 ) == 0 ) {
+                            fprintf ( fsdist, "#            index              distance\n");
+                        }
+
+                        fprintf ( fsdist, "%21i %21.10f\n", r, dstnc);
+                        fclose ( fsdist );
+                        htw = "a";
+                    }
+
+
                 }
             }
             else {
                 // check here, this needs to be done for all of the solute atoms, not just assume that there is only one
                 dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, atoms, refmask, nref, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+
+                if ( inppar->output ) {
+                    sprintf(tmp, "%s%s", inppar->outputprefix, "surfdist.dat");
+                    fsdist = fopen(&tmp[0], htw);
+
+                    if ( strncmp ( htw, "w", 1 ) == 0 ) {
+                        fprintf ( fsdist, "#            index              distance\n");
+                    }
+
+                    fprintf ( fsdist, "%21i %21.10f\n", 0, dstnc);
+                    fclose ( fsdist );
+                    htw = "a";
+                }
             }
 
             /* check here, and move stuff for refinement box creation somewhere else */
-        
-            sprintf(tmp, "%s%s", inppar->outputprefix, "surfdist.dat");
-            fsdist = fopen(&tmp[0], htw);
-
-            if ( strncmp ( htw, "w", 1 ) == 0 ) {
-                fprintf ( fsdist, "#            lower                 upper\n");
-            }
-
-            fprintf ( fsdist, "%21.10f %21.10f\n", distlo, disthi);
-            fclose ( fsdist );
-            htw = "a";
 
             int k;
             for ( k=0; k<nsurf; k++ )
