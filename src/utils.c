@@ -499,9 +499,9 @@ void periodify_indices ( int * out, int * nvx, int * in, int len)
 
     for ( k=0; k<len; k++ )
         if ( in[k] < 0 )
-            out[k] = in[k] + nvx[0];
-        else if ( in[k] >= nvx[0] )
-            out[k] = in[k] - nvx[0];
+            out[k] = in[k] + nvx[k];
+        else if ( in[k] >= nvx[k] )
+            out[k] = in[k] - nvx[k];
         else
             out[k] = in[k];
 }

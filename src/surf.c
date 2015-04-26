@@ -404,8 +404,6 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface,
     for ( i=0; i<DIM; i++ )
         surfpts[i] = (real *) malloc ( surface->nvoxels * sizeof ( real ) );
 
-    int surfup, surfdown;
-
     for ( i=0; i<surface->n[0]; i++ )
         for ( j=0; j<surface->n[1]; j++ ) {
 
@@ -505,8 +503,6 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface,
 
                     if ( ( tmpdt[0] > surfcut ) && ( tmpdt[2] < surfcut ) ) {
                         fndsrf = crrnt;
-                        // surfup = 1;
-                        surfup++;
 
                         // change the operators below (< and >=) check here for validity
                         if ( tmpdt[2] < surfcut ) {
@@ -522,8 +518,6 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface,
 
                     else if ( ( tmpdt[0] < surfcut ) && ( tmpdt[2] > surfcut ) ) {
                         fndsrf = crrnt;
-                        // surfdown++;
-                        surfdown = 1;
 
                         if ( tmpdt[2] >= surfcut ) {
                             t = lerp_to_t ( tmpdt[0], tmpdt[1], surfcut );
@@ -570,6 +564,7 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface,
 
     for ( i=0; i<*nsurf; i++ ) {
         finalsurf[i] = ( real * ) malloc ( DIM * sizeof ( real ) );
+        (*drctn)[i] = tmpdir[i];
 
         for ( k=0; k<DIM; k++ )
             finalsurf[i][k] = surfpts[k][i];
@@ -586,9 +581,10 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface,
     return finalsurf;
 }
 
-real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int * direction, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut )
+real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int * direction, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic )
 {
     int k, l;
+    int crrnt[DIM];
     real ** lodi;
     real ** updi;
     real * dx;
@@ -605,17 +601,6 @@ real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int
     for ( k=0; k<nsurf; k++ )
         dsts[k] = get_distance_periodic ( surfpts[k], com, pbc );
 
-#ifdef DEBUG
-    FILE *fsxyzlo, *fsxyzup;
-
-    char tmp[MAXSTRLEN];
-    sprintf(tmp, "%s%s", opref, "surflo.xyz");
-    fsxyzlo = fopen(&tmp[0], "a");;
-
-    sprintf(tmp, "%s%s", opref, "surfup.xyz");
-    fsxyzup = fopen(&tmp[0], "a");;
-#endif
-
     int min = 0;
 
     dstnc = find_minimum_1d_real (&min, dsts, nsurf );
@@ -626,20 +611,53 @@ real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int
     // if ( surf_2d_down[minx][miny] > com[2] )
     //     *distlo *= -1;
 
+    get_index_triple ( crrnt, com, pbc, dx, periodic );
+
+    int lower[DIM], upper[DIM];
+
+    // HELLO;
+    // direction array is fucked up
+    // printf("%5i\n", direction[min]);
+    for ( l=0; l<DIM; l++ ) {
+        if ( l == direction[min] ) {
+            lower[l] = crrnt[l] - 1;
+            upper[l] = crrnt[l] + 1;
+        }
+        else {
+            lower[l] = crrnt[l];
+            upper[l] = crrnt[l];
+        }
+    }
+
+    int loind, hiind;
+
+    periodify_indices ( lower, surface->n, lower, DIM );
+    periodify_indices ( upper, surface->n, upper, DIM );
+
+    loind = get_index ( surface->n, lower[0], lower[1], lower[2] );
+    hiind = get_index ( surface->n, upper[0], upper[1], upper[2] );
+
+    // printf("%5i %5i %5i %5i %5i %5i %5i %5i %5i %5i %5i\n", crrnt[0], crrnt[1], crrnt[2], lower[0], lower[1], lower[2], upper[0], upper[1], upper[2], loind, hiind);
+
+    real t;
+    t = lerp_to_t ( surface->voxels[loind].data, surface->voxels[hiind].data, surfcut );
+
+    real crd;
+    crd = surface->voxels[loind].coords[direction[min]] + dx[direction[min]] * t;
+
+    if ( surface->voxels[loind].data > surface->voxels[hiind].data ) {
+        if ( ( surface->voxels[loind].data > surfcut ) && ( com[direction[min]] > crd ) )
+            // HELLO;
+            dstnc *= -1.;
+    }
+    else if ( surface->voxels[hiind].data > surface->voxels[loind].data ) {
+        if ( ( surface->voxels[hiind].data > surfcut ) && ( com[direction[min]] < crd ) )
+            dstnc *= -1.;
+    }
+
     free ( dsts );
     free ( dx );
 
     return dstnc;
 
-//     if ( output > 1 ) {
-//         char funame[MAXSTRLEN];
-//         sprintf( funame, "%s%s", opref, "2dsurf-up.dat");
-//
-//         write_matrix_real_2d_to_file_w_cont_spacing ( funame, surf_2d_up, surface->n[0], surface->n[1], &(surface->origin[0]), surface->boxv[0][0], surface->boxv[1][1] );
-//
-//         char fdname[MAXSTRLEN];
-//         sprintf( fdname, "%s%s", opref, "2dsurf-down.dat");
-//
-//         write_matrix_real_2d_to_file_w_cont_spacing ( fdname, surf_2d_down, surface->n[0], surface->n[1], &(surface->origin[0]), surface->boxv[0][0], surface->boxv[1][1] );
-//     }
 }

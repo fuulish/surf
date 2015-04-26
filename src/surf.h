@@ -21,4 +21,4 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 
 cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, real zeta, real surfcut, int output, char * outputprefix, real * pbc, real resolution, real accuracy, int provide_box, real * origincube, int * ncube, real boxvcube[DIM][DIM], int periodic, int provide_mask );
 real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface, real surfcut, int newsurf, int * surf_inds );
-real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int * direction, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut );
+real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int * direction, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic );

@@ -269,7 +269,7 @@ int tanalize ( input_t * inppar )
 
                 for ( r=0; r<nref; r++ ) {
 
-                    dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, atoms, &(refmask[r]), 1, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff );
+                    dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, atoms, &(refmask[r]), 1, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
                     ind = ( int ) floor ( dstnc / inppar->profileres );
 
@@ -281,7 +281,7 @@ int tanalize ( input_t * inppar )
             }
             else {
                 // check here, this needs to be done for all of the solute atoms, not just assume that there is only one
-                dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, atoms, refmask, nref, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff );
+                dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, atoms, refmask, nref, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
             }
 
             /* check here, and move stuff for refinement box creation somewhere else */
