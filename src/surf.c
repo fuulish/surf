@@ -183,6 +183,12 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
 #ifdef OPTSURF
     if ( periodic ) {
 
+#ifdef OPENMP
+#pragma omp parallel for default(none) \
+    private(a,i,j,k,wrki,wrkj,wrkk,index,mn,mx,tmpndx,distance) shared(atoms,pbc,resarr,periodic,surface,trplzt,natoms,mask,mxvox,mttsqzeta,prefactor,cutshft) // \
+        // schedule(guided, surface.n[2])
+    // schedule(dynamic)
+#endif
         for ( a=0; a<natoms; a++ ) {
 
             // get index of voxel where atom is sitting
@@ -215,8 +221,10 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
                         if ( distance > trplzt )
                             continue;
 
-                        surface.voxels[tmpndx].data += prefactor * exp( sqr( distance ) / (mttsqzeta));
-                        surface.voxels[tmpndx].data -= cutshft;
+#pragma omp atomic update
+                        surface.voxels[tmpndx].data += prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft;
+                        // surface.voxels[tmpndx].data += prefactor * exp( sqr( distance ) / (mttsqzeta));
+                        // surface.voxels[tmpndx].data -= cutshft;
 
                     }
         }
