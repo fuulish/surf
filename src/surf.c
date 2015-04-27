@@ -475,7 +475,7 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
                     tmpdir[*nsurf] = direction;
 
                     tgrd[*nsurf] = surface->voxels[upper].data - surface->voxels[lower].data;
-                    tgrd[*nsurf] /= dx[direction];
+                    tgrd[*nsurf] /= 2. * dx[direction];
 
                     for ( l=0; l<DIM; l++ ) {
                         if ( l == direction )
