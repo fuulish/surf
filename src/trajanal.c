@@ -318,6 +318,9 @@ int tanalize ( input_t * inppar )
             for ( k=0; k<nsurf; k++ )
                 free ( surfpts[k] );
 
+            if ( newsurf )
+                free ( surf_inds );
+
             free ( surfpts );
             free ( direction );
             free ( surface.atoms );
