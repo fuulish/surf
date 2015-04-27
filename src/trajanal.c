@@ -119,6 +119,27 @@ int tanalize ( input_t * inppar )
         exit ( 1 );
     }
 
+    int * frags[inppar->numfrags];
+    int * frag;
+    int ntotfrag = 0;
+    int o;
+    char buff[10] = "indices";
+
+    if ( inppar->nofrags )
+        printf("Using indices given in 'refmask'\n");
+    else {
+
+        /* check here and wrap fragments to central box */
+
+        printf("Using fragments given in 'fragments'\n");
+
+        for ( o=0; o<inppar->numfrags; o++ ) {
+            frag = get_mask(&(buff[0]), inppar->fragments[o], inppar->natomsfrag[o], atoms, natoms);
+            frags[o] = frag;
+            ntotfrag += inppar->natomsfrag[o];
+        }
+    }
+
     nref = 0;
     while ( refmask[nref] != -1 )
         nref++;
@@ -267,10 +288,30 @@ int tanalize ( input_t * inppar )
                 int r;
                 signed int ind;
                 int hndprof = ndprof / 2.;
+                int *fakemask;
+                int fakenum;
+
+                // inppar->fragments[o], inppar->natomsfrag[o]
+
+                int nfrg;
+
+                if ( inppar->nofrags )
+                    nfrg = inppar->numfrags;
+                else
+                    nfrg = nref;
 
                 for ( r=0; r<nref; r++ ) {
 
-                    dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, atoms, &(refmask[r]), 1, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+                    if ( inppar->nofrags ) {
+                        fakemask = &(refmask[r]);
+                        fakenum = 1;
+                    }
+                    else {
+                        fakemask = frags[r];
+                        fakenum = inppar->natomsfrag[r];
+                    }
+
+                    dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, atoms, fakemask, fakenum, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
                     ind = ( int ) floor ( dstnc / inppar->profileres );
 
@@ -377,6 +418,15 @@ int tanalize ( input_t * inppar )
 
         fclose ( fdprof );
 
+    }
+
+    if ( ! ( inppar->nofrags ) ) {
+        for ( i=0; i<inppar->numfrags; i++ ) {
+            free(inppar->fragments[i]);
+            free(frags[i]);
+        }
+
+        free(inppar->natomsfrag);
     }
 
     if ( inppar->tasknum == SURFDENSPROF )
