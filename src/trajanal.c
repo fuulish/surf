@@ -162,6 +162,7 @@ int tanalize ( input_t * inppar )
     real mxdim;
     int ndprof;
     real drdprof = inppar->profileres;
+    real dv;
 
     if ( inppar->tasknum == SURFDENSPROF ) {
 
@@ -207,6 +208,7 @@ int tanalize ( input_t * inppar )
     int ntot = ( inppar->stop - inppar->start ) / inppar->stride;
     int frwrd = inppar->start + 1;
     char * htw = "w";
+    real *dx;
 
 #ifdef OPTSURF
     if ( ( inppar->tasknum == SURFDIST ) || ( inppar->tasknum == SURFDENSPROF ) )
@@ -293,6 +295,9 @@ int tanalize ( input_t * inppar )
 
                 // inppar->fragments[o], inppar->natomsfrag[o]
 
+                if ( counter == 0 )
+                    dx = get_box_volels ( &surface );
+
                 int nfrg;
 
                 if ( inppar->nofrags )
@@ -317,7 +322,7 @@ int tanalize ( input_t * inppar )
 
                     // periodify_indices ( &ind, &ndprof, &ind, 1 );
 
-                    densprof[ hndprof + ind ] += 1.;
+                    densprof[ hndprof + ind ] += 1.; //  / nsurf;
 
                     if ( inppar->output ) {
                         sprintf(tmp, "%s%s", inppar->outputprefix, "surfdist.dat");
@@ -378,25 +383,32 @@ int tanalize ( input_t * inppar )
 
     if ( ( inppar->tasknum == SURFDENSPROF ) && ( inppar->output ) ) {
 
+        int natdens;
         real factor, partdens, norm;
 
+        if ( inppar->nofrags )
+            natdens = nref;
+        else
+            natdens = inppar->numfrags;
+
         if ( inppar->periodic ) {
-            real slicevol;
+            real smarea;
             real fctr;
 
-            slicevol = ONE;
+            smarea = ONE;
+
             for ( i=0; i<DIM; i++ )
                 if ( inppar->direction != i )
-                    slicevol *= inppar->pbc[i];
+                    // smarea *= inppar->pbc[i] * dx[i];
+                    smarea *= inppar->pbc[i];
 
-            partdens = (real) nref / ( inppar->pbc[0] * inppar->pbc[1] * inppar->pbc[2]);
-            factor = (real) counter * partdens * slicevol * drdprof;
-
-            // the one below gives almost the same value
-            // fctr = (real) counter * nref / (real) ndprof; // * inppar->profileres;
+            factor = smarea * drdprof;
+            // dv = sqr ( inppar->resolution ) * inppar->resolution;
+            // partdens = (real) natdens / ( inppar->pbc[0] * inppar->pbc[1] * inppar->pbc[2]);
+            // factor = (real) counter * partdens * dv * drdprof * smarea;
         }
         else {
-            factor = (real) nref * (real) counter;
+            factor = (real) natdens * (real) counter;
         }
 
         printf("particle density:     %21.10f\n", partdens);
@@ -429,8 +441,10 @@ int tanalize ( input_t * inppar )
         free(inppar->natomsfrag);
     }
 
-    if ( inppar->tasknum == SURFDENSPROF )
+    if ( inppar->tasknum == SURFDENSPROF ) {
         free ( densprof );
+        free ( dx );
+    }
 
     free(mask);
     free(refmask);
