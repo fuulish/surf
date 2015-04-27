@@ -60,6 +60,7 @@ int tanalize ( input_t * inppar )
     int nref;
     int natoms;
     int nmask;
+    int ntotsurf = 0;
 
     int * mask;
     int * refmask;
@@ -112,11 +113,9 @@ int tanalize ( input_t * inppar )
 
     mask = get_mask(inppar->maskkind, inppar->mask, inppar->nkinds, atoms, natoms);
 
-    if ( strstr ( inppar->refmask, EMPTY ) == NULL )
-        refmask = get_mask(inppar->refmaskkind, inppar->refmask, inppar->refnkinds, atoms, natoms);
-    else {
-        printf("Cannot do analysis without 'refmask'\n");
-        exit ( 1 );
+    if ( (inppar->tasknum == SURFDENSPROF ) && ( ( strstr ( inppar->refmask, EMPTY ) != NULL ) && ( inppar->nofrags ) ) ) {
+        print_error ( MISSING_INPUT_PARAM, "refmask or fragments" );
+        exit ( MISSING_INPUT_PARAM );
     }
 
     int * frags[inppar->numfrags];
@@ -125,8 +124,19 @@ int tanalize ( input_t * inppar )
     int o;
     char buff[10] = "indices";
 
-    if ( inppar->nofrags )
+    if ( inppar->nofrags ) {
         printf("Using indices given in 'refmask'\n");
+        refmask = get_mask(inppar->refmaskkind, inppar->refmask, inppar->refnkinds, atoms, natoms);
+
+        nref = 0;
+        while ( refmask[nref] != -1 )
+            nref++;
+
+        if ( !(nref) ) {
+            printf("Cannot continue with 0 reference atoms\n");
+            exit ( 1 );
+        }
+    }
     else {
 
         /* check here and wrap fragments to central box */
@@ -140,23 +150,9 @@ int tanalize ( input_t * inppar )
         }
     }
 
-    nref = 0;
-    while ( refmask[nref] != -1 )
-        nref++;
-
-    if ( !(nref) ) {
-        printf("Cannot continue with 0 reference atoms\n");
-        exit ( 1 );
-    }
-
-    atom_t refatoms[nref];
-
     nmask = 0;
     while ( mask[nmask] != -1 )
         nmask++;
-
-    for ( i=0; i<nref; i++ )
-        refatoms[i] = atoms[refmask[i]];
 
     real *densprof;
     real mxdim;
@@ -170,7 +166,6 @@ int tanalize ( input_t * inppar )
 
         if ( ! ( inppar->pbcset ) ) {
              print_error ( MISSING_INPUT_PARAM, "pbc" );
-             // check here, need to introduce return value for tanalize
              return MISSING_INPUT_PARAM;
         }
 
@@ -246,12 +241,15 @@ int tanalize ( input_t * inppar )
 
             /* check here, and remove hard-coded surface direction */
             int * direction;
+            real * grad;
             int newsurf = 0;
             int nsurf = 0;
 
             real ** surfpts;
 
-            surfpts = get_2d_representation_ils ( &nsurf, &direction, &surface, inppar->surfacecutoff, newsurf, surf_inds );
+            surfpts = get_2d_representation_ils ( &nsurf, &direction, &grad, &surface, inppar->surfacecutoff, newsurf, surf_inds );
+
+            ntotsurf += nsurf;
 
             // use function write_combined_xmol
             if ( inppar->surfxyz ) {
@@ -293,19 +291,17 @@ int tanalize ( input_t * inppar )
                 int *fakemask;
                 int fakenum;
 
-                // inppar->fragments[o], inppar->natomsfrag[o]
-
                 if ( counter == 0 )
                     dx = get_box_volels ( &surface );
 
                 int nfrg;
 
                 if ( inppar->nofrags )
-                    nfrg = inppar->numfrags;
-                else
                     nfrg = nref;
+                else
+                    nfrg = inppar->numfrags;
 
-                for ( r=0; r<nref; r++ ) {
+                for ( r=0; r<nfrg; r++ ) {
 
                     if ( inppar->nofrags ) {
                         fakemask = &(refmask[r]);
@@ -316,13 +312,11 @@ int tanalize ( input_t * inppar )
                         fakenum = inppar->natomsfrag[r];
                     }
 
-                    dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, atoms, fakemask, fakenum, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+                    dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
                     ind = ( int ) floor ( dstnc / inppar->profileres );
 
-                    // periodify_indices ( &ind, &ndprof, &ind, 1 );
-
-                    densprof[ hndprof + ind ] += 1.; //  / nsurf;
+                    densprof[ hndprof + ind ] += 1.; // / nsurf;
 
                     if ( inppar->output ) {
                         sprintf(tmp, "%s%s", inppar->outputprefix, "surfdist.dat");
@@ -340,23 +334,23 @@ int tanalize ( input_t * inppar )
 
                 }
             }
-            else {
-                // check here, this needs to be done for all of the solute atoms, not just assume that there is only one
-                dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, atoms, refmask, nref, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+            // else {
+            //     // check here, this needs to be done for all of the solute atoms, not just assume that there is only one
+            //     dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, grad, atoms, refmask, nref, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
-                if ( inppar->output ) {
-                    sprintf(tmp, "%s%s", inppar->outputprefix, "surfdist.dat");
-                    fsdist = fopen(&tmp[0], htw);
+            //     if ( inppar->output ) {
+            //         sprintf(tmp, "%s%s", inppar->outputprefix, "surfdist.dat");
+            //         fsdist = fopen(&tmp[0], htw);
 
-                    if ( strncmp ( htw, "w", 1 ) == 0 ) {
-                        fprintf ( fsdist, "#            index              distance\n");
-                    }
+            //         if ( strncmp ( htw, "w", 1 ) == 0 ) {
+            //             fprintf ( fsdist, "#            index              distance\n");
+            //         }
 
-                    fprintf ( fsdist, "%21i %21.10f\n", 0, dstnc);
-                    fclose ( fsdist );
-                    htw = "a";
-                }
-            }
+            //         fprintf ( fsdist, "%21i %21.10f\n", 0, dstnc);
+            //         fclose ( fsdist );
+            //         htw = "a";
+            //     }
+            // }
 
             /* check here, and move stuff for refinement box creation somewhere else */
 
@@ -367,6 +361,7 @@ int tanalize ( input_t * inppar )
             if ( newsurf )
                 free ( surf_inds );
 
+            free ( grad );
             free ( surfpts );
             free ( direction );
             free ( surface.atoms );
@@ -384,6 +379,7 @@ int tanalize ( input_t * inppar )
     if ( ( inppar->tasknum == SURFDENSPROF ) && ( inppar->output ) ) {
 
         int natdens;
+        int navsurf;
         real factor, partdens, norm;
 
         if ( inppar->nofrags )
@@ -399,13 +395,19 @@ int tanalize ( input_t * inppar )
 
             for ( i=0; i<DIM; i++ )
                 if ( inppar->direction != i )
-                    // smarea *= inppar->pbc[i] * dx[i];
-                    smarea *= inppar->pbc[i];
+                    smarea *= dx[i];
 
-            factor = smarea * drdprof;
+            // smarea = 2*smarea;
+            // factor = smarea * drdprof;
             // dv = sqr ( inppar->resolution ) * inppar->resolution;
-            // partdens = (real) natdens / ( inppar->pbc[0] * inppar->pbc[1] * inppar->pbc[2]);
-            // factor = (real) counter * partdens * dv * drdprof * smarea;
+            partdens = (real) natdens / ( inppar->pbc[0] * inppar->pbc[1] * inppar->pbc[2]);
+            factor = (real) counter * partdens * smarea * drdprof;
+
+            navsurf = ntotsurf / counter;
+            smarea = navsurf * smarea;
+
+            factor = (real) counter * drdprof * smarea * partdens;
+
         }
         else {
             factor = (real) natdens * (real) counter;
@@ -440,6 +442,9 @@ int tanalize ( input_t * inppar )
 
         free(inppar->natomsfrag);
     }
+    else {
+        free ( refmask );
+    }
 
     if ( inppar->tasknum == SURFDENSPROF ) {
         free ( densprof );
@@ -447,7 +452,7 @@ int tanalize ( input_t * inppar )
     }
 
     free(mask);
-    free(refmask);
+    // free(refmask);
     free(atoms);
 
     if ( ! ( inppar->xdrread ) )

@@ -370,7 +370,7 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     return surface;
 }
 
-real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface, real surfcut, int newsurf, int * surf_inds )
+real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cube_t * surface, real surfcut, int newsurf, int * surf_inds )
 {
     int i, j, k, l;
     int baseind;
@@ -378,10 +378,6 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface,
     int cnt_up = 0;
     int cnt_down = 0;
     int direction;
-    /* check here, and pass these values in function call or so */
-    /* for now take a tenth of the whole surface-direction */
-
-    /* then interpolate to a hundresth of that spacing */
 
     real * dx;
     real tmpsrf;
@@ -410,6 +406,7 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface,
 
     surfpts = (real **) malloc ( DIM * sizeof ( real *) );
     int *tmpdir = ( int * ) malloc ( surface->nvoxels * sizeof ( int ) );
+    real *tgrd = ( real * ) malloc ( surface->nvoxels * sizeof ( real ) );
 
     for ( i=0; i<DIM; i++ )
         surfpts[i] = (real *) malloc ( surface->nvoxels * sizeof ( real ) );
@@ -428,8 +425,10 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface,
                 ix[1] = j;
                 ix[2] = k;
 
+                // check here and maybe change direction
+                // --> see what the influence would be
                 for ( d=2; d>-1; d-- ) {
-                    fndsrf = check_if_surface_voxel ( tmpdt, surface, ix, d, surfcut );
+                    fndsrf = check_if_surface_voxel ( &upper, &lower, tmpdt, surface, ix, d, surfcut );
                     direction = d;
 
                     if ( fndsrf )
@@ -475,6 +474,9 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface,
                     tmpsrf = surface->voxels[crrnt].coords[direction] + tfin * dx[direction];
                     tmpdir[*nsurf] = direction;
 
+                    tgrd[*nsurf] = surface->voxels[upper].data - surface->voxels[lower].data;
+                    tgrd[*nsurf] /= dx[direction];
+
                     for ( l=0; l<DIM; l++ ) {
                         if ( l == direction )
                             surfpts[l][*nsurf] = tmpsrf;
@@ -501,10 +503,12 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface,
     // check here and insert allocate_matrix_real_2d (also above);
     finalsurf = ( real ** ) malloc ( *nsurf * sizeof ( real * ) );
     *drctn =  ( int * ) malloc ( *nsurf * sizeof ( int ) );
+    *grad = ( real * ) malloc ( *nsurf * sizeof ( real ) );
 
     for ( i=0; i<*nsurf; i++ ) {
         finalsurf[i] = ( real * ) malloc ( DIM * sizeof ( real ) );
         (*drctn)[i] = tmpdir[i];
+        (*grad)[i] = tgrd[i];
 
         for ( k=0; k<DIM; k++ )
             finalsurf[i][k] = surfpts[k][i];
@@ -515,13 +519,14 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, cube_t * surface,
 
     free ( surfpts );
     free ( tmpdir );
+    free ( tgrd );
 
     free ( dx );
 
     return finalsurf;
 }
 
-real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int * direction, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic )
+real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int * direction, real * grad, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic )
 {
     int k, l;
     int crrnt[DIM];
@@ -545,19 +550,10 @@ real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int
 
     dstnc = find_minimum_1d_real (&min, dsts, nsurf );
 
-    // now it's more difficult to check whether in- or outside of bulk (because we don't know the direction of the surface at that point, unless we safe it maybe)
-    // that's why we have the direction array now
-
-    // if ( surf_2d_down[minx][miny] > com[2] )
-    //     *distlo *= -1;
-
     get_index_triple ( crrnt, com, pbc, dx, periodic );
 
     int lower[DIM], upper[DIM];
 
-    // HELLO;
-    // direction array is fucked up
-    // printf("%5i\n", direction[min]);
     for ( l=0; l<DIM; l++ ) {
         if ( l == direction[min] ) {
             lower[l] = crrnt[l] - 1;
@@ -577,22 +573,10 @@ real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int
     loind = get_index ( surface->n, lower[0], lower[1], lower[2] );
     hiind = get_index ( surface->n, upper[0], upper[1], upper[2] );
 
-    // printf("%5i %5i %5i %5i %5i %5i %5i %5i %5i %5i %5i\n", crrnt[0], crrnt[1], crrnt[2], lower[0], lower[1], lower[2], upper[0], upper[1], upper[2], loind, hiind);
-
-    real t;
-    t = lerp_to_t ( surface->voxels[loind].data, surface->voxels[hiind].data, surfcut );
-
-    real crd;
-    crd = surface->voxels[loind].coords[direction[min]] + dx[direction[min]] * t;
-
-    if ( surface->voxels[loind].data > surface->voxels[hiind].data ) {
-        if ( ( surface->voxels[loind].data > surfcut ) && ( com[direction[min]] > crd ) )
-            // HELLO;
-            dstnc *= -1.;
-    }
-    else if ( surface->voxels[hiind].data > surface->voxels[loind].data ) {
-        if ( ( surface->voxels[hiind].data > surfcut ) && ( com[direction[min]] < crd ) )
-            dstnc *= -1.;
+    if ( ( ( grad[min] < 0. ) && ( com[direction[min]] > surfpts[min][direction[min]] ) ) || 
+         ( ( grad[min] > 0. ) && ( com[direction[min]] < surfpts[min][direction[min]] ) ) ) {
+        // printf("%5i\n", refmask[0]);
+        dstnc *= -1.;
     }
 
     free ( dsts );
@@ -602,7 +586,7 @@ real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int
 
 }
 
-int check_if_surface_voxel ( real * tmpdt, cube_t * surface, int * ix, int direction, real surfcut )
+int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * surface, int * ix, int direction, real surfcut )
 {
     int k, l, ihi, ilo;
     signed int inds[DIM][DIM];
@@ -636,6 +620,9 @@ int check_if_surface_voxel ( real * tmpdt, cube_t * surface, int * ix, int direc
     ( ( tmpdt[2] < surfcut ) && (tmpdt[1] < surfcut) &&  ( tmpdt[0] > surfcut ) ) )
         fndsrf = 1;
 #endif
+
+    *upper = voxinds[2];
+    *lower = voxinds[0];
 
     return fndsrf;
 }
