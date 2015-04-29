@@ -247,7 +247,7 @@ int tanalize ( input_t * inppar )
 
             real ** surfpts;
 
-            surfpts = get_2d_representation_ils ( &nsurf, &direction, &grad, &surface, inppar->surfacecutoff, newsurf, surf_inds );
+            surfpts = get_2d_representation_ils ( &nsurf, &direction, &grad, &surface, inppar->surfacecutoff, newsurf, surf_inds, inppar->direction );
 
             ntotsurf += nsurf;
 

@@ -370,14 +370,13 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     return surface;
 }
 
-real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cube_t * surface, real surfcut, int newsurf, int * surf_inds )
+real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cube_t * surface, real surfcut, int newsurf, int * surf_inds, int direction )
 {
     int i, j, k, l;
     int baseind;
     int upper, lower;
     int cnt_up = 0;
     int cnt_down = 0;
-    int direction;
 
     real * dx;
     real tmpsrf;
@@ -399,6 +398,13 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
     real **surfpts;
     real dblsrfct = 2. * surfcut;
 
+    int  srf[DIM];
+    int lrdfnd;
+
+    real grd[DIM];
+    real tpx[DIM];
+    real dlt;
+
     // we'll assume every point could be a point at the surface and sort out things later on
     // we'll make no division between upper and lower surface, because it's bullshit anyways
 
@@ -419,78 +425,48 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 
                 crrnt = baseind + k;
                 fndsrf = 0;
-                direction = 0;
+                lrdfnd = 0;
 
                 ix[0] = i;
                 ix[1] = j;
                 ix[2] = k;
 
-                // check here and maybe change direction
-                // --> see what the influence would be
-                for ( d=2; d>-1; d-- ) {
+                for ( d=0; d<DIM; d++ ) {
                     fndsrf = check_if_surface_voxel ( &upper, &lower, tmpdt, surface, ix, d, surfcut );
-                    direction = d;
 
-                    if ( fndsrf )
-                        break;
+                    tpx[d] = ZERO;
+
+                    lrdfnd += fndsrf;
+                    srf[d] = fndsrf;
+
+                    if ( ( d == direction ) && ( fndsrf ) ) {
+
+                        grd[d] = surface->voxels[upper].data - surface->voxels[lower].data;
+                        grd[d] /= 2. * dx[d];
+
+                        if ( grd[d] >= 0 ) {
+                            t = lerp_to_t ( tmpdt[1], tmpdt[2], surfcut );
+                            tpx[d] = surface->voxels[crrnt].coords[d] + t * dx[d];
+                        }
+                        else if ( grd[d] < 0 ) {
+                            t = lerp_to_t ( tmpdt[0], tmpdt[1], surfcut );
+                            tpx[d] = surface->voxels[lower].coords[d] + t * dx[d];
+                        }
+
+                        surfpts[d][*nsurf] = tpx[d];
+
+                        tgrd[*nsurf] = grd[d];
+                        tmpdir[*nsurf] = d;
+
+                    }
+                    else {
+                        tpx[d] = ZERO;
+                        surfpts[d][*nsurf] = surface->voxels[crrnt].coords[d];
+                    }
+
                 }
-
-                // carefully check here again the assignment of the surface direction
-                // maybe use a tri-linear interpolation (but i don't think it's actually needed
-                // and substitute the stupid zeros by surfcut, that should work equally well
-
-                if ( fndsrf ) {
-
-                    if ( ( tmpdt[0] > surfcut ) && ( tmpdt[2] < surfcut ) ) {
-                        fndsrf = crrnt;
-
-                        // change the operators below (< and >=) check here for validity
-                        if ( tmpdt[2] < surfcut ) {
-                            t = lerp_to_t ( tmpdt[1], tmpdt[2], surfcut );
-                            tfin = t;
-                        }
-
-                        if ( tmpdt[0] >= surfcut ) {
-                            t = lerp_to_t ( tmpdt[0], tmpdt[1], surfcut );
-                            tfin = t - 1;
-                        }
-                    }
-
-                    else if ( ( tmpdt[0] < surfcut ) && ( tmpdt[2] > surfcut ) ) {
-                        fndsrf = crrnt;
-
-                        if ( tmpdt[2] >= surfcut ) {
-                            t = lerp_to_t ( tmpdt[0], tmpdt[1], surfcut );
-                            tfin = t - 1;
-                        }
-
-                        if ( tmpdt[0] < surfcut ) {
-                            t = lerp_to_t ( tmpdt[1], tmpdt[2], surfcut );
-                            tfin = t;
-                        }
-
-                    }
-                    // for now interpolate only in the direction that the surface is actually present
-                    tmpsrf = surface->voxels[crrnt].coords[direction] + tfin * dx[direction];
-                    tmpdir[*nsurf] = direction;
-
-                    tgrd[*nsurf] = surface->voxels[upper].data - surface->voxels[lower].data;
-                    tgrd[*nsurf] /= 2. * dx[direction];
-
-                    for ( l=0; l<DIM; l++ ) {
-                        if ( l == direction )
-                            surfpts[l][*nsurf] = tmpsrf;
-                        else
-                            surfpts[l][*nsurf] = surface->voxels[crrnt].coords[l];
-                    }
-
+                if ( lrdfnd )
                     (*nsurf)++;
-
-                    // check here and insert vertical interpolation
-                    if ( newsurf )
-                        surf_inds[*nsurf] = crrnt;
-
-                }
 
             }
         }
@@ -506,10 +482,11 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
     *grad = ( real * ) malloc ( *nsurf * sizeof ( real ) );
 
     for ( i=0; i<*nsurf; i++ ) {
-        finalsurf[i] = ( real * ) malloc ( DIM * sizeof ( real ) );
+
         (*drctn)[i] = tmpdir[i];
         (*grad)[i] = tgrd[i];
 
+        finalsurf[i] = ( real * ) malloc ( DIM * sizeof ( real ) );
         for ( k=0; k<DIM; k++ )
             finalsurf[i][k] = surfpts[k][i];
     }
@@ -616,8 +593,14 @@ int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * su
         fndsrf = 1;
     }
 #else
+    // or maybe the other way 'round
+    // we could also set fndsrf to something more informative that will tell us which two voxels we should use!?
+    // the way below, the middle voxels will always be close to the desired surface segment!?
+    // if ( ( ( tmpdt[2] < surfcut ) && ( tmpdt[1] > surfcut ) && ( tmpdt[0] > surfcut ) ) ||
+    // ( ( tmpdt[2] > surfcut ) && (tmpdt[1] > surfcut) &&  ( tmpdt[0] < surfcut ) ) )
+
     if ( ( ( tmpdt[2] > surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] < surfcut ) ) ||
-    ( ( tmpdt[2] < surfcut ) && (tmpdt[1] < surfcut) &&  ( tmpdt[0] > surfcut ) ) )
+         ( ( tmpdt[2] < surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] > surfcut ) ) )
         fndsrf = 1;
 #endif
 
