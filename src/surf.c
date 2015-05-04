@@ -164,7 +164,7 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     // printf("We are using the optimized, but not debugged version of the code!!!\n", trplzt);
 
     real mxdst;
-    int mxvox;
+    int mxvox[DIM];
     int mx[DIM];
     int mn[DIM];
     int k;
@@ -179,10 +179,17 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
         resarr[k] = resolution;
 
     mxdst = trplzt + resolution;
-    mxvox = mxdst / resolution;
 
+    for ( k=0 ; k<DIM; k++ ) {
+        mxvox[k] = mxdst / resolution;
+
+        if ( 2*mxvox[k] > surface.n[k] )
+            mxvox[k] -= (int) ceil ( (real) (2*mxvox[k] - surface.n[k]) / 2. );
+    }
+
+    // this should not happen anymore
     for ( k=0; k<DIM; k++ ) {
-        if ( ( 2*mxvox ) >= ( surface.n[k] ) ) {
+        if ( ( 2*mxvox[k] ) > ( surface.n[k] ) ) {
             print_error ( PROGRAM_BROKEN, "to use box dimension smaller than two times surface calculation cutoff");
             exit ( PROGRAM_BROKEN );
         }
@@ -204,8 +211,8 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
         // then determine mni, mxi, ... and so on
 
         for ( k=0; k<DIM; k++ ) {
-            mn[k] = index[k] - mxvox;
-            mx[k] = index[k] + mxvox;
+            mn[k] = index[k] - mxvox[k];
+            mx[k] = index[k] + mxvox[k];
         }
 
         for ( i=mn[0]; i<mx[0]; i++ )
