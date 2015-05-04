@@ -23,6 +23,7 @@ typedef enum errors_e
 {
     FILE_NOT_FOUND=100,
     MISSING_INPUT_PARAM,
+    PROGRAM_BROKEN,
     NOT_IMPLEMENTED,
 
 } errors_t;

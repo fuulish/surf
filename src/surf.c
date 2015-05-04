@@ -27,6 +27,7 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include "atom_param.h"
 #include "cube.h"
 #include "surf.h"
+#include "errors.h"
 #include "molmanipul.h"
 #include "time.h"
 #include <stdio.h>
@@ -180,54 +181,56 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     mxdst = trplzt + resolution;
     mxvox = mxdst / resolution;
 
-#ifdef OPTSURF
-    if ( periodic ) {
+    for ( k=0; k<DIM; k++ ) {
+        if ( ( 2*mxvox ) >= ( surface.n[k] ) ) {
+            print_error ( PROGRAM_BROKEN, "to use box dimension smaller than two times surface calculation cutoff");
+            exit ( PROGRAM_BROKEN );
+        }
+    }
 
+#ifdef OPTSURF
 #ifdef OPENMP
 #pragma omp parallel for default(none) \
     private(a,i,j,k,wrki,wrkj,wrkk,index,mn,mx,tmpndx,distance) shared(atoms,pbc,resarr,periodic,surface,trplzt,natoms,mask,mxvox,mttsqzeta,prefactor,cutshft) // \
         // schedule(guided, surface.n[2])
     // schedule(dynamic)
 #endif
-        for ( a=0; a<natoms; a++ ) {
+    for ( a=0; a<natoms; a++ ) {
 
-            // get index of voxel where atom is sitting
-            //
-            get_index_triple ( index, &(atoms[mask[a]].coords[0]), pbc, resarr, periodic );
+        // get index of voxel where atom is sitting
+        //
+        get_index_triple ( index, &(atoms[mask[a]].coords[0]), pbc, resarr, periodic );
 
-            // then determine mni, mxi, ... and so on
+        // then determine mni, mxi, ... and so on
 
-            for ( k=0; k<DIM; k++ ) {
-                mn[k] = index[k] - mxvox;
-                mx[k] = index[k] + mxvox;
-            }
-
-            // printf("atom #%i\n", a);
-
-            for ( i=mn[0]; i<mx[0]; i++ )
-                for ( j=mn[1]; j<mx[1]; j++ )
-                    for ( k=mn[2]; k<mx[2]; k++ ) {
-
-                        periodify_indices ( &wrki, &(surface.n[0]), &i, 1 );
-                        periodify_indices ( &wrkj, &(surface.n[1]), &j, 1 );
-                        periodify_indices ( &wrkk, &(surface.n[2]), &k, 1 );
-
-                        tmpndx = get_index ( surface.n, wrki, wrkj, wrkk );
-
-                        // printf("%i %i %i %i\n", wrki, wrkj, wrkk, tmpndx);
-
-                        distance = get_distance_periodic ( &(surface.voxels[tmpndx].coords[0]), &(atoms[mask[a]].coords[0]), pbc );
-
-                        if ( distance > trplzt )
-                            continue;
-
-#pragma omp atomic update
-                        surface.voxels[tmpndx].data += prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft;
-                        // surface.voxels[tmpndx].data += prefactor * exp( sqr( distance ) / (mttsqzeta));
-                        // surface.voxels[tmpndx].data -= cutshft;
-
-                    }
+        for ( k=0; k<DIM; k++ ) {
+            mn[k] = index[k] - mxvox;
+            mx[k] = index[k] + mxvox;
         }
+
+        for ( i=mn[0]; i<mx[0]; i++ )
+            for ( j=mn[1]; j<mx[1]; j++ )
+                for ( k=mn[2]; k<mx[2]; k++ ) {
+
+                    periodify_indices ( &wrki, &(surface.n[0]), &i, 1 );
+                    periodify_indices ( &wrkj, &(surface.n[1]), &j, 1 );
+                    periodify_indices ( &wrkk, &(surface.n[2]), &k, 1 );
+
+                    tmpndx = get_index ( surface.n, wrki, wrkj, wrkk );
+
+                    if ( periodic )
+                        distance = get_distance_periodic ( &(surface.voxels[tmpndx].coords[0]), &(atoms[mask[a]].coords[0]), pbc );
+                    else
+                        distance = get_distance ( &(surface.voxels[tmpndx].coords[0]), &(atoms[mask[a]].coords[0]) );
+
+                    if ( distance > trplzt )
+                        continue;
+
+                    // the below formula can be simplified, check here
+#pragma omp atomic update
+                    surface.voxels[tmpndx].data += prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft;
+
+                }
     }
 
 #else

@@ -43,6 +43,8 @@ void print_error(int errno, char * detail)
         case NOT_IMPLEMENTED:
             printf("%s is not implemented, yet.\n", detail);
             break;
+        case PROGRAM_BROKEN:
+            printf("Trying %s will break the program. A workaround may be implemented soon. Stay tuned!\n", detail);
         default:
             printf("An error occurred that has not yet been assigned to a category!\n");
             break;
