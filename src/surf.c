@@ -419,6 +419,17 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 
     int lofin, hifin;
 
+    int dstrt, dstp;
+
+    if ( ( direction >= 0 ) && ( direction < DIM ) ) {
+        dstrt = direction;
+        dstp = direction + 1;
+    }
+    else {
+        dstrt = 0;
+        dstp = DIM;
+    }
+
     for ( i=0; i<DIM; i++ )
         surfpts[i] = (real *) malloc ( surface->nvoxels * sizeof ( real ) );
 
@@ -438,7 +449,7 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 
                 mxgrd = ZERO;
 
-                for ( d=0; d<DIM; d++ ) {
+                for ( d=dstrt; d<dstp; d++ ) {
                     fndsrf = check_if_surface_voxel ( &upper, &lower, tmpdt, surface, ix, d, surfcut );
 
                     tpx[d] = ZERO;
