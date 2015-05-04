@@ -414,6 +414,11 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
     int *tmpdir = ( int * ) malloc ( surface->nvoxels * sizeof ( int ) );
     real *tgrd = ( real * ) malloc ( surface->nvoxels * sizeof ( real ) );
 
+    real mxgrd;
+    real dt[DIM];
+
+    int lofin, hifin;
+
     for ( i=0; i<DIM; i++ )
         surfpts[i] = (real *) malloc ( surface->nvoxels * sizeof ( real ) );
 
@@ -431,42 +436,59 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
                 ix[1] = j;
                 ix[2] = k;
 
+                mxgrd = ZERO;
+
                 for ( d=0; d<DIM; d++ ) {
                     fndsrf = check_if_surface_voxel ( &upper, &lower, tmpdt, surface, ix, d, surfcut );
 
                     tpx[d] = ZERO;
-
                     lrdfnd += fndsrf;
                     srf[d] = fndsrf;
 
-                    if ( ( d == direction ) && ( fndsrf ) ) {
-
+                    if ( fndsrf ) {
                         grd[d] = surface->voxels[upper].data - surface->voxels[lower].data;
                         grd[d] /= 2. * dx[d];
 
-                        if ( grd[d] >= 0 ) {
-                            t = lerp_to_t ( tmpdt[1], tmpdt[2], surfcut );
-                            tpx[d] = surface->voxels[crrnt].coords[d] + t * dx[d];
+                        if ( ( fabs ( grd[d] ) ) > ( fabs ( mxgrd ) ) ) {
+                            tmpdir[*nsurf] = d;
+                            mxgrd = grd[d];
+                            tgrd[*nsurf] = mxgrd;
+
+                            hifin = upper;
+                            lofin = lower;
+
+                            for ( l=0; l<DIM; l++ )
+                                dt[l] = tmpdt[l];
                         }
-                        else if ( grd[d] < 0 ) {
-                            t = lerp_to_t ( tmpdt[0], tmpdt[1], surfcut );
-                            tpx[d] = surface->voxels[lower].coords[d] + t * dx[d];
+                    }
+
+                }
+
+                if ( lrdfnd ) {
+
+                    for ( d=0; d<DIM; d++ ) {
+                        if ( d == tmpdir[*nsurf] ) {
+
+                            if ( mxgrd >= 0 ) {
+                                t = lerp_to_t ( dt[1], dt[2], surfcut );
+                                tpx[d] = surface->voxels[crrnt].coords[d] + t * dx[d];
+                            }
+                            else if ( mxgrd < 0 ) {
+                                t = lerp_to_t ( dt[0], dt[1], surfcut );
+                                tpx[d] = surface->voxels[lofin].coords[d] + t * dx[d];
+                            }
+                        }
+                        else {
+                            tpx[d] = surface->voxels[crrnt].coords[d];
                         }
 
                         surfpts[d][*nsurf] = tpx[d];
 
-                        tgrd[*nsurf] = grd[d];
-                        tmpdir[*nsurf] = d;
+                    }
 
-                    }
-                    else {
-                        tpx[d] = ZERO;
-                        surfpts[d][*nsurf] = surface->voxels[crrnt].coords[d];
-                    }
+                (*nsurf)++;
 
                 }
-                if ( lrdfnd )
-                    (*nsurf)++;
 
             }
         }
