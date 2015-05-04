@@ -253,3 +253,20 @@ real * get_box_volels(cube_t * cube)
 
 }
 
+void get_box_areas_pointer (real * da, cube_t * cube, real * dx )
+{
+    int i, j;
+
+    for ( i=0; i<DIM; i++ )
+        da[i] = ONE;
+
+    for ( i=0; i<DIM; i++ ) {
+        for ( j=0; j<DIM; j++ ) {
+            da[i] *= dx[j];
+
+            if ( i == j )
+                da[i] /= dx[j];
+        }
+    }
+
+}

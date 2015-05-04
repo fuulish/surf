@@ -370,7 +370,7 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     return surface;
 }
 
-real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cube_t * surface, real surfcut, int newsurf, int * surf_inds, int direction )
+real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cube_t * surface, real surfcut, int newsurf, int * surf_inds, int direction, real * area )
 {
     int i, j, k, l;
     int baseind;
@@ -416,9 +416,9 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 
     real mxgrd;
     real dt[DIM];
+    real tmparea[DIM];
 
     int lofin, hifin;
-
     int dstrt, dstp;
 
     if ( ( direction >= 0 ) && ( direction < DIM ) ) {
@@ -429,6 +429,8 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
         dstrt = 0;
         dstp = DIM;
     }
+
+    get_box_areas_pointer (tmparea, surface, dx );
 
     for ( i=0; i<DIM; i++ )
         surfpts[i] = (real *) malloc ( surface->nvoxels * sizeof ( real ) );
@@ -479,6 +481,8 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 
                     for ( d=0; d<DIM; d++ ) {
                         if ( d == tmpdir[*nsurf] ) {
+
+                            *area += tmparea[d];
 
                             if ( mxgrd >= 0 ) {
                                 t = lerp_to_t ( dt[1], dt[2], surfcut );

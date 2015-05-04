@@ -720,7 +720,7 @@ void set_input_defaults(input_t * inppar)
     inppar->tasknum = NOTASK;
     assign_atom_parameters ( "symbol", "Du", &(inppar->dumatom) );
     inppar->dummy = 0;
-    inppar->direction = 2;
+    inppar->direction = -1;
     inppar->surfxyz = 0;
 
     int i;

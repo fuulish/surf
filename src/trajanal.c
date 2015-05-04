@@ -60,7 +60,7 @@ int tanalize ( input_t * inppar )
     int nref;
     int natoms;
     int nmask;
-    int ntotsurf = 0;
+    real ntotarea = ZERO;
 
     int * mask;
     int * refmask;
@@ -245,11 +245,12 @@ int tanalize ( input_t * inppar )
             int newsurf = 0;
             int nsurf = 0;
 
+            real area = ZERO;
             real ** surfpts;
 
-            surfpts = get_2d_representation_ils ( &nsurf, &direction, &grad, &surface, inppar->surfacecutoff, newsurf, surf_inds, inppar->direction );
+            surfpts = get_2d_representation_ils ( &nsurf, &direction, &grad, &surface, inppar->surfacecutoff, newsurf, surf_inds, inppar->direction, &area );
 
-            ntotsurf += nsurf;
+            ntotarea += area;
 
             // use function write_combined_xmol
             if ( inppar->surfxyz ) {
@@ -334,23 +335,6 @@ int tanalize ( input_t * inppar )
 
                 }
             }
-            // else {
-            //     // check here, this needs to be done for all of the solute atoms, not just assume that there is only one
-            //     dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, grad, atoms, refmask, nref, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
-
-            //     if ( inppar->output ) {
-            //         sprintf(tmp, "%s%s", inppar->outputprefix, "surfdist.dat");
-            //         fsdist = fopen(&tmp[0], htw);
-
-            //         if ( strncmp ( htw, "w", 1 ) == 0 ) {
-            //             fprintf ( fsdist, "#            index              distance\n");
-            //         }
-
-            //         fprintf ( fsdist, "%21i %21.10f\n", 0, dstnc);
-            //         fclose ( fsdist );
-            //         htw = "a";
-            //     }
-            // }
 
             /* check here, and move stuff for refinement box creation somewhere else */
 
@@ -380,6 +364,7 @@ int tanalize ( input_t * inppar )
 
         int natdens;
         int navsurf;
+        real avarea;
         real factor, partdens, norm;
 
         if ( inppar->nofrags )
@@ -387,34 +372,25 @@ int tanalize ( input_t * inppar )
         else
             natdens = inppar->numfrags;
 
+        real smarea;
         if ( inppar->periodic ) {
-            real smarea;
             real fctr;
 
-            smarea = ONE;
-
-            for ( i=0; i<DIM; i++ )
-                if ( inppar->direction != i )
-                    smarea *= dx[i];
-
-            // smarea = 2*smarea;
-            // factor = smarea * drdprof;
-            // dv = sqr ( inppar->resolution ) * inppar->resolution;
             partdens = (real) natdens / ( inppar->pbc[0] * inppar->pbc[1] * inppar->pbc[2]);
-            factor = (real) counter * partdens * smarea * drdprof;
 
-            navsurf = ntotsurf / counter;
-            smarea = navsurf * smarea;
+            avarea = ntotarea / counter;
+            smarea = avarea;
 
             factor = (real) counter * drdprof * smarea * partdens;
 
         }
         else {
-            factor = (real) natdens * (real) counter;
+            factor = (real) counter * drdprof * smarea * natdens;
         }
 
         printf("particle density:     %21.10f\n", partdens);
         printf("normalization factor: %21.10f\n", factor);
+        printf("average surface area: %21.10f\n", smarea);
 
         FILE *fdprof;
         char tmp[MAXSTRLEN];
