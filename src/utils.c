@@ -496,12 +496,14 @@ void get_index_triple ( int *i, real* coords, real *pbc, real *resolution, int p
 void periodify_indices ( int * out, int * nvx, int * in, int len)
 {
     int k;
+    int res;
 
-    for ( k=0; k<len; k++ )
+    for ( k=0; k<len; k++ ) {
+        res = in[k] % nvx[k];
+
         if ( in[k] < 0 )
-            out[k] = in[k] + nvx[k];
-        else if ( in[k] >= nvx[k] )
-            out[k] = in[k] - nvx[k];
+            out[k] = res + nvx[k];
         else
-            out[k] = in[k];
+            out[k] = res;
+    }
 }
