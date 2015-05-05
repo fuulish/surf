@@ -23,3 +23,4 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
 real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cube_t * surface, real surfcut, int newsurf, int * surf_inds, int direction, real * area );
 real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int * direction, real * grad, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic );
 int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * surface, int * ix, int direction, real surfcut );
+real get_bulk_volume ( cube_t * surface, real surfcut );

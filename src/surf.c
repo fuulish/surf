@@ -656,3 +656,17 @@ int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * su
 
     return fndsrf;
 }
+
+real get_bulk_volume ( cube_t * surface, real surfcut )
+{
+    int i;
+    real vol = ZERO;
+
+    for ( i=0; i<surface->nvoxels; i++ )
+        if ( surface->voxels[i].data >= surfcut )
+            vol += ONE;
+
+    vol *= surface->dv;
+
+    return vol;
+}

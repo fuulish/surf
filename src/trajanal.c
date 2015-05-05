@@ -61,6 +61,7 @@ int tanalize ( input_t * inppar )
     int natoms;
     int nmask;
     real ntotarea = ZERO;
+    real ntotvol = ZERO;
 
     int * mask;
     int * refmask;
@@ -231,6 +232,7 @@ int tanalize ( input_t * inppar )
             real fake_boxv[DIM][DIM];
             real disthi, distlo;
             int * surf_inds;
+            real vol;
             int inthi, intlo;
             char tmp[MAXSTRLEN];
 
@@ -238,6 +240,12 @@ int tanalize ( input_t * inppar )
             sprintf(opref, "%s%i_", inppar->outputprefix, i);
 
             surface = instant_surface_periodic ( mask, atoms, natoms, inppar->zeta, inppar->surfacecutoff, inppar->output, opref, inppar->pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
+            vol = get_bulk_volume ( &surface, inppar->surfacecutoff );
+
+            // check here, depending on whether we want to look at stuff in the non-solvent phase or in the solvent phase we need to take different volumes
+            // printf("%21.10f%21.10f\n", vol, inppar->pbc[0]*inppar->pbc[1]*inppar->pbc[2]);
+
+            ntotvol += vol;
 
             /* check here, and remove hard-coded surface direction */
             int * direction;
@@ -365,6 +373,7 @@ int tanalize ( input_t * inppar )
         int natdens;
         int navsurf;
         real avarea;
+        real avvol;
         real factor, partdens, norm;
 
         if ( inppar->nofrags )
@@ -376,10 +385,12 @@ int tanalize ( input_t * inppar )
         if ( inppar->periodic ) {
             real fctr;
 
-            partdens = (real) natdens / ( inppar->pbc[0] * inppar->pbc[1] * inppar->pbc[2]);
-
             avarea = ntotarea / counter;
+            avvol = ntotvol / counter;
             smarea = avarea;
+
+            partdens = (real) natdens / ( avvol );
+            // partdens = (real) natdens / ( inppar->pbc[0] * inppar->pbc[1] * inppar->pbc[2]);
 
             factor = (real) counter * drdprof * smarea * partdens;
 
