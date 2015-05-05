@@ -374,6 +374,15 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             {
                 inppar->surfxyz = atoi ( value );
             }
+            else if ((keywords[key] == "normalization"))
+            {
+                if ( strstr ( value, "average" ) != NULL )
+                    inppar->normalization = NORM_AVER;
+                else if ( strstr ( value, "bulk" ) != NULL )
+                    inppar->normalization = NORM_BULK;
+                else if ( strstr ( value, "surface" ) != NULL )
+                    inppar->normalization = NORM_SLAB;
+            }
             else if ((keywords[key] == "dummy"))
             {
                 real conv = 1.;
@@ -722,6 +731,7 @@ void set_input_defaults(input_t * inppar)
     inppar->dummy = 0;
     inppar->direction = -1;
     inppar->surfxyz = 0;
+    inppar->normalization = NORM_AVER;
 
     int i;
     for ( i=0; i<DIM; i++ )

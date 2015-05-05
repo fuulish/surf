@@ -58,6 +58,7 @@ static const char *keywords[NUMKEYS] =
     "dummy",
     "direction",
     "surfxyz",
+    "normalization",
 };
 
 typedef struct voxel_s
@@ -155,6 +156,7 @@ typedef struct input_s
     int dummy;
     int direction;
     int surfxyz;
+    int normalization;
 } input_t;
 
 typedef struct list_s
@@ -193,3 +195,10 @@ typedef enum abstruse_e
     BOXEDGELO=-3,
     BOXEDGEHI=-4,
 } abstruse_t;
+
+typedef enum norm_e
+{
+    NORM_AVER=10000,
+    NORM_BULK,
+    NORM_SLAB,
+} norm_t;

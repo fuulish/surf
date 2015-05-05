@@ -240,7 +240,15 @@ int tanalize ( input_t * inppar )
             sprintf(opref, "%s%i_", inppar->outputprefix, i);
 
             surface = instant_surface_periodic ( mask, atoms, natoms, inppar->zeta, inppar->surfacecutoff, inppar->output, opref, inppar->pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
-            vol = get_bulk_volume ( &surface, inppar->surfacecutoff );
+
+            if ( ( inppar->normalization == NORM_BULK) || ( inppar->normalization == NORM_SLAB ) ) {
+                vol = get_bulk_volume ( &surface, inppar->surfacecutoff );
+
+                if ( inppar->normalization == NORM_SLAB )
+                    vol = inppar->pbc[0]*inppar->pbc[1]*inppar->pbc[2] - vol;
+            }
+            else
+                vol = inppar->pbc[0]*inppar->pbc[1]*inppar->pbc[2];
 
             // check here, depending on whether we want to look at stuff in the non-solvent phase or in the solvent phase we need to take different volumes
             // printf("%21.10f%21.10f\n", vol, inppar->pbc[0]*inppar->pbc[1]*inppar->pbc[2]);
