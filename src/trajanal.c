@@ -273,7 +273,7 @@ int tanalize ( input_t * inppar )
                 }
 
                 for ( g=0; g<nsurf; g++ ) {
-                    fprintf(fsxyzal, "%5s", "S");
+                    fprintf(fsxyzal, "%5s", "X");
                     for ( k=0; k<DIM; k++ ) {
                         fprintf ( fsxyzal, "    %21.10f", BOHR * surfpts[g][k]);
                     }
