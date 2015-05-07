@@ -1,0 +1,6 @@
+out_*
+*.xtc
+*.edr
+*.log
+*.tpr
+*.out

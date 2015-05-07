@@ -178,7 +178,7 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     for ( k=0; k<DIM; k++ )
         resarr[k] = resolution;
 
-    mxdst = trplzt + resolution;
+    mxdst = trplzt + 2*resolution;
 
     for ( k=0 ; k<DIM; k++ ) {
         mxvox[k] = mxdst / resolution;
@@ -599,6 +599,7 @@ real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int
 
     if ( ( ( grad[min] < 0. ) && ( com[direction[min]] > surfpts[min][direction[min]] ) ) || 
          ( ( grad[min] > 0. ) && ( com[direction[min]] < surfpts[min][direction[min]] ) ) ) {
+        // for later checks if solute is above/below surface
         // printf("%5i\n", refmask[0]);
         dstnc *= -1.;
     }
