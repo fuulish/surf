@@ -296,13 +296,7 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
 
     real rfct = (real) factor;
 
-    int n0, n1, n2;
-
     real c00, c10, c01, c11, c0, c1, c;
-
-    n0 = original->n[0]-1;
-    n1 = original->n[1]-1;
-    n2 = original->n[2]-1;
 
     for ( i=0; i<DIM; i++ )
     {
