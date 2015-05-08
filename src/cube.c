@@ -283,7 +283,7 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
     int cn[DIM];
     int count, valcounter;
     int fctcnt;
-    int index;
+    int index, finex;
     int x, y, z;
     int x000, x100, x010, x110, x001, x101, x011, x111;
     real xd, yd, zd;
@@ -308,10 +308,28 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
 
     int xup, yup, zup;
 
+    // here we can also rewrite the code to only loop over i=0; i<fine.nvoxels; i++ and calculate the index tuple directly from the running index
+    // this would mean some additional work, but should be totally fine
+    // need a new function to get the index tuple from general index, do it via the modulus
+    // below the openmp parallelization is wrong!!! (work in progress)
+// #ifdef OPENMP
+// #pragma omp parallel for default(none) \
+//     private(i,j,k,x,y,z,xd,yd,zd,xup,yup,zup,x000,x001,x010,x100,x011,x101,x110,x111,c00,c01,c10,c11,c0,c1,c,index,finex) shared(original,fine,factor,rfct,count) // \
+//         // schedule(guided, )
+// #endif
     for ( i=0; i<fine.n[0]; i++)
         for ( j=0; j<fine.n[1]; j++)
             for ( k=0; k<fine.n[2]; k++)
             {
+// #ifdef OPENMP
+//                 // HELLO;
+//                 x = (int) floor((float)i/rfct);
+//                 y = (int) floor((float)j/rfct);
+//                 z = (int) floor((float)k/rfct);
+// 
+//                 finex = k + fine.n[2] * ( j + fine.n[1] * i );
+//                 count = finex;
+// #else
                 if ( fctcnt == factor )
                     fctcnt = 0;
 
@@ -320,7 +338,9 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
                     y = (int) floor((float)j/rfct);
                     z = (int) floor((float)k/rfct);
                 }
+// #endif
 
+                // use function get_index
                 index = z + original->n[2] * ( y + original->n[1] * x);
 
                 xup = x+1;
@@ -361,8 +381,10 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
 
                 fine.voxels[count].data = c;
 
+// #ifndef OPENMP
                 count++;
                 fctcnt ++;
+// #endif
             }
 
     return fine;

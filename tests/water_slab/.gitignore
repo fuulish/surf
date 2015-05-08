@@ -5,3 +5,5 @@ out_*
 *.tpr
 *.out
 mdout.mdp
+*.cpt
+confout.gro
