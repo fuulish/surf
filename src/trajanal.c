@@ -241,7 +241,7 @@ int tanalize ( input_t * inppar )
 
             surface = instant_surface_periodic ( mask, atoms, natoms, inppar->zeta, inppar->surfacecutoff, inppar->output, opref, inppar->pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
 
-            if ( inppar->postinterpolate ) {
+            if ( inppar->postinterpolate > 1 ) {
                 cube_t fine;
 
                 fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate );

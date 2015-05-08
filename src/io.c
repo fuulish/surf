@@ -732,6 +732,7 @@ void set_input_defaults(input_t * inppar)
     inppar->direction = -1;
     inppar->surfxyz = 0;
     inppar->normalization = NORM_AVER;
+    inppar->postinterpolate = 0;
 
     int i;
     for ( i=0; i<DIM; i++ )
