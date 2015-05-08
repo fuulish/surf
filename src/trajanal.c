@@ -241,6 +241,25 @@ int tanalize ( input_t * inppar )
 
             surface = instant_surface_periodic ( mask, atoms, natoms, inppar->zeta, inppar->surfacecutoff, inppar->output, opref, inppar->pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
 
+            if ( inppar->postinterpolate ) {
+                cube_t fine;
+
+                fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate );
+
+                free ( surface.atoms );
+                free ( surface.voxels );
+
+                surface = fine;
+
+                surface.atoms = fine.atoms;
+                surface.voxels = fine.voxels;
+
+                if ( inppar->output > 1 ) {
+                    sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "interpolated-instant-surface.cube");
+                    write_cubefile(tmp, &surface);
+                }
+            }
+
             if ( ( inppar->normalization == NORM_BULK) || ( inppar->normalization == NORM_SLAB ) ) {
                 vol = get_bulk_volume ( &surface, inppar->surfacecutoff );
 
@@ -265,25 +284,6 @@ int tanalize ( input_t * inppar )
             real ** surfpts;
 
             surfpts = get_2d_representation_ils ( &nsurf, &direction, &grad, &surface, inppar->surfacecutoff, newsurf, surf_inds, inppar->direction, &area );
-
-            if ( inppar->postinterpolate ) {
-                cube_t fine;
-
-                fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate );
-
-                free ( surface.atoms );
-                free ( surface.voxels );
-
-                surface = fine;
-
-                surface.atoms = fine.atoms;
-                surface.voxels = fine.voxels;
-
-                if ( inppar->output > 1 ) {
-                    sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "interpolated-instant-surface.cube");
-                    write_cubefile(tmp, &surface);
-                }
-            }
 
             ntotarea += area;
 
