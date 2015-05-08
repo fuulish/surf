@@ -24,6 +24,7 @@ typedef enum errors_e
     FILE_NOT_FOUND=100,
     MISSING_INPUT_PARAM,
     PROGRAM_BROKEN,
+    OUT_OF_MEMORY,
     NOT_IMPLEMENTED,
 
 } errors_t;

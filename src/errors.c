@@ -45,6 +45,10 @@ void print_error(int errno, char * detail)
             break;
         case PROGRAM_BROKEN:
             printf("Trying %s will break the program. A workaround may be implemented soon. Stay tuned!\n", detail);
+            break;
+        case OUT_OF_MEMORY:
+            printf("Out of memory during %s.\n", detail);
+            break;
         default:
             printf("An error occurred that has not yet been assigned to a category!\n");
             break;
