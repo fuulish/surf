@@ -283,14 +283,8 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
     int cn[DIM];
     int count, valcounter;
     int fctcnt;
-    int shift;
-    int shiftcount;
     int index;
     int x, y, z;
-    real value, xval, yval, zval;
-    int xprev, xnext;
-    int yprev, ynext;
-    int zprev, znext;
     int x000, x100, x010, x110, x001, x101, x011, x111;
     real xd, yd, zd;
 
@@ -306,7 +300,6 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
             cboxv[i][j] = original->boxv[i][j] / rfct;
         }
     }
-    // printf("%5i%5i%5i || %5i%5i%5i\n", original->n[0], original->n[1], original->n[2], cn[0], cn[1], cn[2]);
 
     fine = initialize_cube(original->origin, cboxv, cn, original->atoms, original->natoms);
 
