@@ -27,6 +27,7 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include "atom_param.h"
 #include "cube.h"
 #include "molmanipul.h"
+#include "errors.h"
 #include "time.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -86,7 +87,10 @@ cube_t initialize_cube(real origin[DIM], real boxv[DIM][DIM], int n[DIM], atom_t
 
     cube.natoms = natoms;
     cube.atoms = (atom_t*) malloc(cube.natoms * (sizeof(atom_t)));
-    cube.voxels = (voxel_t*) malloc(cube.nvoxels * (sizeof(voxel_t)));
+    if ( NULL == ( cube.voxels = (voxel_t*) malloc(cube.nvoxels * (sizeof(voxel_t))))) {
+        print_error ( OUT_OF_MEMORY, "allocation of cube voxels" );
+        exit ( OUT_OF_MEMORY );
+    }
 
     for (i=0; i<cube.natoms; i++)
     {
@@ -269,4 +273,110 @@ void get_box_areas_pointer (real * da, cube_t * cube, real * dx )
         }
     }
 
+}
+
+cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
+{
+    int i, j, k;
+    cube_t fine;
+    real cboxv[DIM][DIM];
+    int cn[DIM];
+    int count, valcounter;
+    int fctcnt;
+    int shift;
+    int shiftcount;
+    int index;
+    int x, y, z;
+    real value, xval, yval, zval;
+    int xprev, xnext;
+    int yprev, ynext;
+    int zprev, znext;
+    int x000, x100, x010, x110, x001, x101, x011, x111;
+    real xd, yd, zd;
+
+    real rfct = (real) factor;
+
+    int n0, n1, n2;
+
+    real c00, c10, c01, c11, c0, c1, c;
+
+    n0 = original->n[0]-1;
+    n1 = original->n[1]-1;
+    n2 = original->n[2]-1;
+
+    for ( i=0; i<DIM; i++ )
+    {
+        cn[i] = original->n[i]*factor;
+        for ( j=0; j<DIM; j++ )
+        {
+            cboxv[i][j] = original->boxv[i][j] / rfct;
+        }
+    }
+    // printf("%5i%5i%5i || %5i%5i%5i\n", original->n[0], original->n[1], original->n[2], cn[0], cn[1], cn[2]);
+
+    fine = initialize_cube(original->origin, cboxv, cn, original->atoms, original->natoms);
+
+    count = 0;
+    fctcnt = 0;
+
+    int xup, yup, zup;
+
+    for ( i=0; i<fine.n[0]; i++)
+        for ( j=0; j<fine.n[1]; j++)
+            for ( k=0; k<fine.n[2]; k++)
+            {
+                if ( fctcnt == factor )
+                    fctcnt = 0;
+
+                if ( fctcnt == 0 ) {
+                    x = (int) floor((float)i/rfct);
+                    y = (int) floor((float)j/rfct);
+                    z = (int) floor((float)k/rfct);
+                }
+
+                index = z + original->n[2] * ( y + original->n[1] * x);
+
+                xup = x+1;
+                yup = y+1;
+                zup = z+1;
+
+                if ( zup == original->n[2] )
+                    periodify_indices ( &zup, &(original->n[2]), &zup, 1);
+
+                if ( yup == original->n[1] )
+                    periodify_indices ( &yup, &(original->n[1]), &yup, 1);
+
+                if ( xup == original->n[0] )
+                    periodify_indices ( &xup, &(original->n[0]), &xup, 1);
+
+                xd = (fine.voxels[count].coords[0] - original->voxels[index].coords[0]) / original->boxv[0][0];
+                yd = (fine.voxels[count].coords[1] - original->voxels[index].coords[1]) / original->boxv[1][1];
+                zd = (fine.voxels[count].coords[2] - original->voxels[index].coords[2]) / original->boxv[2][2];
+
+                x000 = z + original->n[2] * ( y + original->n[1] * x );
+                x100 = z + original->n[2] * ( y + original->n[1] * (xup) );
+                x010 = z + original->n[2] * ( (yup) + original->n[1] * x );
+                x110 = z + original->n[2] * ( (yup) + original->n[1] * (xup) );
+                x001 = (zup) + original->n[2] * ( y + original->n[1] * x );
+                x101 = (zup) + original->n[2] * ( y + original->n[1] * (xup) );
+                x011 = (zup) + original->n[2] * ( (yup) + original->n[1] * x );
+                x111 = (zup) + original->n[2] * ( (yup) + original->n[1] * (xup) );
+
+                c00 = original->voxels[x000].data * ( 1 - xd ) + original->voxels[x100].data * xd;
+                c10 = original->voxels[x010].data * ( 1 - xd ) + original->voxels[x110].data * xd;
+                c01 = original->voxels[x001].data * ( 1 - xd ) + original->voxels[x101].data * xd;
+                c11 = original->voxels[x011].data * ( 1 - xd ) + original->voxels[x111].data * xd;
+
+                c0 = c00 * ( 1 - yd) + c10 * yd;
+                c1 = c01 * ( 1 - yd) + c11 * yd;
+
+                c = c0 * ( 1 - zd ) + c1 * zd;
+
+                fine.voxels[count].data = c;
+
+                count++;
+                fctcnt ++;
+            }
+
+    return fine;
 }

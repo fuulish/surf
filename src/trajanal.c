@@ -266,6 +266,25 @@ int tanalize ( input_t * inppar )
 
             surfpts = get_2d_representation_ils ( &nsurf, &direction, &grad, &surface, inppar->surfacecutoff, newsurf, surf_inds, inppar->direction, &area );
 
+            if ( inppar->postinterpolate ) {
+                cube_t fine;
+
+                fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate );
+
+                free ( surface.atoms );
+                free ( surface.voxels );
+
+                surface = fine;
+
+                surface.atoms = fine.atoms;
+                surface.voxels = fine.voxels;
+
+                if ( inppar->output > 1 ) {
+                    sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "interpolated-instant-surface.cube");
+                    write_cubefile(tmp, &surface);
+                }
+            }
+
             ntotarea += area;
 
             // use function write_combined_xmol
