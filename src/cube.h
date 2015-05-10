@@ -27,3 +27,6 @@ real * get_box_volels(cube_t * cube);
 void get_box_volels_pointer(cube_t * cube, real * dx);
 void get_box_areas_pointer (real * da, cube_t * cube, real * dx );
 cube_t interpolate_cube_trilinear ( cube_t * original, int factor );
+#ifdef EINSPLINE
+cube_t interpolate_cube_bsplines ( cube_t * original, int factor );
+#endif
