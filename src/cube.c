@@ -33,7 +33,7 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#ifdef EINSPLINE
+#ifdef HAVE_EINSPLINE
 #include <einspline/bspline.h>
 #endif
 
@@ -371,7 +371,7 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
     return fine;
 }
 
-#ifdef EINSPLINE
+#ifdef HAVE_EINSPLINE
 cube_t interpolate_cube_bsplines ( cube_t * original, int factor )
 {
 

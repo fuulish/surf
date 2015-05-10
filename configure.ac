@@ -26,6 +26,16 @@ AC_ARG_ENABLE([xdr],
 
 ])
 
+AC_ARG_ENABLE([einspline],
+              AS_HELP_STRING([--enable-einspline], [enable EINSPLINE file support]))
+
+              AS_IF([test "x$enable_einspline" = "xyes"], [
+              AC_SEARCH_LIBS([create_UBspline_3d_s], [einspline], [CFLAGS="$CFLAGS -DHAVE_EINSPLINE"], [
+                AC_MSG_ERROR([unable to find the create_UBspline_3d_s function. Is EINSPLINE library installed?])
+              ])
+
+])
+
 AC_ARG_ENABLE([float],
               AS_HELP_STRING([--enable-float], [enable single precision]))
 

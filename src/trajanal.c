@@ -244,7 +244,7 @@ int tanalize ( input_t * inppar )
             if ( inppar->postinterpolate > 1 ) {
                 cube_t fine;
 
-#ifdef EINSPLINE
+#ifdef HAVE_EINSPLINE
                 fine = interpolate_cube_bsplines ( &surface, inppar->postinterpolate );
 #else
                 fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate );
