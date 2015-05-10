@@ -244,10 +244,11 @@ int tanalize ( input_t * inppar )
             if ( inppar->postinterpolate > 1 ) {
                 cube_t fine;
 
+                if ( inppar->interpolkind == INTERPOLATE_TRILINEAR )
+                    fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate );
 #ifdef HAVE_EINSPLINE
-                fine = interpolate_cube_bsplines ( &surface, inppar->postinterpolate );
-#else
-                fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate );
+                else if ( inppar->interpolkind == INTERPOLATE_BSPLINES )
+                    fine = interpolate_cube_bsplines ( &surface, inppar->postinterpolate );
 #endif
 
                 free ( surface.atoms );

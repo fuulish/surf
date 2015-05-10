@@ -130,6 +130,20 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             else if ((keywords[key] == "postinterpolate"))
             {
                 inppar->postinterpolate = atoi(value);
+
+                dummy = strtok ( NULL, " " );
+
+                if ( dummy != NULL ) {
+                    if ( strstr ( dummy, "trilinear" ) != NULL )
+                        inppar->interpolkind = INTERPOLATE_TRILINEAR;
+                    else if ( strstr ( dummy, "bsplines" ) != NULL ) {
+#ifndef HAVE_EINSPLINE
+                        print_error ( MISSING_LIBRARY, "EINSPLINE" );
+                        exit ( MISSING_LIBRARY );
+#endif
+                        inppar->interpolkind = INTERPOLATE_BSPLINES;
+                    }
+                }
             }
             else if ((keywords[key] == "roughsurf"))
             {
@@ -733,6 +747,7 @@ void set_input_defaults(input_t * inppar)
     inppar->surfxyz = 0;
     inppar->normalization = NORM_AVER;
     inppar->postinterpolate = 0;
+    inppar->interpolkind = INTERPOLATE_TRILINEAR;
 
     int i;
     for ( i=0; i<DIM; i++ )

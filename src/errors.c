@@ -49,6 +49,9 @@ void print_error(int errno, char * detail)
         case OUT_OF_MEMORY:
             printf("Out of memory during %s.\n", detail);
             break;
+        case MISSING_LIBRARY:
+            printf("%s library is missing. Please, recompile with %s support.\n", detail, detail);
+            break;
         default:
             printf("An error occurred that has not yet been assigned to a category!\n");
             break;
