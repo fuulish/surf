@@ -87,7 +87,7 @@ int tanalize ( input_t * inppar )
         natoms = atoi( fgets ( text, MAXSTRLEN, fxmol ) );
         read_xmol(&inppar->structure[0], &atoms);
 
-#ifdef XDRCAP
+#ifdef HAVE_XDRFILE
         xd_read = xdrfile_open ( &inppar->trajectory[0], "r" );
         result_xtc = read_xtc_natoms( &inppar->trajectory[0], &natoms_xtc);
 #endif
@@ -477,7 +477,7 @@ int tanalize ( input_t * inppar )
 
     if ( ! ( inppar->xdrread ) )
         fclose ( fxmol );
-#ifdef XDRCAP
+#ifdef HAVE_XDRFILE
     else if ( inppar->xdrread )
         xdrfile_close ( xd_read );
 #endif

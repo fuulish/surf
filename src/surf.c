@@ -159,8 +159,6 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     printf("%i active atoms for surface generation\n", cnt);
 #endif
 
-#ifndef OLDSURF
-
     // printf("We are using the optimized, but not debugged version of the code!!!\n", trplzt);
 
     real mxdst;
@@ -195,7 +193,6 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
         }
     }
 
-#ifdef OPTSURF
 #ifdef OPENMP
 #pragma omp parallel for default(none) \
     private(a,i,j,k,wrki,wrkj,wrkk,index,mn,mx,tmpndx,distance) shared(atoms,pbc,resarr,periodic,surface,trplzt,natoms,mask,mxvox,mttsqzeta,prefactor,cutshft) // \
@@ -239,101 +236,6 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
 
                 }
     }
-
-#else
-
-    if ( periodic ) {
-#ifdef OPENMP
-#pragma omp parallel for default(none) \
-    private(i,j,k,a,distance,skip,tmpdst) shared(surface,atoms,natoms,mask,prefactor,mttsqzeta,pbc,maxdist,cubedge,periodic,trplzt,cutshft) \
-        schedule(guided, surface.n[2])
-    // schedule(dynamic)
-#endif
-        for ( i=0; i<surface.nvoxels; i++)
-        {
-            for ( a=0; a<natoms; a++ ) {
-                distance = ZERO;
-                skip = 0;
-
-                for ( k=0; k<DIM; k++ ) {
-                    tmpdst = get_distance_periodic_1d ( surface.voxels[i].coords[k], atoms[mask[a]].coords[k], pbc[k] );
-
-                    if ( tmpdst > trplzt )
-                        skip = 1;
-                    else
-                        distance += sqr ( tmpdst );
-
-                    if ( skip ) {
-                        // HELLO;
-                        continue;
-                    }
-                }
-
-                if ( skip )
-                    continue;
-
-                distance = sqrt ( distance );
-
-                if ( distance > trplzt )
-                    continue;
-
-                surface.voxels[i].data += prefactor * exp( sqr( distance ) / (mttsqzeta));
-                surface.voxels[i].data -= cutshft;
-
-                }
-        }
-    }
-    else {
-#ifdef OPENMP
-#pragma omp parallel for default(none) \
-    private(i,j,a,distance,skip) shared(surface,atoms,nactive,actatoms,prefactor,mttsqzeta,pbc,maxdist,cubedge,periodic,cutshft,trplzt)
-#endif
-        for ( i=0; i<surface.nvoxels; i++)
-        {
-            for ( a=0; a<nactive; a++ ) {
-                distance = get_distance ( &(surface.voxels[i].coords[0]), &(atoms[actatoms[a]].coords[0]) );
-
-                if ( distance > trplzt )
-                    continue;
-
-                surface.voxels[i].data += prefactor * exp( sqr( distance ) / (mttsqzeta));
-                surface.voxels[i].data -= cutshft;
-
-            }
-        }
-    }
-#endif
-#endif
-
-#ifdef OLDSURF
-    if ( periodic ) {
-#ifdef OPENMP
-#pragma omp parallel for default(none) \
-    private(i,j,a,distance,skip) shared(surface,atoms,natoms,mask,prefactor,mttsqzeta,pbc,maxdist,cubedge,periodic)
-#endif
-        for ( i=0; i<surface.nvoxels; i++)
-        {
-            for ( a=0; a<natoms; a++ ) {
-                distance = get_distance_periodic ( &(surface.voxels[i].coords[0]), &(atoms[mask[a]].coords[0]), pbc );
-                surface.voxels[i].data += prefactor * exp( sqr( distance ) / (mttsqzeta));
-                }
-        }
-    }
-    else {
-#ifdef OPENMP
-#pragma omp parallel for default(none) \
-    private(i,j,a,distance,skip) shared(surface,atoms,nactive,actatoms,prefactor,mttsqzeta,pbc,maxdist,cubedge,periodic)
-#endif
-        for ( i=0; i<surface.nvoxels; i++)
-        {
-            for ( a=0; a<nactive; a++ ) {
-                distance = get_distance ( &(surface.voxels[i].coords[0]), &(atoms[actatoms[a]].coords[0]) );
-                surface.voxels[i].data += prefactor * exp( sqr( distance ) / (mttsqzeta));
-
-            }
-        }
-    }
-#endif
 
     if ( !( periodic ) )
         free ( actatoms );

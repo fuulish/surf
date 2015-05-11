@@ -365,7 +365,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             }
             else if ((keywords[key] == "xdrread"))
             {
-#ifdef XDRCAP
+#ifdef HAVE_XDRFILE
                 inppar->xdrread = atoi(value);
 #else
                 printf("SURF not compiled with XDR support\n");
@@ -1193,7 +1193,7 @@ void parse_cmdline(input_t * inppar, char ** argv, int argc)
                 strcpy(inppar->trajectory, optarg);
 
                 if ( strstr(inppar->trajectory, ".xtc") != NULL )
-#ifdef XDRCAP
+#ifdef HAVE_XDRFILE
                     inppar->xdrread = 1;
 #else
                 {
@@ -1324,7 +1324,7 @@ void read_xtr_forward ( XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms
     x_xtc = calloc(natoms, sizeof(x_xtc[0]));
 
     for ( i=0; i<frwrd; i++ )
-#ifdef XDRCAP
+#ifdef HAVE_XDRFILE
         result_xtc = read_xtc(xd_read, natoms, &step_xtc, &time_xtc, box_xtc, x_xtc, &prec_xtc);
 #endif
 

@@ -3485,7 +3485,7 @@ $as_echo "$ac_cv_search_read_xtc" >&6; }
 ac_res=$ac_cv_search_read_xtc
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  CFLAGS="$CFLAGS -DXDRCAP"
+  CFLAGS="$CFLAGS -DHAVE_XDRFILE"
 else
 
                 as_fn_error $? "unable to find the read_xtc function. Is xdrfile library installed?" "$LINENO" 5
