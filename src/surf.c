@@ -159,8 +159,6 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     printf("%i active atoms for surface generation\n", cnt);
 #endif
 
-    // printf("We are using the optimized, but not debugged version of the code!!!\n", trplzt);
-
     real mxdst;
     int mxvox[DIM];
     int mx[DIM];

@@ -20,7 +20,7 @@ AC_ARG_ENABLE([xdr],
               AS_HELP_STRING([--enable-xdr], [enable XDR file support]))
 
               AS_IF([test "x$enable_xdr" = "xyes"], [
-              AC_SEARCH_LIBS([read_xtc], [xdrfile], [CFLAGS="$CFLAGS -DXDRCAP"], [
+              AC_SEARCH_LIBS([read_xtc], [xdrfile], [CFLAGS="$CFLAGS -DHAVE_XDRFILE"], [
                 AC_MSG_ERROR([unable to find the read_xtc function. Is xdrfile library installed?])
               ])
 

@@ -206,11 +206,6 @@ int tanalize ( input_t * inppar )
     char * htw = "w";
     real *dx;
 
-#ifdef OPTSURF
-    if ( ( inppar->tasknum == SURFDIST ) || ( inppar->tasknum == SURFDENSPROF ) )
-        printf("Using the optimized surface routine.\nIt is about an order of magnitude faster, but not completely debugged yet.\nAll tests so far give identical numerical results to older, naive version!\n\n");
-#endif
-
     for ( i=inppar->start; i<inppar->stop; i += inppar->stride )
     {
         /* read snapshot */
