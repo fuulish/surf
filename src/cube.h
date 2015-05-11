@@ -29,4 +29,7 @@ void get_box_areas_pointer (real * da, cube_t * cube, real * dx );
 cube_t interpolate_cube_trilinear ( cube_t * original, int factor );
 #ifdef HAVE_EINSPLINE
 cube_t interpolate_cube_bsplines ( cube_t * original, int factor );
+#include <einspline/bspline_base.h>
+#include <einspline/bspline_structs.h>
+UBspline_3d_s * get_cube_bsplines ( cube_t * cube );
 #endif

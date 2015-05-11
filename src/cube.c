@@ -35,7 +35,6 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include <math.h>
 #ifdef HAVE_EINSPLINE
 #include <einspline/bspline.h>
-UBspline_3d_s * get_cube_bsplines ( cube_t * cube );
 #endif
 
 int tstart;
