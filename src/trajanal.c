@@ -30,8 +30,8 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include "molmanipul.h"
 #include "trajanal.h"
 #include "time.h"
-#include <xdrfile.h>
-#include <xdrfile_xtc.h>
+#include <xdrfile/xdrfile.h>
+#include <xdrfile/xdrfile_xtc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -318,7 +318,6 @@ int tanalize ( input_t * inppar )
                 fclose ( fsxyzal );
             }
 
-            real dstnc;
             if ( inppar->tasknum == SURFDENSPROF ) {
 
                 int r;
@@ -337,6 +336,14 @@ int tanalize ( input_t * inppar )
                 else
                     nfrg = inppar->numfrags;
 
+                real * dstnc = ( real * ) malloc ( nfrg * sizeof ( real ) );
+
+#ifdef OPENMP
+                // each thread should have about the same amount of work, so the atomic update will not be too harmful
+#pragma omp parallel for default(none) \
+                private(r,fakemask,fakenum,ind) \
+                shared(dstnc,nfrg,refmask,frags,inppar,surface,direction,natoms,opref,densprof,hndprof,atoms,nsurf,grad,surfpts)
+#endif
                 for ( r=0; r<nfrg; r++ ) {
 
                     if ( inppar->nofrags ) {
@@ -348,27 +355,26 @@ int tanalize ( input_t * inppar )
                         fakenum = inppar->natomsfrag[r];
                     }
 
-                    dstnc = get_distance_to_surface ( &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+                    dstnc[r] = get_distance_to_surface ( &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
-                    ind = ( int ) floor ( dstnc / inppar->profileres );
+                    ind = ( int ) floor ( dstnc[r] / inppar->profileres );
 
+#pragma omp atomic update
                     densprof[ hndprof + ind ] += 1.; // / nsurf;
 
-                    if ( inppar->output ) {
-                        sprintf(tmp, "%s%s", inppar->outputprefix, "surfdist.dat");
-                        fsdist = fopen(&tmp[0], htw);
-
-                        if ( strncmp ( htw, "w", 1 ) == 0 ) {
-                            fprintf ( fsdist, "#            index              distance\n");
-                        }
-
-                        fprintf ( fsdist, "%21i %21.10f\n", r, dstnc);
-                        fclose ( fsdist );
-                        htw = "a";
-                    }
-
-
                 }
+
+                if ( inppar->output ) {
+                    sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "surfdist.dat");
+                    fsdist = fopen(&tmp[0], "w");
+
+                    fprintf ( fsdist, "#            index              distance\n");
+                    for ( r=0; r<nfrg; r++ )
+                        fprintf ( fsdist, "%21i %21.10f\n", r, dstnc[r]);
+
+                    fclose ( fsdist );
+                }
+
             }
 
             /* check here, and move stuff for refinement box creation somewhere else */

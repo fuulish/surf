@@ -26,8 +26,8 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include "atom_param.h"
 #include "io.h"
 #include "errors.h"
-#include <xdrfile.h>
-#include <xdrfile_xtc.h>
+#include <xdrfile/xdrfile.h>
+#include <xdrfile/xdrfile_xtc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

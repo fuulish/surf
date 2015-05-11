@@ -20,7 +20,7 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
-#include <xdrfile.h>
+#include <xdrfile/xdrfile.h>
 
 void parse_input_file(input_t *, char *);
 void set_input_value(input_t *, char *, char *);
