@@ -267,21 +267,16 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             }
             else if ((keywords[key] == "output"))
             {
-                if (strstr(value, "silent") != NULL)
-                {
+                if (strstr(value, "silent") != NULL) {
                     inppar->output = 0;
                     printf("silent mode activated\n");
                 }
-                else
-                    if (strstr(value, "normal") != NULL)
-                    {
-                        inppar->output = 1;
-                    }
-                    else
-                        if (strstr(value, "debug") != NULL)
-                        {
-                            inppar->output = 2;
-                        }
+                else if (strstr(value, "normal") != NULL)
+                    inppar->output = 1;
+                else if (strstr(value, "high") != NULL)
+                    inppar->output = 2;
+                else if (strstr(value, "debug") != NULL)
+                    inppar->output = 3;
             }
             else if ((keywords[key] == "fragments"))
             {

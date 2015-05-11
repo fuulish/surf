@@ -254,7 +254,7 @@ int tanalize ( input_t * inppar )
                 surface.atoms = fine.atoms;
                 surface.voxels = fine.voxels;
 
-                if ( inppar->output > 1 ) {
+                if ( inppar->output > 2 ) {
                     sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "interpolated-instant-surface.cube");
                     write_cubefile(tmp, &surface);
                 }

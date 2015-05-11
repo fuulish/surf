@@ -240,7 +240,7 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
 
     char buf[MAXSTRLEN];
 
-    if ( output )
+    if ( output > 1 )
     {
         sprintf(buf, "%s%s", outputprefix, "instant-surface.cube");
         write_cubefile(buf, &surface);
@@ -270,7 +270,7 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     printf("%i voxels belong to surface and occupy a volume of %21.10f Bohr^3\n", nsurf, nsurf*surface.dv);
 #endif
 
-    if ( ( provide_mask ) && ( output > 1) ) {
+    if ( ( provide_mask ) && ( output > 2) ) {
         sprintf(buf, "%s%s", outputprefix, "instant-surface-plain.cube");
         write_cubefile(buf, &surface);
     }
