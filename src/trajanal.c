@@ -437,11 +437,12 @@ int tanalize ( input_t * inppar )
         fdprof = fopen(&tmp[0], "w");
 
         int hndprof = ndprof / 2;
+        real hdrdprof = drdprof / 2.;
         for ( i=-hndprof; i<hndprof; i++ ) {
 
             norm = factor;
 
-            fprintf ( fdprof, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof, densprof[i+hndprof], densprof[i+hndprof] / norm);
+            fprintf ( fdprof, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof+hdrdprof, densprof[i+hndprof], densprof[i+hndprof] / norm);
         }
 
         fclose ( fdprof );
