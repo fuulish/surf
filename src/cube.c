@@ -35,6 +35,7 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include <math.h>
 #ifdef HAVE_EINSPLINE
 #include <einspline/bspline.h>
+UBspline_3d_s * get_cube_bsplines ( cube_t * cube );
 #endif
 
 int tstart;
@@ -374,51 +375,18 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
 #ifdef HAVE_EINSPLINE
 cube_t interpolate_cube_bsplines ( cube_t * original, int factor )
 {
-
-    int i, j, k, indx, einindx;
+    int i, j, k, indx;
 
     real cboxv[DIM][DIM];
     float x, y, z, val;
     int cn[DIM];
     cube_t fine;
-    real dx[DIM], fdx[DIM];
+    real fdx[DIM];
 
-    get_box_volels_pointer(original, dx);
     real rfct = (real) factor;
 
-    Ugrid x_grid, y_grid, z_grid;
-
-    // set x_grid, y_grid, z_grid to correct values
-    // other two data entries (delta, delta_inv) are considered private
-
-    x_grid.start = original->origin[0];
-    x_grid.end = original->origin[0]+original->n[0]*dx[0];
-    x_grid.num = original->n[0];
-
-    y_grid.start = original->origin[1];
-    y_grid.end = original->origin[1]+original->n[1]*dx[1];
-    y_grid.num = original->n[1];
-
-    z_grid.start = original->origin[2];
-    z_grid.end = original->origin[2]+original->n[2]*dx[2];
-    z_grid.num = original->n[2];
-
-    // boundary conditions (periodic)
-    // what is the meaning of the last two entries? left and right boundary conditions values (not sure what exactly)
-    // maybe we should set boundary values to original->origin[i], but this is just a guess
-	BCtype_s xBC = {PERIODIC, PERIODIC , original->origin[0], original->origin[0]};
-	BCtype_s yBC = {PERIODIC, PERIODIC , original->origin[1], original->origin[1]};
-	BCtype_s zBC = {PERIODIC, PERIODIC , original->origin[2], original->origin[2]};
-
-    float * data = (float *) malloc(original->nvoxels * sizeof ( float ));
-
-    // reassign data to new array that EINSPLINE can work with
-    // check here, in general, maybe we should also use just a contiguous array of data points instead of array of structure voxel_t
-    for ( i=0; i<original->nvoxels; i++ )
-        data[i] = original->voxels[i].data;
-
     // create 3D spline object
-	UBspline_3d_s *spline_3d_xyz = create_UBspline_3d_s(x_grid, y_grid, z_grid, xBC, yBC, zBC, data);
+	UBspline_3d_s *spline_3d_xyz = get_cube_bsplines ( original );
 
     // initialize new and fine cube (first, set dimensions, second initialize cube)
     for ( i=0; i<DIM; i++ ) {
@@ -448,10 +416,50 @@ cube_t interpolate_cube_bsplines ( cube_t * original, int factor )
                 fine.voxels[indx].data = val;
             }
 
-    free ( data );
-
     destroy_Bspline(spline_3d_xyz);
 
     return fine;
+}
+
+UBspline_3d_s * get_cube_bsplines ( cube_t * cube )
+{
+    int i, j, k;
+    real dx[DIM];
+    get_box_volels_pointer(cube, dx);
+    Ugrid x_grid, y_grid, z_grid;
+
+    // set x_grid, y_grid, z_grid to correct values
+    // other two data entries (delta, delta_inv) are considered private
+
+    x_grid.start = cube->origin[0];
+    x_grid.end = cube->origin[0]+cube->n[0]*dx[0];
+    x_grid.num = cube->n[0];
+
+    y_grid.start = cube->origin[1];
+    y_grid.end = cube->origin[1]+cube->n[1]*dx[1];
+    y_grid.num = cube->n[1];
+
+    z_grid.start = cube->origin[2];
+    z_grid.end = cube->origin[2]+cube->n[2]*dx[2];
+    z_grid.num = cube->n[2];
+
+    // boundary conditions (periodic)
+	BCtype_s xBC = {PERIODIC, PERIODIC , cube->origin[0], cube->origin[0]};
+	BCtype_s yBC = {PERIODIC, PERIODIC , cube->origin[1], cube->origin[1]};
+	BCtype_s zBC = {PERIODIC, PERIODIC , cube->origin[2], cube->origin[2]};
+
+    float * data = (float *) malloc(cube->nvoxels * sizeof ( float ));
+
+    // reassign data to new array that EINSPLINE can work with
+    // check here, in general, maybe we should also use just a contiguous array of data points instead of array of structure voxel_t
+    for ( i=0; i<cube->nvoxels; i++ )
+        data[i] = cube->voxels[i].data;
+
+    // create 3D spline object
+	UBspline_3d_s *spline_3d_xyz = create_UBspline_3d_s(x_grid, y_grid, z_grid, xBC, yBC, zBC, data);
+
+    free ( data );
+
+    return spline_3d_xyz;
 }
 #endif
