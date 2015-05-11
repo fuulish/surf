@@ -127,6 +127,7 @@ typedef struct input_s
     int stride;
     int batchmode;
     int postinterpolate;
+    int interpolkind;
     int surfrefinement;
     int refineitpl;
     real pbc[DIM];
@@ -202,3 +203,10 @@ typedef enum norm_e
     NORM_BULK,
     NORM_SLAB,
 } norm_t;
+
+typedef enum interpolate_e
+{
+    INTERPOLATE_TRILINEAR=100000,
+    INTERPOLATE_BSPLINES,
+    INTERPOLATE_FFT,
+} interpolate_t;

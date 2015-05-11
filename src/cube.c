@@ -33,6 +33,9 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#ifdef HAVE_EINSPLINE
+#include <einspline/bspline.h>
+#endif
 
 int tstart;
 int tstop;
@@ -367,3 +370,95 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
 
     return fine;
 }
+
+#ifdef HAVE_EINSPLINE
+cube_t interpolate_cube_bsplines ( cube_t * original, int factor )
+{
+    int i, j, k, indx;
+
+    real cboxv[DIM][DIM];
+    float x, y, z, val;
+    int cn[DIM];
+    cube_t fine;
+    real fdx[DIM];
+
+    real rfct = (real) factor;
+
+    // create 3D spline object
+	UBspline_3d_s *spline_3d_xyz = get_cube_bsplines ( original );
+
+    // initialize new and fine cube (first, set dimensions, second initialize cube)
+    for ( i=0; i<DIM; i++ ) {
+        cn[i] = original->n[i]*factor;
+        for ( j=0; j<DIM; j++ )
+            cboxv[i][j] = original->boxv[i][j] / rfct;
+    }
+
+    fine = initialize_cube(original->origin, cboxv, cn, original->atoms, original->natoms);
+
+    get_box_volels_pointer(&fine, fdx);
+
+    // now evaluate spline at new points
+
+    for ( i=0; i<fine.n[0]; i++ )
+        for ( j=0; j<fine.n[1]; j++ )
+            for ( k=0; k<fine.n[2]; k++ ) {
+
+                x = fine.origin[0] + i* fdx[0];
+                y = fine.origin[1] + j* fdx[1];
+                z = fine.origin[2] + k* fdx[2];
+
+                val = ZERO;
+                eval_UBspline_3d_s ( spline_3d_xyz, x, y, z, &val );
+
+                indx = get_index ( fine.n, i, j, k );
+                fine.voxels[indx].data = val;
+            }
+
+    destroy_Bspline(spline_3d_xyz);
+
+    return fine;
+}
+
+UBspline_3d_s * get_cube_bsplines ( cube_t * cube )
+{
+    int i, j, k;
+    real dx[DIM];
+    get_box_volels_pointer(cube, dx);
+    Ugrid x_grid, y_grid, z_grid;
+
+    // set x_grid, y_grid, z_grid to correct values
+    // other two data entries (delta, delta_inv) are considered private
+
+    x_grid.start = cube->origin[0];
+    x_grid.end = cube->origin[0]+cube->n[0]*dx[0];
+    x_grid.num = cube->n[0];
+
+    y_grid.start = cube->origin[1];
+    y_grid.end = cube->origin[1]+cube->n[1]*dx[1];
+    y_grid.num = cube->n[1];
+
+    z_grid.start = cube->origin[2];
+    z_grid.end = cube->origin[2]+cube->n[2]*dx[2];
+    z_grid.num = cube->n[2];
+
+    // boundary conditions (periodic)
+	BCtype_s xBC = {PERIODIC, PERIODIC , cube->origin[0], cube->origin[0]};
+	BCtype_s yBC = {PERIODIC, PERIODIC , cube->origin[1], cube->origin[1]};
+	BCtype_s zBC = {PERIODIC, PERIODIC , cube->origin[2], cube->origin[2]};
+
+    float * data = (float *) malloc(cube->nvoxels * sizeof ( float ));
+
+    // reassign data to new array that EINSPLINE can work with
+    // check here, in general, maybe we should also use just a contiguous array of data points instead of array of structure voxel_t
+    for ( i=0; i<cube->nvoxels; i++ )
+        data[i] = cube->voxels[i].data;
+
+    // create 3D spline object
+	UBspline_3d_s *spline_3d_xyz = create_UBspline_3d_s(x_grid, y_grid, z_grid, xBC, yBC, zBC, data);
+
+    free ( data );
+
+    return spline_3d_xyz;
+}
+#endif
