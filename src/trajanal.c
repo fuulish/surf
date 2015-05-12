@@ -112,7 +112,7 @@ int tanalize ( input_t * inppar )
         read_xmol(inppar->trajectory, &atoms);
     }
 
-    mask = get_mask(inppar->maskkind, inppar->mask, inppar->nkinds, atoms, natoms);
+    nmask = get_mask(&(mask), inppar->maskkind, inppar->mask, inppar->nkinds, atoms, natoms);
 
     if  (inppar->tasknum == SURFDENSPROF ) {
             if ( ( strstr ( inppar->refmask, EMPTY ) != NULL ) && ( inppar->nofrags ) )  {
@@ -132,11 +132,7 @@ int tanalize ( input_t * inppar )
 
     if ( inppar->nofrags ) {
         printf("Using indices given in 'refmask'\n");
-        refmask = get_mask(inppar->refmaskkind, inppar->refmask, inppar->refnkinds, atoms, natoms);
-
-        nref = 0;
-        while ( refmask[nref] != -1 )
-            nref++;
+        nref = get_mask(&refmask, inppar->refmaskkind, inppar->refmask, inppar->refnkinds, atoms, natoms);
 
         if ( !(nref) ) {
             printf("Cannot continue with 0 reference atoms\n");
@@ -150,15 +146,11 @@ int tanalize ( input_t * inppar )
         printf("Using fragments given in 'fragments'\n");
 
         for ( o=0; o<inppar->numfrags; o++ ) {
-            frag = get_mask(&(buff[0]), inppar->fragments[o], inppar->natomsfrag[o], atoms, natoms);
+            int tmpfrg  = get_mask(&frag, &(buff[0]), inppar->fragments[o], inppar->natomsfrag[o], atoms, natoms);
             frags[o] = frag;
             ntotfrag += inppar->natomsfrag[o];
         }
     }
-
-    nmask = 0;
-    while ( mask[nmask] != -1 )
-        nmask++;
 
     real *densprof;
     real mxdim;

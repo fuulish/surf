@@ -34,7 +34,7 @@ void write_cubefile_offset(char *, cube_t *, int);
 void allocate_cube(voxel_t **, int);
 void allocate_atoms(atom_t **, int);
 void set_input_defaults(input_t *);
-int * get_mask(char *, char *, int, atom_t * atoms, int natoms);
+int get_mask(int ** indices, char *, char *, int, atom_t * atoms, int natoms);
 int read_xmol(char *, atom_t **);
 int check_input_dependencies(input_t *);
 int replicate_structure(cube_t * cube, real pbc[], int nreplicas[]);

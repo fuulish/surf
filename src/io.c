@@ -825,10 +825,10 @@ void set_input_defaults(input_t * inppar)
     }
 }
 
-int * get_mask(char * maskkind, char * mask, int nkinds, atom_t * atoms, int natoms)
+int get_mask(int ** indices, char * maskkind, char * mask, int nkinds, atom_t * atoms, int natoms)
 {
     int i, j, k;
-    int * indices;
+    int nind;
     int * kinds;
     char * dummy;
     int check = 0;
@@ -847,9 +847,9 @@ int * get_mask(char * maskkind, char * mask, int nkinds, atom_t * atoms, int nat
     }
 
     if ( strstr(maskkind, "indices") != NULL )
-        indices = (int *) malloc((nkinds+1) * sizeof(int));
+        *indices = (int *) malloc((nkinds+1) * sizeof(int));
     else if ( strstr ( maskkind, "atoms" ) != NULL )
-        indices = (int *) malloc((natoms+1) * sizeof(int));
+        *indices = (int *) malloc((natoms+1) * sizeof(int));
 
     if ( strncmp(maskkind, "atoms", 5) == 0 )
     {
@@ -860,13 +860,14 @@ int * get_mask(char * maskkind, char * mask, int nkinds, atom_t * atoms, int nat
             {
                 if ( atoms[i].number == kinds[j] )
                 {
-                    indices[k] = i;
+                    (*indices)[k] = i;
                     k++;
                     break;
                 }
             }
         }
-        indices[k] = -1;
+        nind = k;
+        (*indices)[k] = -1;
     }
     else if ( strncmp(maskkind, "notatoms", 5) == 0 )
     {
@@ -884,19 +885,20 @@ int * get_mask(char * maskkind, char * mask, int nkinds, atom_t * atoms, int nat
             }
             if ( check )
             {
-                indices[k] = i;
+                (*indices)[k] = i;
                 k++;
             }
         }
-        indices[k] = -1;
+        nind = k;
+        (*indices)[k] = -1;
     }
     else if ( strncmp(maskkind, "indices", 7) == 0 )
     {
         for ( i=0; i<nkinds; i++ )
-        {
-            indices[i] = kinds[i];
-        }
-        indices[i] = -1;
+            (*indices)[i] = kinds[i];
+
+        nind = i;
+        (*indices)[i] = -1;
     }
     else if ( strncmp(maskkind, "notindices", 7) == 0 )
     {
@@ -912,11 +914,13 @@ int * get_mask(char * maskkind, char * mask, int nkinds, atom_t * atoms, int nat
                 }
             }
             if ( check ) {
-                indices[k] = i;
+                (*indices)[k] = i;
                 k++;
             }
         }
-        indices[k] = -1;
+
+        nind = k;
+        (*indices)[k] = -1;
     }
     else if ( strncmp ( maskkind, "file", 5 ) == 0 )
     {
@@ -929,16 +933,16 @@ int * get_mask(char * maskkind, char * mask, int nkinds, atom_t * atoms, int nat
             char * value;
 
             fgets ( text, MAXSTRLEN, inddat );
-            int nind = atoi ( text );
+            nind = atoi ( text );
 
-            indices = (int *) malloc ( ( nind + 1 ) * sizeof ( int ) );
+            *indices = (int *) malloc ( ( nind + 1 ) * sizeof ( int ) );
 
             for ( i=0; i<nind; i++ ) {
                 if ( fgets(text, MAXSTRLEN, inddat) != NULL)
-                    indices[i] = atoi ( text );
+                    (*indices)[i] = atoi ( text );
             }
 
-            indices[nind] = -1;
+            (*indices)[nind] = -1;
             fclose ( inddat );
         }
     }
@@ -946,7 +950,7 @@ int * get_mask(char * maskkind, char * mask, int nkinds, atom_t * atoms, int nat
     if ( strstr ( maskkind, "file" ) != NULL )
         free(kinds);
 
-    return indices;
+    return nind;
 }
 
 int read_xmol(char * coordfile, atom_t ** atoms)

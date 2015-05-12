@@ -129,7 +129,7 @@ int ** guess_fragments(atom_t * atoms, int natoms, int * mask, int * numfrags, r
         // allocate integer arrays with bonded atoms indicees and then concatenate all
 
         char symdex[8] = "indices";
-        bondinds[i] = get_mask(&symdex[0], bonds[i], countbonds[i], atoms, natoms);
+        int nbond = get_mask(&(bondinds[i]), &symdex[0], bonds[i], countbonds[i], atoms, natoms);
 
         // printf("%s\n", bonds[i]);
         // for ( j=0; j<countbonds[i]; j++ )
@@ -159,7 +159,7 @@ int ** guess_fragments(atom_t * atoms, int natoms, int * mask, int * numfrags, r
         recurse_concatenate ( &fragmask[0], bondinds, countbonds, i, isprocessed, &natomsfrag);
 
         char symdex[8] = "indices";
-        fragatoms[fragcount] = get_mask( &symdex[0], fragmask, natomsfrag, atoms, natoms);
+        int nfrgcnt = get_mask( &(fragatoms[fragcount]), &symdex[0], fragmask, natomsfrag, atoms, natoms);
 
         bubble_sort_ints(fragatoms[fragcount], natomsfrag);
 
