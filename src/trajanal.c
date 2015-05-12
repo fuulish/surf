@@ -114,9 +114,14 @@ int tanalize ( input_t * inppar )
 
     mask = get_mask(inppar->maskkind, inppar->mask, inppar->nkinds, atoms, natoms);
 
-    if ( (inppar->tasknum == SURFDENSPROF ) && ( ( strstr ( inppar->refmask, EMPTY ) != NULL ) && ( inppar->nofrags ) ) ) {
-        print_error ( MISSING_INPUT_PARAM, "refmask or fragments" );
-        exit ( MISSING_INPUT_PARAM );
+    if  (inppar->tasknum == SURFDENSPROF ) {
+            if ( ( strstr ( inppar->refmask, EMPTY ) != NULL ) && ( inppar->nofrags ) )  {
+                print_error ( MISSING_INPUT_PARAM, "refmask or fragments" );
+                exit ( MISSING_INPUT_PARAM );
+            } else if ( ( strstr ( inppar->refmask, EMPTY ) == NULL ) && ( ! ( inppar->nofrags ) ) )  {
+                print_error ( CONFLICTING_OPTIONS, "refmask or fragments" );
+                exit ( CONFLICTING_OPTIONS );
+            }
     }
 
     int * frags[inppar->numfrags];

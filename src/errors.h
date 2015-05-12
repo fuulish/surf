@@ -26,6 +26,7 @@ typedef enum errors_e
     PROGRAM_BROKEN,
     OUT_OF_MEMORY,
     MISSING_LIBRARY,
+    CONFLICTING_OPTIONS,
     NOT_IMPLEMENTED,
 
 } errors_t;
