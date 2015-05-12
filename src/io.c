@@ -846,9 +846,9 @@ int * get_mask(char * maskkind, char * mask, int nkinds, atom_t * atoms, int nat
         dummy = strtok(NULL, ",");
     }
 
-    if ( strncmp(maskkind, "indices", 5) == 0 )
+    if ( strstr(maskkind, "indices") != NULL )
         indices = (int *) malloc((nkinds+1) * sizeof(int));
-    else
+    else if ( strstr ( maskkind, "atoms" ) != NULL )
         indices = (int *) malloc((natoms+1) * sizeof(int));
 
     if ( strncmp(maskkind, "atoms", 5) == 0 )
@@ -918,8 +918,34 @@ int * get_mask(char * maskkind, char * mask, int nkinds, atom_t * atoms, int nat
         }
         indices[k] = -1;
     }
+    else if ( strncmp ( maskkind, "file", 5 ) == 0 )
+    {
+        FILE *inddat;
 
-    free(kinds);
+        if((inddat = fopen(mask, "r")))
+        {
+            char text[MAXSTRLEN];
+            char * variable;
+            char * value;
+
+            fgets ( text, MAXSTRLEN, inddat );
+            int nind = atoi ( text );
+
+            indices = (int *) malloc ( ( nind + 1 ) * sizeof ( int ) );
+
+            for ( i=0; i<nind; i++ ) {
+                if ( fgets(text, MAXSTRLEN, inddat) != NULL)
+                    indices[i] = atoi ( text );
+            }
+
+            indices[nind] = -1;
+            fclose ( inddat );
+        }
+    }
+
+    if ( strstr ( maskkind, "file" ) != NULL )
+        free(kinds);
+
     return indices;
 }
 
@@ -1224,15 +1250,21 @@ void parse_cmdline(input_t * inppar, char ** argv, int argc)
 
                 strcpy(inppar->mask, dummy);
 
-                while ( dummy != NULL )
-                {
-                    dummy = strtok(NULL, " ");
-                    if ( dummy != NULL)
+                if ( strstr ( inppar->mask, "file" ) != NULL ) {
+                    dummy = strtok ( NULL, " " );
+                    strcpy ( inppar->mask, dummy );
+                }
+                else {
+                    while ( dummy != NULL )
                     {
-                        strcat(inppar->mask, ",");
-                        strcat(inppar->mask, dummy);
+                        dummy = strtok(NULL, " ");
+                        if ( dummy != NULL)
+                        {
+                            strcat(inppar->mask, ",");
+                            strcat(inppar->mask, dummy);
+                        }
+                        inppar->nkinds++;
                     }
-                    inppar->nkinds++;
                 }
                 break;
             case 'e':
@@ -1244,15 +1276,21 @@ void parse_cmdline(input_t * inppar, char ** argv, int argc)
 
                 strcpy(inppar->refmask, dummy);
 
-                while ( dummy != NULL )
-                {
-                    dummy = strtok(NULL, " ");
-                    if ( dummy != NULL)
+                if ( strstr ( inppar->refmask, "file" ) != NULL ) {
+                    dummy = strtok ( NULL, " " );
+                    strcpy ( inppar->refmask, dummy );
+                }
+                else {
+                    while ( dummy != NULL )
                     {
-                        strcat(inppar->refmask, ",");
-                        strcat(inppar->refmask, dummy);
+                        dummy = strtok(NULL, " ");
+                        if ( dummy != NULL)
+                        {
+                            strcat(inppar->refmask, ",");
+                            strcat(inppar->refmask, dummy);
+                        }
+                        inppar->refnkinds++;
                     }
-                    inppar->refnkinds++;
                 }
                 break;
             case 'f':
