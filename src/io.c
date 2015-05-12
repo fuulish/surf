@@ -111,9 +111,21 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             {
                 strcpy(inppar->outputprefix, value);
             }
+            // likely obsolete, old keyword, check here
             else if ((keywords[key] == "surfrefinement"))
             {
-                inppar->surfrefinement = atof(value);
+                real conv = 1.;
+
+                if ( strstr ( dummy, "ANG" ) != NULL ) {
+                    conv = ANG2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+                else if ( strstr ( dummy, "NM" ) != NULL ) {
+                    conv = NM2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+
+                inppar->surfrefinement = conv * atof(dummy);
             }
             else if ((keywords[key] == "refinementitpl"))
             {
@@ -121,11 +133,33 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             }
             else if ((keywords[key] == "surfacecutoff"))
             {
-                inppar->surfacecutoff = atof(value);
+                real conv = 1.;
+
+                if ( strstr ( dummy, "ANG" ) != NULL ) {
+                    conv = ANG2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+                else if ( strstr ( dummy, "NM" ) != NULL ) {
+                    conv = NM2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+
+                inppar->surfacecutoff = atof(dummy) / ( sqr ( conv ) * conv );
             }
             else if ((keywords[key] == "zeta"))
             {
-                inppar->zeta = atof(value);
+                real conv = 1.;
+
+                if ( strstr ( dummy, "ANG" ) != NULL ) {
+                    conv = ANG2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+                else if ( strstr ( dummy, "NM" ) != NULL ) {
+                    conv = NM2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+
+                inppar->zeta = conv * atof(dummy);
             }
             else if ((keywords[key] == "postinterpolate"))
             {
@@ -352,11 +386,33 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             }
             else if ((keywords[key] == "resolution"))
             {
-                inppar->resolution = atof(value);
+                real conv = 1.;
+
+                if ( strstr ( dummy, "ANG" ) != NULL ) {
+                    conv = ANG2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+                else if ( strstr ( dummy, "NM" ) != NULL ) {
+                    conv = NM2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+
+                inppar->resolution = conv * atof( dummy );
             }
             else if ((keywords[key] == "profileres"))
             {
-                inppar->profileres = atof(value);
+                real conv = 1.;
+
+                if ( strstr ( dummy, "ANG" ) != NULL ) {
+                    conv = ANG2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+                else if ( strstr ( dummy, "NM" ) != NULL ) {
+                    conv = NM2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+
+                inppar->profileres = conv * atof( dummy );
             }
             else if ((keywords[key] == "xdrread"))
             {
@@ -371,9 +427,21 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             {
                 inppar->gnrfrst = atoi(value);
             }
+            // obsolete keyword, check here
             else if ((keywords[key] == "accuracy"))
             {
-                inppar->accuracy = atof ( value );
+                real conv = 1.;
+
+                if ( strstr ( dummy, "ANG" ) != NULL ) {
+                    conv = ANG2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+                else if ( strstr ( dummy, "NM" ) != NULL ) {
+                    conv = NM2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+
+                inppar->accuracy = conv * atof ( dummy );
             }
             else if ((keywords[key] == "direction"))
             {
@@ -1129,7 +1197,16 @@ void parse_cmdline(input_t * inppar, char ** argv, int argc)
             case 'u':
                 dummy = strtok ( optarg, " " );
 
-                inppar->resolution = atof ( dummy );
+                if ( strstr ( dummy, "ANG" ) != NULL ) {
+                    conv = ANG2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+                else if ( strstr ( dummy, "NM" ) != NULL ) {
+                    conv = NM2BOHR;
+                    dummy = strtok ( NULL, " " );
+                }
+
+                inppar->resolution = conv * atof ( dummy );
     
                 break;
             case 'g':
