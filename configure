@@ -675,8 +675,8 @@ ac_user_opts='
 enable_option_checking
 enable_silent_rules
 enable_dependency_tracking
-enable_xdr
 enable_depends
+enable_xdr
 enable_einspline
 enable_float
 enable_openmp
@@ -1310,8 +1310,8 @@ Optional Features:
                           do not reject slow dependency extractors
   --disable-dependency-tracking
                           speeds up one-time build
-  --enable-xdr            enable XDR file support
   --enable-depends        enable single precision
+  --enable-xdr            enable XDR file support
   --enable-einspline      enable EINSPLINE file support
   --enable-float          enable single precision
   --enable-openmp         enable OpenMP multithreading (currently only for
@@ -3426,6 +3426,55 @@ else
 fi
 
 
+# Check whether --enable-depends was given.
+if test "${enable_depends+set}" = set; then :
+  enableval=$enable_depends;
+fi
+
+
+              if test "x$enable_depends" = "xyes"; then :
+
+                     LIBS="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a $LIBS"
+                C_INCLUDE_PATH="$C_INCLUDE_PATH:$PWD/depends/include"
+                CFLAGS="$CFLAGS -I$PWD/depends/include"
+                CXXFLAGS="$CXXFLAGS -I$PWD/depends/include"
+                LDFLAGS="$LDFLAGS -L$PWD/depends/lib"
+                LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/depends/lib"
+                #LDADD="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a"
+
+fi
+
+### # adding the lib to the files to link
+### #LIBS="-leinspline -lxdrfile $LIBS"
+###
+### # introduce the optional configure parameter for a non-standard install prefix of XXX
+### AC_ARG_WITH([depends],
+###     [AS_HELP_STRING([--with-depends=prefix],
+###         [try this for a non-standard install prefix of the libraries in <SURF>/depends])],
+###     [DEPENDSPATHSET=1],
+###     [DEPENDSPATHSET=0])
+###
+### # if optional parameter used, extend path flags for compliler and linker
+### if test $DEPENDSPATHSET = 1 ; then
+###     # extend the compiler and linker flags according to the path set
+###     AM_C_INCLUDE_PATH="$AM_C_INCLUDE_PATH:$with_depends/include"
+###     AM_CFLAGS="$AM_CFLAGS -I$with_depends/include"
+###     AM_CXXFLAGS="$AM_CXXFLAGS -I$with_depends/include"
+###     AM_LDFLAGS="$AM_LDFLAGS -L$with_depends/lib"
+###
+###     C_INCLUDE_PATH="$C_INCLUDE_PATH:$with_depends/include"
+###     CFLAGS="$CFLAGS -I$with_depends/include"
+###     CXXFLAGS="$CXXFLAGS -I$with_depends/include"
+###     LDFLAGS="$LDFLAGS -L$with_depends/lib"
+###     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$with_depends/lib"
+### fi
+###
+### AC_SUBST([LIBS])
+### AC_SUBST([AM_C_INCLUDE_PATH])
+### AC_SUBST([AM_CFLAGS])
+### AC_SUBST([AM_CXXFLAGS])
+### AC_SUBST([AM_LDFLAGS])
+
 # Check whether --enable-xdr was given.
 if test "${enable_xdr+set}" = set; then :
   enableval=$enable_xdr;
@@ -3497,55 +3546,6 @@ fi
 
 
 fi
-
-# Check whether --enable-depends was given.
-if test "${enable_depends+set}" = set; then :
-  enableval=$enable_depends;
-fi
-
-
-              if test "x$enable_depends" = "xyes"; then :
-
-                     LIBS="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a $LIBS"
-                C_INCLUDE_PATH="$C_INCLUDE_PATH:$PWD/depends/include"
-                CFLAGS="$CFLAGS -I$PWD/depends/include"
-                CXXFLAGS="$CXXFLAGS -I$PWD/depends/include"
-                LDFLAGS="$LDFLAGS -L$PWD/depends/lib"
-                LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/depends/lib"
-                #LDADD="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a"
-
-fi
-
-### # adding the lib to the files to link
-### #LIBS="-leinspline -lxdrfile $LIBS"
-###
-### # introduce the optional configure parameter for a non-standard install prefix of XXX
-### AC_ARG_WITH([depends],
-###     [AS_HELP_STRING([--with-depends=prefix],
-###         [try this for a non-standard install prefix of the libraries in <SURF>/depends])],
-###     [DEPENDSPATHSET=1],
-###     [DEPENDSPATHSET=0])
-###
-### # if optional parameter used, extend path flags for compliler and linker
-### if test $DEPENDSPATHSET = 1 ; then
-###     # extend the compiler and linker flags according to the path set
-###     AM_C_INCLUDE_PATH="$AM_C_INCLUDE_PATH:$with_depends/include"
-###     AM_CFLAGS="$AM_CFLAGS -I$with_depends/include"
-###     AM_CXXFLAGS="$AM_CXXFLAGS -I$with_depends/include"
-###     AM_LDFLAGS="$AM_LDFLAGS -L$with_depends/lib"
-###
-###     C_INCLUDE_PATH="$C_INCLUDE_PATH:$with_depends/include"
-###     CFLAGS="$CFLAGS -I$with_depends/include"
-###     CXXFLAGS="$CXXFLAGS -I$with_depends/include"
-###     LDFLAGS="$LDFLAGS -L$with_depends/lib"
-###     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$with_depends/lib"
-### fi
-###
-### AC_SUBST([LIBS])
-### AC_SUBST([AM_C_INCLUDE_PATH])
-### AC_SUBST([AM_CFLAGS])
-### AC_SUBST([AM_CXXFLAGS])
-### AC_SUBST([AM_LDFLAGS])
 
 # Check whether --enable-einspline was given.
 if test "${enable_einspline+set}" = set; then :

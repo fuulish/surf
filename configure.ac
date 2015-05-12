@@ -16,16 +16,6 @@ AC_SEARCH_LIBS([gzopen], [z], [], [
   AC_MSG_ERROR([unable to find the gzopen function. Is zlib installed?])
 ])
 
-AC_ARG_ENABLE([xdr],
-              AS_HELP_STRING([--enable-xdr], [enable XDR file support]))
-
-              AS_IF([test "x$enable_xdr" = "xyes"], [
-              AC_SEARCH_LIBS([read_xtc], [xdrfile], [CFLAGS="$CFLAGS -DHAVE_XDRFILE"], [
-                AC_MSG_ERROR([unable to find the read_xtc function. Is xdrfile library installed?])
-              ])
-
-])
-
 AC_ARG_ENABLE([depends],
               AS_HELP_STRING([--enable-depends], [enable single precision]))
 
@@ -69,6 +59,16 @@ AC_ARG_ENABLE([depends],
 ### AC_SUBST([AM_CFLAGS])
 ### AC_SUBST([AM_CXXFLAGS])
 ### AC_SUBST([AM_LDFLAGS])
+
+AC_ARG_ENABLE([xdr],
+              AS_HELP_STRING([--enable-xdr], [enable XDR file support]))
+
+              AS_IF([test "x$enable_xdr" = "xyes"], [
+              AC_SEARCH_LIBS([read_xtc], [xdrfile], [CFLAGS="$CFLAGS -DHAVE_XDRFILE"], [
+                AC_MSG_ERROR([unable to find the read_xtc function. Is xdrfile library installed?])
+              ])
+
+])
 
 AC_ARG_ENABLE([einspline],
               AS_HELP_STRING([--enable-einspline], [enable EINSPLINE file support]))

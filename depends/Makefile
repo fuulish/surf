@@ -24,7 +24,7 @@ einspline-0.9.2.tar.gz:
 # Build xdrfile from scratch
 
 lib/libxdrfile.a: xdrfile-1.1.4
-	cd xdrfile-1.1.4 && CONFIG_SHELL=/bin/sh ./configure --prefix=$(PWD)
+	cd xdrfile-1.1.4 && CONFIG_SHELL=/bin/sh ./configure --prefix=$(PWD) --enable-shared
 	cd xdrfile-1.1.4 && $(MAKE) install
 
 xdrfile-1.1.4: xdrfile-1.1.4.tar.gz
