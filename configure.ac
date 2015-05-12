@@ -26,6 +26,50 @@ AC_ARG_ENABLE([xdr],
 
 ])
 
+AC_ARG_ENABLE([depends],
+              AS_HELP_STRING([--enable-depends], [enable single precision]))
+
+              AS_IF([test "x$enable_depends" = "xyes"], [
+                     LIBS="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a $LIBS"
+                C_INCLUDE_PATH="$C_INCLUDE_PATH:$PWD/depends/include"
+                CFLAGS="$CFLAGS -I$PWD/depends/include"
+                CXXFLAGS="$CXXFLAGS -I$PWD/depends/include"
+                LDFLAGS="$LDFLAGS -L$PWD/depends/lib"
+                LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/depends/lib"
+                #LDADD="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a"
+])
+
+### # adding the lib to the files to link
+### #LIBS="-leinspline -lxdrfile $LIBS"
+###
+### # introduce the optional configure parameter for a non-standard install prefix of XXX
+### AC_ARG_WITH([depends],
+###     [AS_HELP_STRING([--with-depends=prefix],
+###         [try this for a non-standard install prefix of the libraries in <SURF>/depends])],
+###     [DEPENDSPATHSET=1],
+###     [DEPENDSPATHSET=0])
+###
+### # if optional parameter used, extend path flags for compliler and linker
+### if test $DEPENDSPATHSET = 1 ; then
+###     # extend the compiler and linker flags according to the path set
+###     AM_C_INCLUDE_PATH="$AM_C_INCLUDE_PATH:$with_depends/include"
+###     AM_CFLAGS="$AM_CFLAGS -I$with_depends/include"
+###     AM_CXXFLAGS="$AM_CXXFLAGS -I$with_depends/include"
+###     AM_LDFLAGS="$AM_LDFLAGS -L$with_depends/lib"
+###
+###     C_INCLUDE_PATH="$C_INCLUDE_PATH:$with_depends/include"
+###     CFLAGS="$CFLAGS -I$with_depends/include"
+###     CXXFLAGS="$CXXFLAGS -I$with_depends/include"
+###     LDFLAGS="$LDFLAGS -L$with_depends/lib"
+###     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$with_depends/lib"
+### fi
+###
+### AC_SUBST([LIBS])
+### AC_SUBST([AM_C_INCLUDE_PATH])
+### AC_SUBST([AM_CFLAGS])
+### AC_SUBST([AM_CXXFLAGS])
+### AC_SUBST([AM_LDFLAGS])
+
 AC_ARG_ENABLE([einspline],
               AS_HELP_STRING([--enable-einspline], [enable EINSPLINE file support]))
 
