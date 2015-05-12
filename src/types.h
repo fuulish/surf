@@ -137,7 +137,7 @@ typedef struct input_s
     real refcenter[DIM];
     int numfrags;
     int * natomsfrag;
-    char * fragments[MAXSTRLEN];
+    int ** fragments;
     int periodic;
     int wrap;
     real blfudge;

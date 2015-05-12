@@ -80,12 +80,13 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
     long key;
     char * dummy;
+    char *save_ptr;
 
     // check here and exclude lines that start with a hash
     if ( strncmp ( variable, "#", 1 ) == 0 )
         return;
             
-    dummy = strtok(variable, " ");
+    dummy = strtok_r(variable, " ", &save_ptr);
     variable = dummy;
     int counter = 0;
 
@@ -94,7 +95,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
         if (strncmp(variable, keywords[key], 20) == 0)
         {
             counter++;
-            dummy = strtok(value, " ");
+            dummy = strtok_r(value, " ", &save_ptr);
             value = dummy;
 
             printf("%s is set to: '%s'\n", variable, value);
@@ -118,11 +119,11 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 if ( strstr ( dummy, "ANG" ) != NULL ) {
                     conv = ANG2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
                 else if ( strstr ( dummy, "NM" ) != NULL ) {
                     conv = NM2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
 
                 inppar->surfrefinement = conv * atof(dummy);
@@ -137,11 +138,11 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 if ( strstr ( dummy, "ANG" ) != NULL ) {
                     conv = ANG2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
                 else if ( strstr ( dummy, "NM" ) != NULL ) {
                     conv = NM2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
 
                 inppar->surfacecutoff = atof(dummy) / ( sqr ( conv ) * conv );
@@ -152,11 +153,11 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 if ( strstr ( dummy, "ANG" ) != NULL ) {
                     conv = ANG2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
                 else if ( strstr ( dummy, "NM" ) != NULL ) {
                     conv = NM2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
 
                 inppar->zeta = conv * atof(dummy);
@@ -165,7 +166,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             {
                 inppar->postinterpolate = atoi(value);
 
-                dummy = strtok ( NULL, " " );
+                dummy = strtok_r ( NULL, " " , &save_ptr);
 
                 if ( dummy != NULL ) {
                     if ( strstr ( dummy, "trilinear" ) != NULL )
@@ -193,11 +194,11 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 if ( strstr ( dummy, "ANG" ) != NULL ) {
                     conv = ANG2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
                 else if ( strstr ( dummy, "NM" ) != NULL ) {
                     conv = NM2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
 
                 while ( dummy != NULL )
@@ -205,7 +206,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                     inppar->pbc[i] = atof(dummy);
                     inppar->pbc[i] *= conv;
 
-                    dummy = strtok(NULL, " ");
+                    dummy = strtok_r(NULL, " ", &save_ptr);
                     i++;
                 }
 
@@ -223,7 +224,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 {
                     inppar->solcenter[i] = atof(dummy);
 
-                    dummy = strtok(NULL, " ");
+                    dummy = strtok_r(NULL, " ", &save_ptr);
                     i++;
                 }
 
@@ -240,7 +241,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 {
                     inppar->refcenter[i] = atof(dummy);
 
-                    dummy = strtok(NULL, " ");
+                    dummy = strtok_r(NULL, " ", &save_ptr);
                     i++;
                 }
 
@@ -250,7 +251,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             {
                 strcpy(inppar->maskkind, value);
 
-                dummy = strtok(NULL, " ");
+                dummy = strtok_r(NULL, " ", &save_ptr);
                 inppar->nkinds = 0;
 
                 value = dummy;
@@ -258,7 +259,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 while ( dummy != NULL )
                 {
-                    dummy = strtok(NULL, " ");
+                    dummy = strtok_r(NULL, " ", &save_ptr);
                     if ( dummy != NULL)
                     {
                         strcat(inppar->mask, ",");
@@ -271,7 +272,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             {
                 strcpy(inppar->refmaskkind, value);
 
-                dummy = strtok(NULL, " ");
+                dummy = strtok_r(NULL, " ", &save_ptr);
                 inppar->refnkinds = 0;
 
                 value = dummy;
@@ -279,7 +280,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 while ( dummy != NULL )
                 {
-                    dummy = strtok(NULL, " ");
+                    dummy = strtok_r(NULL, " ", &save_ptr);
                     if ( dummy != NULL)
                     {
                         strcat(inppar->refmask, ",");
@@ -293,10 +294,10 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 inppar->start = atoi(value);
                 inppar->batchmode = 1;
 
-                dummy = strtok(NULL, " ");
+                dummy = strtok_r(NULL, " ", &save_ptr);
                 inppar->stop = atoi(dummy);
 
-                dummy = strtok(NULL, " ");
+                dummy = strtok_r(NULL, " ", &save_ptr);
                 inppar->stride = atoi(dummy);
             }
             else if ((keywords[key] == "output"))
@@ -315,52 +316,124 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             else if ((keywords[key] == "fragments"))
             {
                 inppar->nofrags = 0;
-                inppar->numfrags = atoi(value);
 
-                inppar->natomsfrag = (int *) malloc(inppar->numfrags * sizeof(int));
+                if ( strstr ( value, "file" ) != NULL ) {
+                    FILE *frgdat;
 
-                int i;
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
 
-                for ( i=0; i<inppar->numfrags; i++ )
-                {
-                    inppar->fragments[i] = (char *) malloc(MAXSTRLEN * sizeof(char));
-                }
-
-                i = 0;
-                dummy = strtok(NULL, " ");
-                inppar->fragtotnatoms = 0;
-                while ( dummy != NULL )
-                {
-                    inppar->natomsfrag[i] = 0;
-                    while ( strstr(dummy, ";") == NULL )
+                    if((frgdat = fopen(dummy, "r")))
                     {
-                        strcat((inppar->fragments)[i], dummy);
-                        strcat((inppar->fragments)[i], ",");
-                        dummy = strtok(NULL, " ");
-                        inppar->natomsfrag[i] += 1;
+                        char tmptext[MAXSTRLEN];
+
+                        if ( fgets(tmptext, MAXSTRLEN, frgdat) != NULL)
+                            inppar->numfrags = atoi ( tmptext );
+                        else {
+                        }
+
+                        inppar->natomsfrag = (int *) malloc(inppar->numfrags * sizeof(int));
+                        inppar->fragments = ( int ** ) malloc ( inppar->numfrags * sizeof ( int * ) );
+
+                        char * tmpvariable;
+                        char * tmpvalue;
+                        char * save_other;
+
+                        int i;
+                        for ( i=0; i<inppar->numfrags; i++ ) {
+                            if ( fgets(tmptext, MAXSTRLEN, frgdat) != NULL) {
+                                tmpvariable = strtok_r (tmptext, " \n", &save_other);
+
+                                // check here, we could also do the same as below and don't expect the user to give us the number of atoms...
+                                inppar->natomsfrag[i] = atoi ( tmpvariable );
+                                inppar->fragments[i] = (int *) malloc ( ( inppar->natomsfrag[i] + 1 ) * sizeof ( int ) );
+                                int k;
+                                for ( k=0; k<inppar->natomsfrag[i]; k++ ) {
+                                    tmpvalue = strtok_r (NULL, " \n", &save_other);
+                                    inppar->fragments[i][k] = atoi ( tmpvalue );
+                                }
+                                inppar->fragments[i][k] = -1;
+
+                            }
+                        }
                     }
+                }
+                else {
+                    inppar->numfrags = atoi(value);
 
-                    int tmplen = strlen(dummy);
-                    char buffer[MAXSTRLEN] = "";
+                    inppar->natomsfrag = (int *) malloc(inppar->numfrags * sizeof(int));
+                    inppar->fragments = ( int ** ) malloc ( inppar->numfrags * sizeof ( int * ) );
 
-                    strncpy(&buffer[0], dummy, tmplen-1);
-                    strcat((inppar->fragments)[i], buffer);
-                    inppar->natomsfrag[i] += 1;
+                    int i;
 
-                    // put here later, does the last "," hurt the get_mask function?
-                    inppar->fragtotnatoms += inppar->natomsfrag[i];
-                    
-                    printf("%i atoms in fragment #%i: %s\n", inppar->natomsfrag[i], i, inppar->fragments[i]);
+                    // for ( i=0; i<inppar->numfrags; i++ )
+                    //     inppar->fragments[i] = (char *) malloc(MAXSTRLEN * sizeof(char));
 
-                    dummy = strtok(NULL, " ");
+                    i = 0;
+                    dummy = strtok_r(NULL, " ", &save_ptr);
+                    inppar->fragtotnatoms = 0;
 
-                    strcat(inppar->fragmask, (inppar->fragments)[i]);
-                    
-                    if ( dummy != NULL )
-                        strcat(inppar->fragmask, ",");
+                    while ( dummy != NULL )
+                    {
+                        inppar->natomsfrag[i] = 0;
+                        char tmpfrg[MAXSTRLEN];
 
-                    // printf("%s\n", (inppar->fragments)[i]);
-                    i++;
+                        int cnt = 0;
+                        while ( strstr(dummy, ";") == NULL )
+                        {
+                            if ( cnt )
+                                strcat(&(tmpfrg[0]), dummy);
+                            else
+                                strcpy(&(tmpfrg[0]), dummy);
+
+                            strcat(&(tmpfrg[0]), ",");
+                            dummy = strtok_r(NULL, " ", &save_ptr);
+                            inppar->natomsfrag[i] += 1;
+                            cnt++;
+                        }
+                        int tmplen = strlen(dummy);
+                        char buffer[MAXSTRLEN] = "";
+
+                        strncpy(&buffer[0], dummy, tmplen-1);
+                        strcat(&(tmpfrg[0]), buffer);
+                        strcat(&(tmpfrg[0]), ",");
+
+                        inppar->natomsfrag[i] += 1;
+
+                        printf("%i atoms in fragment #%i: ", inppar->natomsfrag[i], i);
+
+                        dummy = strtok_r(NULL, " ", &save_ptr);
+
+                        // strcat(inppar->fragmask, (inppar->fragments)[i]);
+                        
+                        // if ( dummy != NULL )
+                        //     strcat(tmpfrg, ",");
+
+                        // printf("%s\n", (inppar->fragments)[i]);
+                        atom_t *dumatom;
+                        // check here, in principle nothing should happen, because we work with "indices" and then the atoms never get touched in get_mask
+
+                        char symdex[8] = "indices";
+                        // printf("%s\n", tmpfrg);
+                        inppar->natomsfrag[i] = get_mask ( &(inppar->fragments[i]), symdex, &(tmpfrg[0]), inppar->natomsfrag[i], dumatom, 0 );
+
+                        int k;
+                        for ( k=0; k<inppar->natomsfrag[i]; k++ )
+                            printf("%5i", inppar->fragments[i][k]);
+                        printf("\n");
+
+                        // put here later, does the last "," hurt the get_mask function?
+                        // inppar->fragtotnatoms += inppar->natomsfrag[i];
+
+                        // int tmplen = strlen(dummy);
+                        // char buffer[MAXSTRLEN] = "";
+
+                        // strncpy(&buffer[0], dummy, tmplen-1);
+                        // strcat((inppar->fragments)[i], buffer);
+                        // inppar->natomsfrag[i] += 1;
+
+                        // 
+                        i++;
+                    }
                 }
             }
             else if ((keywords[key] == "periodic"))
@@ -390,11 +463,11 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 if ( strstr ( dummy, "ANG" ) != NULL ) {
                     conv = ANG2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
                 else if ( strstr ( dummy, "NM" ) != NULL ) {
                     conv = NM2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
 
                 inppar->resolution = conv * atof( dummy );
@@ -405,11 +478,11 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 if ( strstr ( dummy, "ANG" ) != NULL ) {
                     conv = ANG2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
                 else if ( strstr ( dummy, "NM" ) != NULL ) {
                     conv = NM2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
 
                 inppar->profileres = conv * atof( dummy );
@@ -434,11 +507,11 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 if ( strstr ( dummy, "ANG" ) != NULL ) {
                     conv = ANG2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
                 else if ( strstr ( dummy, "NM" ) != NULL ) {
                     conv = NM2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
 
                 inppar->accuracy = conv * atof ( dummy );
@@ -471,11 +544,11 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 // change that whole shit to a function that figures out conversion factor
                 if ( strstr ( dummy, "ANG" ) != NULL ) {
                     conv = ANG2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
                 else if ( strstr ( dummy, "NM" ) != NULL ) {
                     conv = NM2BOHR;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
 
                 if ( strstr ( dummy, "boxcenter" ) != NULL ) {
@@ -483,7 +556,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                         inppar->dumatom.coords[j] = inppar->pbc[j] / 2.;
 
                     inppar->dummy = BOXCENTER;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
 
                 else if ( strstr ( dummy, "boxedgehigh" ) != NULL ) {
@@ -491,7 +564,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                         inppar->dumatom.coords[j] = inppar->pbc[j];
 
                     inppar->dummy = BOXEDGEHI;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
 
                 else if ( strstr ( dummy, "boxedgelow" ) != NULL ) {
@@ -499,7 +572,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                         inppar->dumatom.coords[j] = ZERO;
 
                     inppar->dummy = BOXEDGELO;
-                    dummy = strtok ( NULL, " " );
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
                 else {
 
@@ -511,7 +584,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                         inppar->dumatom.coords[i] = atof(dummy);
                         inppar->dumatom.coords[i] *= conv;
 
-                        dummy = strtok(NULL, " ");
+                        dummy = strtok_r(NULL, " ", &save_ptr);
                         i++;
                     }
 
@@ -831,6 +904,7 @@ int get_mask(int ** indices, char * maskkind, char * mask, int nkinds, atom_t * 
     int nind;
     int * kinds;
     char * dummy;
+    char *save_ptr;
     int check = 0;
 
     kinds = (int *) malloc(nkinds * sizeof(int));
@@ -838,12 +912,12 @@ int get_mask(int ** indices, char * maskkind, char * mask, int nkinds, atom_t * 
     char dummask[MAXSTRLEN];
     strcpy(&(dummask[0]), mask);
 
-    dummy = strtok(dummask, ",");
+    dummy = strtok_r(dummask, ",", &save_ptr);
 
     for ( i=0; i<nkinds; i++ )
     {
         kinds[i] = atoi(dummy);
-        dummy = strtok(NULL, ",");
+        dummy = strtok_r(NULL, ",", &save_ptr);
     }
 
     if ( strstr(maskkind, "indices") != NULL )

@@ -146,8 +146,9 @@ int tanalize ( input_t * inppar )
         printf("Using fragments given in 'fragments'\n");
 
         for ( o=0; o<inppar->numfrags; o++ ) {
-            int tmpfrg  = get_mask(&frag, &(buff[0]), inppar->fragments[o], inppar->natomsfrag[o], atoms, natoms);
-            frags[o] = frag;
+            // int tmpfrg  = get_mask(&frag, &(buff[0]), inppar->fragments[o], inppar->natomsfrag[o], atoms, natoms);
+            // check here, and change this later, because it might get ugly with memory freeing
+            frags[o] = inppar->fragments[o];
             ntotfrag += inppar->natomsfrag[o];
         }
     }
@@ -454,7 +455,7 @@ int tanalize ( input_t * inppar )
 
     if ( ! ( inppar->nofrags ) ) {
         for ( i=0; i<inppar->numfrags; i++ ) {
-            free(inppar->fragments[i]);
+            // free(inppar->fragments[i]);
             free(frags[i]);
         }
 
