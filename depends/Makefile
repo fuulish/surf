@@ -9,7 +9,7 @@ einspline: lib/libeinspline.a
 
 all: xdrfile einspline
 
-# Build xdrfile from scratch
+# Build einspline from scratch
 
 lib/libeinspline.a: einspline-0.9.2
 	cd einspline-0.9.2 && CONFIG_SHELL=/bin/sh ./configure --prefix=$(PWD)
