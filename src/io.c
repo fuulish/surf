@@ -85,7 +85,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
     // check here and exclude lines that start with a hash
     if ( strncmp ( variable, "#", 1 ) == 0 )
         return;
-            
+
     dummy = strtok_r(variable, " ", &save_ptr);
     variable = dummy;
     int counter = 0;
@@ -324,35 +324,61 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                     if((frgdat = fopen(dummy, "r")))
                     {
-                        char tmptext[MAXSTRLEN];
+                        char *dummy;
+                        char * save_other;
+                        char tmptxt[MAXSTRLEN];
 
-                        if ( fgets(tmptext, MAXSTRLEN, frgdat) != NULL)
-                            inppar->numfrags = atoi ( tmptext );
-                        else {
-                        }
+                        if ( fgets ( tmptxt, MAXSTRLEN, frgdat ) != NULL )
+                            inppar->numfrags = atoi ( tmptxt );
 
                         inppar->natomsfrag = (int *) malloc(inppar->numfrags * sizeof(int));
                         inppar->fragments = ( int ** ) malloc ( inppar->numfrags * sizeof ( int * ) );
 
-                        char * tmpvariable;
-                        char * tmpvalue;
-                        char * save_other;
-
+                        // the code below is duplicated and should be put in a separate routine
                         int i;
                         for ( i=0; i<inppar->numfrags; i++ ) {
-                            if ( fgets(tmptext, MAXSTRLEN, frgdat) != NULL) {
-                                tmpvariable = strtok_r (tmptext, " \n", &save_other);
 
-                                // check here, we could also do the same as below and don't expect the user to give us the number of atoms...
-                                inppar->natomsfrag[i] = atoi ( tmpvariable );
-                                inppar->fragments[i] = (int *) malloc ( ( inppar->natomsfrag[i] + 1 ) * sizeof ( int ) );
-                                int k;
-                                for ( k=0; k<inppar->natomsfrag[i]; k++ ) {
-                                    tmpvalue = strtok_r (NULL, " \n", &save_other);
-                                    inppar->fragments[i][k] = atoi ( tmpvalue );
+                            if ( fgets(tmptxt, MAXSTRLEN, frgdat) != NULL) {
+                                char tmpfrg[MAXSTRLEN];
+
+                                dummy = strtok_r(tmptxt, " ", &save_other);
+                                int cnt = 0;
+
+                                while ( strstr(dummy, "\n") == NULL )
+                                {
+                                    if ( cnt )
+                                        strcat(&(tmpfrg[0]), dummy);
+                                    else
+                                        strcpy(&(tmpfrg[0]), dummy);
+
+                                    strcat(&(tmpfrg[0]), ",");
+                                    dummy = strtok_r(NULL, " ", &save_other);
+                                    inppar->natomsfrag[i] += 1;
+                                    cnt++;
                                 }
-                                inppar->fragments[i][k] = -1;
 
+                                int tmplen = strlen(dummy);
+                                char buffer[MAXSTRLEN] = "";
+
+                                strncpy(&buffer[0], dummy, tmplen-1);
+                                strcat(&(tmpfrg[0]), buffer);
+                                strcat(&(tmpfrg[0]), ",");
+
+                                inppar->natomsfrag[i] += 1;
+
+                                printf("%i atoms in fragment #%i: ", inppar->natomsfrag[i], i);
+
+                                dummy = strtok_r(NULL, " \n", &save_other);
+
+                                atom_t *dumatom;
+                                char symdex[8] = "indices";
+
+                                inppar->natomsfrag[i] = get_mask ( &(inppar->fragments[i]), symdex, &(tmpfrg[0]), inppar->natomsfrag[i], dumatom, 0 );
+
+                                int k;
+                                for ( k=0; k<inppar->natomsfrag[i]; k++ )
+                                    printf("%5i", inppar->fragments[i][k]);
+                                printf("\n");
                             }
                         }
                     }
@@ -1024,7 +1050,7 @@ int read_xmol(char * coordfile, atom_t ** atoms)
             count++;
         }
         else
-            return -1; 
+            return -1;
     }
     else
     {
@@ -1063,8 +1089,8 @@ int read_xmol(char * coordfile, atom_t ** atoms)
     }
 
     fclose(data);
-    
-    return natoms; 
+
+    return natoms
 }
 
 void write_cubefile_offset(char * filename, cube_t * cube, int offset)
@@ -1120,7 +1146,7 @@ void write_cubefile_offset(char * filename, cube_t * cube, int offset)
         }
 
         j = 0;
-        
+
         int n0, n1, n2;
         n0 = cube->n[0] - offset;
         n1 = cube->n[1] - offset;
@@ -1195,46 +1221,46 @@ void parse_cmdline(input_t * inppar, char ** argv, int argc)
 
     opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
 
-    while( opt != -1 ) 
+    while( opt != -1 )
     {
         switch( opt )
         {
             case 'i':
                 strcpy(inppar->inpfile, optarg);
                 break;
-    
+
             case 't':
                 strcpy(inppar->task, optarg);
                 inppar-> tasknum = assign_task ( inppar->task );
                 break;
-    
+
             case 'v':
                 inppar->output = atoi(optarg);
                 break;
-    
+
             case 'b':
                 inppar->batchmode = 1;
-    
+
                 dummy = strtok(optarg, ":");
                 inppar->start = atoi(dummy);
-    
+
                 dummy = strtok(NULL, ":");
                 inppar->stop = atoi(dummy);
-    
+
                 dummy = strtok(NULL, ":");
                 inppar->stride = atoi(dummy);
-    
+
                 break;
-    
+
             case 'o':
                 strcpy(inppar->outputprefix, optarg);
                 break;
-    
+
             case 'd':
                 inppar->periodic = 1;
                 /* check here if that is indeed okay, when we are working with cube files, but i see no problem so far */
                 inppar->pbcset = 1;
-    
+
                 real conv = 1.;
                 dummy = strtok(optarg, " ");
 
@@ -1253,7 +1279,7 @@ void parse_cmdline(input_t * inppar, char ** argv, int argc)
                         print_error ( MISSING_INPUT_PARAM, "cell length(s).");
                         exit ( MISSING_INPUT_PARAM );
                 }
-    
+
                 dummy = strtok(NULL, ":");
 
                 if ( dummy != NULL ) {
@@ -1289,7 +1315,7 @@ void parse_cmdline(input_t * inppar, char ** argv, int argc)
                 }
 
                 inppar->resolution = conv * atof ( dummy );
-    
+
                 break;
             case 'g':
                 inppar->guessfragments = 1;
@@ -1375,7 +1401,7 @@ void parse_cmdline(input_t * inppar, char ** argv, int argc)
             case '?':
                 display_usage();
                 break;
-    
+
             default:
                 /* You won't actually get here. */
                 // display_usage();
@@ -1389,7 +1415,7 @@ void parse_cmdline(input_t * inppar, char ** argv, int argc)
     {
         strcpy(inppar->structure, optarg);
     }
-    
+
     return;
 }
 
@@ -1416,7 +1442,7 @@ void display_usage(void)
     printf("    -w, --wrap                      wrap molecules into box around (0,0,0) before doing any analysis\n");
     printf("    -h, --help                      show this message\n");
     printf("\n");
-    
+
     exit(EXIT_FAILURE);
 }
 
@@ -1465,7 +1491,7 @@ int xmol_snap_bytesize(FILE * fxmol)
     fgets ( text, MAXSTRLEN, fxmol );
     bytelen += ( natoms * strlen(text) );
 
-    return bytelen; 
+    return bytelen;
 }
 
 void read_xtr_forward ( XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms )
@@ -1478,7 +1504,7 @@ void read_xtr_forward ( XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms
     matrix box_xtc;
     int step_xtc;
     int result_xtc;
-    
+
     // xd_read = xdrfile_open(rfile, "r");
     // result_xtc = read_xtc_natoms(rfile, &natoms_xtc);
 
