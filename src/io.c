@@ -1090,7 +1090,7 @@ int read_xmol(char * coordfile, atom_t ** atoms)
 
     fclose(data);
 
-    return natoms
+    return natoms;
 }
 
 void write_cubefile_offset(char * filename, cube_t * cube, int offset)
