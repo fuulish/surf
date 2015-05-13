@@ -235,26 +235,28 @@ int tanalize ( input_t * inppar )
             surface = instant_surface_periodic ( mask, atoms, natoms, inppar->zeta, inppar->surfacecutoff, inppar->output, opref, inppar->pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
 
             if ( inppar->postinterpolate > 1 ) {
-                cube_t fine;
+                if ( ! ( inppar->localsurfint ) ) {
+                    cube_t fine;
 
-                if ( inppar->interpolkind == INTERPOLATE_TRILINEAR )
-                    fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate );
+                    if ( inppar->interpolkind == INTERPOLATE_TRILINEAR )
+                        fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate );
 #ifdef HAVE_EINSPLINE
-                else if ( inppar->interpolkind == INTERPOLATE_BSPLINES )
-                    fine = interpolate_cube_bsplines ( &surface, inppar->postinterpolate );
+                    else if ( inppar->interpolkind == INTERPOLATE_BSPLINES )
+                        fine = interpolate_cube_bsplines ( &surface, inppar->postinterpolate );
 #endif
 
-                free ( surface.atoms );
-                free ( surface.voxels );
+                    free ( surface.atoms );
+                    free ( surface.voxels );
 
-                surface = fine;
+                    surface = fine;
 
-                surface.atoms = fine.atoms;
-                surface.voxels = fine.voxels;
+                    surface.atoms = fine.atoms;
+                    surface.voxels = fine.voxels;
 
-                if ( inppar->output > 2 ) {
-                    sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "interpolated-instant-surface.cube");
-                    write_cubefile(tmp, &surface);
+                    if ( inppar->output > 2 ) {
+                        sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "interpolated-instant-surface.cube");
+                        write_cubefile(tmp, &surface);
+                    }
                 }
             }
 
@@ -340,7 +342,7 @@ int tanalize ( input_t * inppar )
                 // each thread should have about the same amount of work, so the atomic update will not be too harmful
 #pragma omp parallel for default(none) \
                 private(r,fakemask,fakenum,ind) \
-                shared(dstnc,nfrg,refmask,frags,inppar,surface,direction,natoms,opref,densprof,hndprof,atoms,nsurf,grad,surfpts)
+                shared(dstnc,nfrg,refmask,frags,inppar,surface,direction,natoms,opref,densprof,hndprof,atoms,nsurf,grad,surfpts,dx)
 #endif
                 for ( r=0; r<nfrg; r++ ) {
 
@@ -353,7 +355,80 @@ int tanalize ( input_t * inppar )
                         fakenum = inppar->natomsfrag[r];
                     }
 
-                    dstnc[r] = get_distance_to_surface ( &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+                    int mnnd;
+                    dstnc[r] = get_distance_to_surface ( &mnnd, &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+
+                    if ( ( inppar->postinterpolate > 1 ) && ( inppar->localsurfint ) && ( dstnc[r] < inppar->ldst ) ) {
+
+                        // need index of point on surface
+                        // this is mnnd
+
+                        // find which voxel that point belongs to
+
+                        int ix[DIM];
+                        int ivx;
+
+                        get_index_triple ( ix, surfpts[mnnd], inppar->pbc, surface.origin, surface.n, dx, inppar->periodic );
+                        ivx = get_index ( surface.n, ix[0], ix[1], ix[2] );
+
+                        // create fake box around that point
+                        real origin[DIM];
+                        //real cboxv[DIM][DIM];
+                        int cn[DIM];
+
+                        int l, m;
+
+                        for ( l=0; l<DIM; l++ ) {
+                            origin[l] = surface.voxels[ivx].coords[l] - inppar->lint * dx[l];
+                            cn[l] = ( inppar->lint*2 + 1 );
+                        }
+
+                        cube_t cutcube, fine;
+                        cutcube = initialize_cube ( origin, surface.boxv, cn, surface.atoms, surface.natoms );
+
+                        // interpolate in that region
+
+                        if ( inppar->interpolkind == INTERPOLATE_TRILINEAR )
+                            fine = interpolate_cube_trilinear ( &cutcube, inppar->postinterpolate );
+#ifdef HAVE_EINSPLINE
+                        else if ( inppar->interpolkind == INTERPOLATE_BSPLINES )
+                            fine = interpolate_cube_bsplines ( &cutcube, inppar->postinterpolate );
+#endif
+
+                        free ( cutcube.atoms );
+                        free ( cutcube.voxels );
+
+                        // get_2d_representation
+
+                        int * drctn;
+                        real * grd;
+                        int nwsrf = 0;
+                        int nsrf = 0;
+                        int * srf_nds;
+
+                        real rea = ZERO;
+                        real ** srfpts;
+
+                        srfpts = get_2d_representation_ils ( &nsrf, &drctn, &grd, &fine, inppar->surfacecutoff, nwsrf, srf_nds, inppar->direction, &rea );
+
+                        // get distance again
+
+                        int mnnd;
+                        dstnc[r] = get_distance_to_surface ( &mnnd, &fine, nsrf, srfpts, drctn, grd, atoms, fakemask, fakenum, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+
+                        for ( l=0; l<nsrf; l++ )
+                            free ( srfpts[l] );
+
+                        if ( nwsrf )
+                            free ( srf_nds );
+
+                        free ( grd );
+                        free ( srfpts );
+                        free ( drctn );
+
+                        free ( fine.atoms );
+                        free ( fine.voxels );
+                    }
 
                     ind = ( int ) floor ( dstnc[r] / inppar->profileres );
 

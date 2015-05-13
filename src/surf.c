@@ -201,7 +201,7 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
 
         // get index of voxel where atom is sitting
         //
-        get_index_triple ( index, &(atoms[mask[a]].coords[0]), pbc, resarr, periodic );
+        get_index_triple ( index, &(atoms[mask[a]].coords[0]), pbc, surface.origin, surface.n, resarr, periodic );
 
         // then determine mni, mxi, ... and so on
 
@@ -450,7 +450,7 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
     return finalsurf;
 }
 
-real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int * direction, real * grad, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic )
+real get_distance_to_surface ( int * mnnd, cube_t * surface, int nsurf, real ** surfpts, int * direction, real * grad, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic )
 {
     int k, l;
     int crrnt[DIM];
@@ -474,7 +474,7 @@ real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int
 
     dstnc = find_minimum_1d_real (&min, dsts, nsurf );
 
-    get_index_triple ( crrnt, com, pbc, dx, periodic );
+    get_index_triple ( crrnt, com, pbc, surface->origin, surface->n, dx, periodic );
 
     int lower[DIM], upper[DIM];
 
@@ -507,6 +507,7 @@ real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int
     free ( dsts );
     free ( dx );
 
+    *mnnd = min;
     return dstnc;
 
 }
