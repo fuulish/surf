@@ -365,9 +365,6 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                     int i;
 
-                    // for ( i=0; i<inppar->numfrags; i++ )
-                    //     inppar->fragments[i] = (char *) malloc(MAXSTRLEN * sizeof(char));
-
                     i = 0;
                     dummy = strtok_r(NULL, " ", &save_ptr);
                     inppar->fragtotnatoms = 0;
@@ -403,17 +400,9 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                         dummy = strtok_r(NULL, " ", &save_ptr);
 
-                        // strcat(inppar->fragmask, (inppar->fragments)[i]);
-                        
-                        // if ( dummy != NULL )
-                        //     strcat(tmpfrg, ",");
-
-                        // printf("%s\n", (inppar->fragments)[i]);
                         atom_t *dumatom;
-                        // check here, in principle nothing should happen, because we work with "indices" and then the atoms never get touched in get_mask
-
                         char symdex[8] = "indices";
-                        // printf("%s\n", tmpfrg);
+
                         inppar->natomsfrag[i] = get_mask ( &(inppar->fragments[i]), symdex, &(tmpfrg[0]), inppar->natomsfrag[i], dumatom, 0 );
 
                         int k;
@@ -421,17 +410,6 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                             printf("%5i", inppar->fragments[i][k]);
                         printf("\n");
 
-                        // put here later, does the last "," hurt the get_mask function?
-                        // inppar->fragtotnatoms += inppar->natomsfrag[i];
-
-                        // int tmplen = strlen(dummy);
-                        // char buffer[MAXSTRLEN] = "";
-
-                        // strncpy(&buffer[0], dummy, tmplen-1);
-                        // strcat((inppar->fragments)[i], buffer);
-                        // inppar->natomsfrag[i] += 1;
-
-                        // 
                         i++;
                     }
                 }
