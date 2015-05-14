@@ -541,8 +541,18 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             {
                 inppar->localsurfint = 1;
 
-                // dummy = strtok_r ( NULL, " ", &save_ptr );
-                inppar->ldst = atof ( value );
+                real conv = 1.;
+
+                if ( strstr ( dummy, "ANG" ) != NULL ) {
+                    conv = ANG2BOHR;
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
+                }
+                else if ( strstr ( dummy, "NM" ) != NULL ) {
+                    conv = NM2BOHR;
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
+                }
+
+                inppar->ldst = conv * atof ( dummy );
 
                 dummy = strtok_r ( NULL, " ", &save_ptr );
                 inppar->lint = atoi ( dummy );
