@@ -376,15 +376,74 @@ int tanalize ( input_t * inppar )
                         //real cboxv[DIM][DIM];
                         int cn[DIM];
 
-                        int l, m;
+                        int l, m, n;
 
                         for ( l=0; l<DIM; l++ ) {
                             origin[l] = surface.voxels[ivx].coords[l] - inppar->lint * dx[l];
                             cn[l] = ( inppar->lint*2 + 1 );
+
+                            // printf("%21.10f\n", origin[l] / dx[l]);
+                            // for ( m=0; m<DIM; m++ )
+                            //     printf("%21.10f", surface.boxv[l][m]);
+                            // printf("\n");
                         }
 
                         cube_t cutcube, fine;
                         cutcube = initialize_cube ( origin, surface.boxv, cn, surface.atoms, surface.natoms );
+
+                        printf("%21.10f %21.10f %21.10f\n", cutcube.boxv[0][0], cutcube.boxv[1][1], cutcube.boxv[2][2]);
+
+                        // assign the data from the original cube file into small cutout
+
+                        int mnx, mxx, mny, mxy, mnz, mxz;
+                        mnx = ix[0] - inppar->lint;
+                        mxx = ix[0] + inppar->lint;
+
+                        mny = ix[1] - inppar->lint;
+                        mxy = ix[1] + inppar->lint;
+
+                        mnz = ix[2] - inppar->lint;
+                        mxz = ix[2] + inppar->lint;
+
+                        int oindx, nindx;
+
+                        // printf("%i %i %i %i %i %i\n", mnx, mxx, mny, mxy, mnz, mxz);
+
+                        int cnl = 0;
+                        int cnm = 0;
+                        int cnn = 0;
+
+                        int il, im, in;
+
+                        cnl = 0;
+                        for ( l=mnx; l<mxx; l++ ) {
+                            cnm = 0;
+                            for ( m=mny; m<mxy; m++ ) {
+                                cnn = 0;
+                                for ( n=mnz; n<mxz; n++ ) {
+                                    periodify_indices ( &il, &(surface.n[0]), &l, 1 );
+                                    periodify_indices ( &im, &(surface.n[1]), &m, 1 );
+                                    periodify_indices ( &in, &(surface.n[2]), &n, 1 );
+
+                                    oindx = get_index ( surface.n, il, im, in );
+                                    nindx = get_index ( cutcube.n, cnl, cnm, cnn );
+
+                                    // printf("%5i %5i %5i %5i %5i %5i\n", l, m, n, cnl, cnm, cnn);
+                                    cutcube.voxels[nindx].data = surface.voxels[oindx].data;
+
+                                    cnn++;
+                                }
+                                cnm++;
+                            }
+                            cnl++;
+                        }
+                        // printf("%21.10f %21.10f %21.10f\n", cutcube.origin[0], cutcube.origin[1], cutcube.origin[2]);
+
+                        char tmp[MAXSTRLEN];
+                        sprintf(tmp, "%s%i_%s", inppar->outputprefix, r, "test_local-interpolation.cube");
+                        write_cubefile(tmp, &cutcube);
+
+                        // printf("%21.10f %21.10f %21.10f\n", cutcube.origin[0], cutcube.origin[1], cutcube.origin[2]);
 
                         // interpolate in that region
 
@@ -394,6 +453,8 @@ int tanalize ( input_t * inppar )
                         else if ( inppar->interpolkind == INTERPOLATE_BSPLINES )
                             fine = interpolate_cube_bsplines ( &cutcube, inppar->postinterpolate );
 #endif
+
+                        // printf("%21.10f %21.10f %21.10f\n\n", fine.origin[0], fine.origin[1], fine.origin[2]);
 
                         free ( cutcube.atoms );
                         free ( cutcube.voxels );
@@ -410,6 +471,36 @@ int tanalize ( input_t * inppar )
                         real ** srfpts;
 
                         srfpts = get_2d_representation_ils ( &nsrf, &drctn, &grd, &fine, inppar->surfacecutoff, nwsrf, srf_nds, inppar->direction, &rea );
+
+                        if ( inppar->surfxyz ) {
+                            FILE *fsxyzal;
+
+                            sprintf(tmp, "%s%i_%s", inppar->outputprefix, r, "test_atrep_surface.xyz");
+                            fsxyzal = fopen(&tmp[0], "w");;
+
+                            int a, g, k;
+
+                            fprintf ( fsxyzal, "%i\n\n", fine.natoms+nsurf );
+
+                            for ( a=0; a<fine.natoms; a++ ) {
+                                fprintf ( fsxyzal, "    %s", fine.atoms[a].symbol );
+                                for ( k=0; k<DIM; k++ ) {
+                                    fprintf ( fsxyzal, "    %21.10f", fine.atoms[a].coords[k]*BOHR );
+                                }
+
+                                fprintf ( fsxyzal, "\n");
+                            }
+
+                            for ( g=0; g<nsurf; g++ ) {
+                                fprintf(fsxyzal, "%5s", "X");
+                                for ( k=0; k<DIM; k++ ) {
+                                    fprintf ( fsxyzal, "    %21.10f", BOHR * srfpts[g][k]);
+                                }
+                                fprintf( fsxyzal, "\n" );
+                            }
+
+                            fclose ( fsxyzal );
+                        }
 
                         // get distance again
 
