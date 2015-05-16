@@ -372,7 +372,7 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
 }
 
 #ifdef HAVE_EINSPLINE
-cube_t interpolate_cube_bsplines ( cube_t * original, int factor )
+cube_t interpolate_cube_bsplines ( cube_t * original, int factor, int periodic )
 {
     int i, j, k, indx;
 
@@ -385,7 +385,7 @@ cube_t interpolate_cube_bsplines ( cube_t * original, int factor )
     real rfct = (real) factor;
 
     // create 3D spline object
-	UBspline_3d_s *spline_3d_xyz = get_cube_bsplines ( original );
+	UBspline_3d_s *spline_3d_xyz = get_cube_bsplines ( original, periodic );
 
     // initialize new and fine cube (first, set dimensions, second initialize cube)
     for ( i=0; i<DIM; i++ ) {
@@ -420,7 +420,7 @@ cube_t interpolate_cube_bsplines ( cube_t * original, int factor )
     return fine;
 }
 
-UBspline_3d_s * get_cube_bsplines ( cube_t * cube )
+UBspline_3d_s * get_cube_bsplines ( cube_t * cube, int periodic )
 {
     int i, j, k;
     real dx[DIM];
@@ -442,10 +442,20 @@ UBspline_3d_s * get_cube_bsplines ( cube_t * cube )
     z_grid.end = cube->origin[2]+cube->n[2]*dx[2];
     z_grid.num = cube->n[2];
 
+    BCtype_s xBC, yBC, zBC;
+
     // boundary conditions (periodic)
-	BCtype_s xBC = {PERIODIC, PERIODIC , cube->origin[0], cube->origin[0]};
-	BCtype_s yBC = {PERIODIC, PERIODIC , cube->origin[1], cube->origin[1]};
-	BCtype_s zBC = {PERIODIC, PERIODIC , cube->origin[2], cube->origin[2]};
+    if ( periodic ) {
+	    xBC = set_boundary_conditions_bsplines ( PERIODIC, PERIODIC, cube->origin[0], cube->origin[0] );
+	    yBC = set_boundary_conditions_bsplines ( PERIODIC, PERIODIC, cube->origin[1], cube->origin[1] );
+	    zBC = set_boundary_conditions_bsplines ( PERIODIC, PERIODIC, cube->origin[2], cube->origin[2] );
+    }
+    else {
+        // check here, need to figure out correct way of getting non-periodic BSpline, this looks okayish so far
+	    xBC = set_boundary_conditions_bsplines ( NATURAL, NATURAL, cube->origin[0], cube->origin[0] );
+	    yBC = set_boundary_conditions_bsplines ( NATURAL, NATURAL, cube->origin[1], cube->origin[1] );
+	    zBC = set_boundary_conditions_bsplines ( NATURAL, NATURAL, cube->origin[2], cube->origin[2] );
+    }
 
     float * data = (float *) malloc(cube->nvoxels * sizeof ( float ));
 
@@ -461,4 +471,18 @@ UBspline_3d_s * get_cube_bsplines ( cube_t * cube )
 
     return spline_3d_xyz;
 }
+
+BCtype_s set_boundary_conditions_bsplines ( bc_code lp, bc_code rp, float lVal, float rVal )
+{
+    BCtype_s bc;
+
+    bc.lCode = lp;
+    bc.rCode = rp;
+
+    bc.lVal = lVal;
+    bc.rVal = rVal;
+
+    return bc;
+}
+
 #endif

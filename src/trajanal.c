@@ -242,7 +242,7 @@ int tanalize ( input_t * inppar )
                         fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate );
 #ifdef HAVE_EINSPLINE
                     else if ( inppar->interpolkind == INTERPOLATE_BSPLINES )
-                        fine = interpolate_cube_bsplines ( &surface, inppar->postinterpolate );
+                        fine = interpolate_cube_bsplines ( &surface, inppar->postinterpolate, inppar->periodic );
 #endif
 
                     free ( surface.atoms );
@@ -442,7 +442,7 @@ int tanalize ( input_t * inppar )
                             fine = interpolate_cube_trilinear ( &cutcube, inppar->postinterpolate );
 #ifdef HAVE_EINSPLINE
                         else if ( inppar->interpolkind == INTERPOLATE_BSPLINES )
-                            fine = interpolate_cube_bsplines ( &cutcube, inppar->postinterpolate );
+                            fine = interpolate_cube_bsplines ( &cutcube, inppar->postinterpolate, 0 );
 #endif
 
                         // printf("%21.10f %21.10f %21.10f\n\n", fine.origin[0], fine.origin[1], fine.origin[2]);
