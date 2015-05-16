@@ -296,16 +296,7 @@ int tanalize ( input_t * inppar )
 
                 int a, g, k;
 
-                fprintf ( fsxyzal, "%i\n\n", surface.natoms+nsurf );
-
-                for ( a=0; a<surface.natoms; a++ ) {
-                    fprintf ( fsxyzal, "    %s", surface.atoms[a].symbol );
-                    for ( k=0; k<DIM; k++ ) {
-                        fprintf ( fsxyzal, "    %21.10f", surface.atoms[a].coords[k]*BOHR );
-                    }
-
-                    fprintf ( fsxyzal, "\n");
-                }
+                fprintf ( fsxyzal, "%i\n\n", nsurf );
 
                 for ( g=0; g<nsurf; g++ ) {
                     fprintf(fsxyzal, "%5s", "X");
@@ -480,18 +471,9 @@ int tanalize ( input_t * inppar )
 
                             int a, g, k;
 
-                            fprintf ( fsxyzal, "%i\n\n", fine.natoms+nsurf );
+                            fprintf ( fsxyzal, "%i\n\n", nsrf );
 
-                            for ( a=0; a<fine.natoms; a++ ) {
-                                fprintf ( fsxyzal, "    %s", fine.atoms[a].symbol );
-                                for ( k=0; k<DIM; k++ ) {
-                                    fprintf ( fsxyzal, "    %21.10f", fine.atoms[a].coords[k]*BOHR );
-                                }
-
-                                fprintf ( fsxyzal, "\n");
-                            }
-
-                            for ( g=0; g<nsurf; g++ ) {
+                            for ( g=0; g<nsrf; g++ ) {
                                 fprintf(fsxyzal, "%5s", "X");
                                 for ( k=0; k<DIM; k++ ) {
                                     fprintf ( fsxyzal, "    %21.10f", BOHR * srfpts[g][k]);
