@@ -283,7 +283,7 @@ int tanalize ( input_t * inppar )
             real area = ZERO;
             real ** surfpts;
 
-            surfpts = get_2d_representation_ils ( &nsurf, &direction, &grad, &surface, inppar->surfacecutoff, newsurf, surf_inds, inppar->direction, &area );
+            surfpts = get_2d_representation_ils ( &nsurf, &direction, &grad, &surface, inppar->surfacecutoff, newsurf, surf_inds, inppar->direction, &area, inppar->periodic );
 
             ntotarea += area;
 
@@ -461,7 +461,7 @@ int tanalize ( input_t * inppar )
                         real rea = ZERO;
                         real ** srfpts;
 
-                        srfpts = get_2d_representation_ils ( &nsrf, &drctn, &grd, &fine, inppar->surfacecutoff, nwsrf, srf_nds, inppar->direction, &rea );
+                        srfpts = get_2d_representation_ils ( &nsrf, &drctn, &grd, &fine, inppar->surfacecutoff, nwsrf, srf_nds, inppar->direction, &rea, 0 );
 
                         if ( inppar->surfxyz ) {
                             FILE *fsxyzal;
