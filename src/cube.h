@@ -26,7 +26,7 @@ void get_cell_pointer(cube_t * cube, real * cell);
 real * get_box_volels(cube_t * cube);
 void get_box_volels_pointer(cube_t * cube, real * dx);
 void get_box_areas_pointer (real * da, cube_t * cube, real * dx );
-cube_t interpolate_cube_trilinear ( cube_t * original, int factor );
+cube_t interpolate_cube_trilinear ( cube_t * original, int factor, int periodic );
 #ifdef HAVE_EINSPLINE
 cube_t interpolate_cube_bsplines ( cube_t * original, int factor, int periodic );
 #include <einspline/bspline_base.h>

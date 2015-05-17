@@ -161,7 +161,7 @@ typedef struct input_s
     int normalization;
     int localsurfint;
     int lint;
-    int ldst;
+    real ldst;
 } input_t;
 
 typedef struct list_s

@@ -345,7 +345,7 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
     for ( i=0; i<DIM; i++ )
         surfpts[i] = (real *) malloc ( surface->nvoxels * sizeof ( real ) );
 
-    int uplo;
+    int uplo = 1;
     int mxd[DIM];
 
     for ( k=0; k<DIM; k++ )
@@ -369,12 +369,9 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 
                 for ( d=dstrt; d<dstp; d++ ) {
 
-                    if ( ! (periodic) ) {
+                    if ( ! (periodic) )
                         if ( ix[d] == mxd[d] )
-                            uplo = -1;
-                        else
-                            uplo = 1;
-                    }
+                            continue;
 
                     fndsrf = check_if_surface_voxel ( &upper, &lower, tmpdt, surface, ix, d, surfcut, uplo, periodic );
 
@@ -480,7 +477,10 @@ real get_distance_to_surface ( int * mnnd, cube_t * surface, int nsurf, real ** 
     get_center_of_mass ( com, atoms, refmask, nref);
 
     for ( k=0; k<nsurf; k++ )
-        dsts[k] = get_distance_periodic ( surfpts[k], com, pbc );
+        if ( periodic )
+            dsts[k] = get_distance_periodic ( surfpts[k], com, pbc );
+        else
+            dsts[k] = get_distance ( surfpts[k], com );
 
     int min = 0;
 

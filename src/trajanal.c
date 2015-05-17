@@ -239,7 +239,7 @@ int tanalize ( input_t * inppar )
                     cube_t fine;
 
                     if ( inppar->interpolkind == INTERPOLATE_TRILINEAR )
-                        fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate );
+                        fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate, inppar->periodic );
 #ifdef HAVE_EINSPLINE
                     else if ( inppar->interpolkind == INTERPOLATE_BSPLINES )
                         fine = interpolate_cube_bsplines ( &surface, inppar->postinterpolate, inppar->periodic );
@@ -349,7 +349,7 @@ int tanalize ( input_t * inppar )
                     int mnnd;
                     dstnc[r] = get_distance_to_surface ( &mnnd, &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
-                    if ( ( inppar->postinterpolate > 1 ) && ( inppar->localsurfint ) && ( dstnc[r] < inppar->ldst ) ) {
+                    if ( ( inppar->postinterpolate > 1 ) && ( inppar->localsurfint ) && ( fabs ( dstnc[r] ) < inppar->ldst ) ) {
 
                         // need index of point on surface
                         // this is mnnd
@@ -382,19 +382,21 @@ int tanalize ( input_t * inppar )
                         cube_t cutcube, fine;
                         cutcube = initialize_cube ( origin, surface.boxv, cn, surface.atoms, surface.natoms );
 
-                        printf("%21.10f %21.10f %21.10f\n", cutcube.boxv[0][0], cutcube.boxv[1][1], cutcube.boxv[2][2]);
+                        // printf("%21.10f %21.10f %21.10f\n", cutcube.boxv[0][0], cutcube.boxv[1][1], cutcube.boxv[2][2]);
 
                         // assign the data from the original cube file into small cutout
 
                         int mnx, mxx, mny, mxy, mnz, mxz;
+
+                        // check here, this was just a quick work-around
                         mnx = ix[0] - inppar->lint;
-                        mxx = ix[0] + inppar->lint;
+                        mxx = ix[0] + inppar->lint + 1;
 
                         mny = ix[1] - inppar->lint;
-                        mxy = ix[1] + inppar->lint;
+                        mxy = ix[1] + inppar->lint + 1;
 
                         mnz = ix[2] - inppar->lint;
-                        mxz = ix[2] + inppar->lint;
+                        mxz = ix[2] + inppar->lint + 1;
 
                         int oindx, nindx;
 
@@ -431,7 +433,7 @@ int tanalize ( input_t * inppar )
                         // printf("%21.10f %21.10f %21.10f\n", cutcube.origin[0], cutcube.origin[1], cutcube.origin[2]);
 
                         char tmp[MAXSTRLEN];
-                        sprintf(tmp, "%s%i_%s", inppar->outputprefix, r, "test_local-interpolation.cube");
+                        sprintf(tmp, "%s%i_%s", inppar->outputprefix, r, "test_local-non-interpolation.cube");
                         write_cubefile(tmp, &cutcube);
 
                         // printf("%21.10f %21.10f %21.10f\n", cutcube.origin[0], cutcube.origin[1], cutcube.origin[2]);
@@ -439,12 +441,14 @@ int tanalize ( input_t * inppar )
                         // interpolate in that region
 
                         if ( inppar->interpolkind == INTERPOLATE_TRILINEAR )
-                            fine = interpolate_cube_trilinear ( &cutcube, inppar->postinterpolate );
+                            fine = interpolate_cube_trilinear ( &cutcube, inppar->postinterpolate, 0 );
 #ifdef HAVE_EINSPLINE
                         else if ( inppar->interpolkind == INTERPOLATE_BSPLINES )
                             fine = interpolate_cube_bsplines ( &cutcube, inppar->postinterpolate, 0 );
 #endif
 
+                        sprintf(tmp, "%s%i_%s", inppar->outputprefix, r, "test_local-interpolation.cube");
+                        write_cubefile(tmp, &fine);
                         // printf("%21.10f %21.10f %21.10f\n\n", fine.origin[0], fine.origin[1], fine.origin[2]);
 
                         free ( cutcube.atoms );
@@ -462,6 +466,7 @@ int tanalize ( input_t * inppar )
                         real ** srfpts;
 
                         srfpts = get_2d_representation_ils ( &nsrf, &drctn, &grd, &fine, inppar->surfacecutoff, nwsrf, srf_nds, inppar->direction, &rea, 0 );
+                        // printf("previous number of surface points: %i\n", nsrf);
 
                         if ( inppar->surfxyz ) {
                             FILE *fsxyzal;
@@ -487,7 +492,9 @@ int tanalize ( input_t * inppar )
                         // get distance again
 
                         int mnnd;
+                        // printf("outdist: %21.10f", dstnc[r]);
                         dstnc[r] = get_distance_to_surface ( &mnnd, &fine, nsrf, srfpts, drctn, grd, atoms, fakemask, fakenum, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+                        // printf("%21.10f, number of surface points %i\n", dstnc[r], nsrf);
 
                         for ( l=0; l<nsrf; l++ )
                             free ( srfpts[l] );

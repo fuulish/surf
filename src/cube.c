@@ -278,7 +278,7 @@ void get_box_areas_pointer (real * da, cube_t * cube, real * dx )
 
 }
 
-cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
+cube_t interpolate_cube_trilinear ( cube_t * original, int factor, int periodic )
 {
     int i, j, k;
     cube_t fine;
@@ -290,6 +290,7 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
     int x, y, z;
     int x000, x100, x010, x110, x001, x101, x011, x111;
     real xd, yd, zd;
+    real dx[DIM];
 
     real rfct = (real) factor;
 
@@ -305,6 +306,8 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
     }
 
     fine = initialize_cube(original->origin, cboxv, cn, original->atoms, original->natoms);
+
+    get_box_volels_pointer(original, dx);
 
     count = 0;
     fctcnt = 0;
@@ -330,14 +333,25 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
                 yup = y+1;
                 zup = z+1;
 
-                if ( zup == original->n[2] )
-                    periodify_indices ( &zup, &(original->n[2]), &zup, 1);
+                if ( periodic ) {
+                    if ( zup == original->n[2] )
+                        periodify_indices ( &zup, &(original->n[2]), &zup, 1);
 
-                if ( yup == original->n[1] )
-                    periodify_indices ( &yup, &(original->n[1]), &yup, 1);
+                    if ( yup == original->n[1] )
+                        periodify_indices ( &yup, &(original->n[1]), &yup, 1);
 
-                if ( xup == original->n[0] )
-                    periodify_indices ( &xup, &(original->n[0]), &xup, 1);
+                    if ( xup == original->n[0] )
+                        periodify_indices ( &xup, &(original->n[0]), &xup, 1);
+
+                }
+                else {
+
+                    if ( ( zup == original->n[2] ) || ( yup == original->n[1] ) || ( xup == original->n[0] ) ) {
+                        fine.voxels[count].data = original->voxels[index].data;
+                        continue;
+                    }
+
+                }
 
                 xd = (fine.voxels[count].coords[0] - original->voxels[index].coords[0]) / original->boxv[0][0];
                 yd = (fine.voxels[count].coords[1] - original->voxels[index].coords[1]) / original->boxv[1][1];
