@@ -289,6 +289,8 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor, int periodic 
     int index;
     int x, y, z;
     int x000, x100, x010, x110, x001, x101, x011, x111;
+    int m000, m100, m010, m110, m001, m101, m011, m111;
+    real x000_dat, x100_dat, x010_dat, x110_dat, x001_dat, x101_dat, x011_dat, x111_dat;
     real xd, yd, zd;
     real dx[DIM];
 
@@ -321,6 +323,7 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor, int periodic 
                 if ( fctcnt == factor )
                     fctcnt = 0;
 
+                // check here, should this be roundf?
                 if ( fctcnt == 0 ) {
                     x = (int) floor((float)i/rfct);
                     y = (int) floor((float)j/rfct);
@@ -344,14 +347,6 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor, int periodic 
                         periodify_indices ( &xup, &(original->n[0]), &xup, 1);
 
                 }
-                else {
-
-                    if ( ( zup == original->n[2] ) || ( yup == original->n[1] ) || ( xup == original->n[0] ) ) {
-                        fine.voxels[count].data = original->voxels[index].data;
-                        continue;
-                    }
-
-                }
 
                 xd = (fine.voxels[count].coords[0] - original->voxels[index].coords[0]) / original->boxv[0][0];
                 yd = (fine.voxels[count].coords[1] - original->voxels[index].coords[1]) / original->boxv[1][1];
@@ -366,10 +361,108 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor, int periodic 
                 x011 = (zup) + original->n[2] * ( (yup) + original->n[1] * x );
                 x111 = (zup) + original->n[2] * ( (yup) + original->n[1] * (xup) );
 
-                c00 = original->voxels[x000].data * ( 1 - xd ) + original->voxels[x100].data * xd;
-                c10 = original->voxels[x010].data * ( 1 - xd ) + original->voxels[x110].data * xd;
-                c01 = original->voxels[x001].data * ( 1 - xd ) + original->voxels[x101].data * xd;
-                c11 = original->voxels[x011].data * ( 1 - xd ) + original->voxels[x111].data * xd;
+                // this will contain the value of the voxel below for non-periodic calculation
+                // and will not contain any reasonable values
+
+                if ( periodic ) {
+                    x000_dat = original->voxels[x000].data;
+                    x100_dat = original->voxels[x100].data;
+                    x010_dat = original->voxels[x010].data;
+                    x110_dat = original->voxels[x110].data;
+                    x001_dat = original->voxels[x001].data;
+                    x101_dat = original->voxels[x101].data;
+                    x011_dat = original->voxels[x011].data;
+                    x111_dat = original->voxels[x111].data;
+                }
+                else {
+                    if ( ( zup == original->n[2] ) || ( yup == original->n[1] ) || ( xup == original->n[0] ) ) {
+                        m100 = z + original->n[2] * ( y + original->n[1] * (x-1) );
+                        m010 = z + original->n[2] * ( (y-1) + original->n[1] * x );
+                        m110 = z + original->n[2] * ( (y-1) + original->n[1] * (x-1) );
+                        m001 = (z-1) + original->n[2] * ( y + original->n[1] * x );
+                        m101 = (z-1) + original->n[2] * ( y + original->n[1] * (x-1) );
+                        m011 = (z-1) + original->n[2] * ( (y-1) + original->n[1] * x );
+                        m111 = (z-1) + original->n[2] * ( (y-1) + original->n[1] * (x-1) );
+
+                        x000_dat = original->voxels[x000].data;
+                        x100_dat = original->voxels[x000].data;
+                        x010_dat = original->voxels[x000].data;
+                        x110_dat = original->voxels[x000].data;
+                        x001_dat = original->voxels[x000].data;
+                        x101_dat = original->voxels[x000].data;
+                        x011_dat = original->voxels[x000].data;
+                        x111_dat = original->voxels[x000].data;
+
+                        //now extrapolate the new data from the gradient to the voxel below the current voxel
+
+                        // if ( ( zup == original->n[2] ) && ( yup == original->n[1] ) && ( xup == original->n[0] ) )
+                            // no voxel data needs to be changed, because everything needs to be extrapolated
+
+                        if ( ( zup == original->n[2] ) && ( yup == original->n[1] ) && ( xup != original->n[0] ) )
+                            x100_dat = original->voxels[x100].data;
+
+                        else if ( ( zup == original->n[2] ) && ( yup != original->n[1] ) && ( xup == original->n[0] ) )
+                            x010_dat = original->voxels[x010].data;
+
+                        else if ( ( zup != original->n[2] ) && ( yup == original->n[1] ) && ( xup == original->n[0] ) )
+                            x001_dat = original->voxels[x001].data;
+
+                        else if ( ( zup != original->n[2] ) && ( yup != original->n[1] ) && ( xup == original->n[0] ) )
+                            x011_dat = original->voxels[x011].data;
+
+                        else if ( ( zup != original->n[2] ) && ( yup == original->n[1] ) && ( xup != original->n[0] ) )
+                            x101_dat = original->voxels[x000].data;
+
+                        else if ( ( zup == original->n[2] ) && ( yup != original->n[1] ) && ( xup != original->n[0] ) )
+                            x110_dat = original->voxels[x110].data;
+
+                        else if ( ( zup != original->n[2] ) && ( yup != original->n[1] ) && ( xup != original->n[0] ) )
+                            x111_dat = original->voxels[x000].data;
+
+                        if ( zup == original->n[2] ) {
+                            real delz = original->voxels[x000].data - original->voxels[m001].data;
+
+                            x001_dat += 2.*delz;
+                            x101_dat += 2.*delz;
+                            x011_dat += 2.*delz;
+                            x111_dat += 2.*delz;
+
+                        }
+
+                        if ( yup == original->n[1] ) {
+                            real dely = original->voxels[x000].data - original->voxels[m010].data;
+
+                            x010_dat += 2.*dely;
+                            x110_dat += 2.*dely;
+                            x011_dat += 2.*dely;
+                            x111_dat += 2.*dely;
+                        }
+
+                        if ( xup == original->n[0] ) {
+                            real delx = original->voxels[x000].data - original->voxels[m100].data;
+
+                            x100_dat += 2.*delx;
+                            x110_dat += 2.*delx;
+                            x101_dat += 2.*delx;
+                            x111_dat += 2.*delx;
+                        }
+                    }
+                    else {
+                        x000_dat = original->voxels[x000].data;
+                        x100_dat = original->voxels[x100].data;
+                        x010_dat = original->voxels[x010].data;
+                        x110_dat = original->voxels[x110].data;
+                        x001_dat = original->voxels[x001].data;
+                        x101_dat = original->voxels[x101].data;
+                        x011_dat = original->voxels[x011].data;
+                        x111_dat = original->voxels[x111].data;
+                    }
+                }
+
+                c00 = x000_dat * ( 1 - xd ) + x100_dat * xd;
+                c10 = x010_dat * ( 1 - xd ) + x110_dat * xd;
+                c01 = x001_dat * ( 1 - xd ) + x101_dat * xd;
+                c11 = x011_dat * ( 1 - xd ) + x111_dat * xd;
 
                 c0 = c00 * ( 1 - yd) + c10 * yd;
                 c1 = c01 * ( 1 - yd) + c11 * yd;

@@ -432,9 +432,11 @@ int tanalize ( input_t * inppar )
                         }
                         // printf("%21.10f %21.10f %21.10f\n", cutcube.origin[0], cutcube.origin[1], cutcube.origin[2]);
 
+#ifdef DEBUG
                         char tmp[MAXSTRLEN];
                         sprintf(tmp, "%s%i_%s", inppar->outputprefix, r, "test_local-non-interpolation.cube");
                         write_cubefile(tmp, &cutcube);
+#endif
 
                         // printf("%21.10f %21.10f %21.10f\n", cutcube.origin[0], cutcube.origin[1], cutcube.origin[2]);
 
@@ -447,9 +449,11 @@ int tanalize ( input_t * inppar )
                             fine = interpolate_cube_bsplines ( &cutcube, inppar->postinterpolate, 0 );
 #endif
 
+#ifdef DEGBU
                         sprintf(tmp, "%s%i_%s", inppar->outputprefix, r, "test_local-interpolation.cube");
                         write_cubefile(tmp, &fine);
                         // printf("%21.10f %21.10f %21.10f\n\n", fine.origin[0], fine.origin[1], fine.origin[2]);
+#endif
 
                         free ( cutcube.atoms );
                         free ( cutcube.voxels );
@@ -468,6 +472,7 @@ int tanalize ( input_t * inppar )
                         srfpts = get_2d_representation_ils ( &nsrf, &drctn, &grd, &fine, inppar->surfacecutoff, nwsrf, srf_nds, inppar->direction, &rea, 0 );
                         // printf("previous number of surface points: %i\n", nsrf);
 
+#ifdef DEBUG
                         if ( inppar->surfxyz ) {
                             FILE *fsxyzal;
 
@@ -488,6 +493,7 @@ int tanalize ( input_t * inppar )
 
                             fclose ( fsxyzal );
                         }
+#endif
 
                         // get distance again
 
