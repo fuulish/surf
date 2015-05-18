@@ -449,7 +449,7 @@ int tanalize ( input_t * inppar )
                             fine = interpolate_cube_bsplines ( &cutcube, inppar->postinterpolate, 0 );
 #endif
 
-#ifdef DEGBU
+#ifdef DEBUG
                         sprintf(tmp, "%s%i_%s", inppar->outputprefix, r, "test_local-interpolation.cube");
                         write_cubefile(tmp, &fine);
                         // printf("%21.10f %21.10f %21.10f\n\n", fine.origin[0], fine.origin[1], fine.origin[2]);
