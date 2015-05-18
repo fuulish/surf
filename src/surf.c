@@ -303,7 +303,7 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
         surf_inds = ( int * ) malloc ( ( surface->nvoxels + 1 ) * sizeof ( int ) );
 
     int crrnt, fndsrf;
-    real tmpdt[2];
+    real tmpdt[DIM];
     real t, tfin;
     real **surfpts;
     real dblsrfct = 2. * surfcut;
@@ -345,17 +345,25 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
     for ( i=0; i<DIM; i++ )
         surfpts[i] = (real *) malloc ( surface->nvoxels * sizeof ( real ) );
 
-    int uplo = 1;
     int mxd[DIM];
+    int mnd[DIM];
 
-    for ( k=0; k<DIM; k++ )
-        mxd[k] = surface->n[k] - 1;
+    if ( periodic )
+        for ( k=0; k<DIM; k++ ) {
+            mxd[k] = surface->n[k];
+            mnd[k] = 0;
+        }
+    else
+        for ( k=0; k<DIM; k++ ) {
+            mxd[k] = surface->n[k] - 1;
+            mnd[k] = 1;
+        }
 
-    for ( i=0; i<surface->n[0]; i++ )
-        for ( j=0; j<surface->n[1]; j++ ) {
+    for ( i=mnd[0]; i<mxd[0]; i++ )
+        for ( j=mnd[1]; j<mxd[1]; j++ ) {
 
             baseind = surface->n[2] * ( j + surface->n[1] * i);
-            for ( k=0; k<surface->n[2]; k++ ) {
+            for ( k=mnd[2]; k<mxd[2]; k++ ) {
 
                 crrnt = baseind + k;
                 fndsrf = 0;
@@ -369,11 +377,7 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 
                 for ( d=dstrt; d<dstp; d++ ) {
 
-                    if ( ! (periodic) )
-                        if ( ix[d] == mxd[d] )
-                            continue;
-
-                    fndsrf = check_if_surface_voxel ( &upper, &lower, tmpdt, surface, ix, d, surfcut, uplo, periodic );
+                    fndsrf = check_if_surface_voxel ( &upper, &lower, tmpdt, surface, ix, d, surfcut, periodic );
 
                     tpx[d] = ZERO;
                     lrdfnd += fndsrf;
@@ -381,15 +385,14 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 
                     if ( fndsrf ) {
                         grd[d] = surface->voxels[upper].data - surface->voxels[lower].data;
-                        grd[d] /= dx[d];
-                        grd[d] *= (real) uplo;
+                        grd[d] /= 2 * dx[d];
 
                         if ( ( fabs ( grd[d] ) ) > ( fabs ( mxgrd ) ) ) {
                             tmpdir[*nsurf] = d;
                             mxgrd = grd[d];
                             tgrd[*nsurf] = mxgrd;
 
-                            for ( l=0; l<2; l++ )
+                            for ( l=0; l<DIM; l++ )
                                 dt[l] = tmpdt[l];
                         }
                     }
@@ -403,11 +406,7 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 
                             *area += tmparea[d];
 
-                            t = lerp_to_t ( dt[0], dt[1], surfcut );
-
-                            if ( !(periodic) )
-                                if ( uplo < 0 )
-                                    t *= -1.;
+                            t = lerp_to_t ( dt[1], dt[2], surfcut );
 
                             tpx[d] = surface->voxels[crrnt].coords[d] + t * dx[d];
 
@@ -524,33 +523,35 @@ real get_distance_to_surface ( int * mnnd, cube_t * surface, int nsurf, real ** 
 
 }
 
-int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * surface, int * ix, int direction, real surfcut, int uplo, int periodic )
+int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * surface, int * ix, int direction, real surfcut, int periodic )
 {
     int k, l, ihi, ilo;
-    signed int inds[2][DIM];
+    signed int inds[DIM][DIM];
     int voxinds[DIM];
     int fndsrf = 0;
 
-    for ( k=0; k<2; k++ )
+    for ( k=0; k<DIM; k++ )
         for ( l=0; l<DIM; l++ )
             inds[k][l] = ix[l];
 
     // check here, this will invert the gradient calculation
-    inds[1][direction] += uplo;
+    inds[0][direction] -= 1;
+    inds[2][direction] += 1;
 
-    if ( periodic )
-        periodify_indices ( &(inds[1][direction]), &(surface->n[direction]), &(inds[1][direction]), 1 );
-    // periodify_indices ( &(inds[2][direction]), &(surface->n[direction]), &(inds[2][direction]), 1 );
+    if ( periodic ) {
+        periodify_indices ( &(inds[0][direction]), &(surface->n[direction]), &(inds[0][direction]), 1 );
+        periodify_indices ( &(inds[2][direction]), &(surface->n[direction]), &(inds[2][direction]), 1 );
+    }
 
-    for ( k=0; k<2; k++ ) {
+    for ( k=0; k<DIM; k++ ) {
         voxinds[k] = get_index ( surface->n, inds[k][0], inds[k][1], inds[k][2] );
         tmpdt[k] = surface->voxels[voxinds[k]].data;
     }
 
 #ifdef ALLSURFPOINTS
-//     if ( ( tmpdt[2] + tmpdt[0] ) < 2 * surfcut ) {
-//         fndsrf = 1;
-//     }
+    if ( ( tmpdt[2] + tmpdt[0] ) < 2 * surfcut ) {
+        fndsrf = 1;
+    }
 #else
     // or maybe the other way 'round
     // we could also set fndsrf to something more informative that will tell us which two voxels we should use!?
@@ -558,12 +559,16 @@ int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * su
     // if ( ( ( tmpdt[2] < surfcut ) && ( tmpdt[1] > surfcut ) && ( tmpdt[0] > surfcut ) ) ||
     // ( ( tmpdt[2] > surfcut ) && (tmpdt[1] > surfcut) &&  ( tmpdt[0] < surfcut ) ) )
 
-    if ( ( ( tmpdt[0] > surfcut ) && ( tmpdt[1] < surfcut ) ) ||
-         ( ( tmpdt[0] < surfcut ) && ( tmpdt[1] > surfcut ) ) )
+    // why exactly does this not work?
+    // if ( ( ( tmpdt[1] > surfcut ) && ( tmpdt[2] < surfcut ) ) ||
+    //      ( ( tmpdt[1] < surfcut ) && ( tmpdt[2] > surfcut ) ) )
+
+    if ( ( ( tmpdt[2] > surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] < surfcut ) ) ||
+         ( ( tmpdt[2] < surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] > surfcut ) ) )
         fndsrf = 1;
 #endif
 
-    *upper = voxinds[1];
+    *upper = voxinds[2];
     *lower = voxinds[0];
 
     return fndsrf;
