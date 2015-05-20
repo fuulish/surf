@@ -1494,14 +1494,14 @@ int xmol_snap_bytesize(FILE * fxmol)
     return bytelen;
 }
 
-void read_xtr_forward ( XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms )
+void read_xtr_forward ( XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms, matrix *box_xtc )
 {
     int i, j;
     // XDRFILE *xd_read;
     rvec *x_xtc;
     float prec_xtc = 1000.0;
     float time_xtc;
-    matrix box_xtc;
+    // matrix box_xtc;
     int step_xtc;
     int result_xtc;
 
@@ -1517,8 +1517,14 @@ void read_xtr_forward ( XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms
 
     for ( i=0; i<frwrd; i++ )
 #ifdef HAVE_XDRFILE
-        result_xtc = read_xtc(xd_read, natoms, &step_xtc, &time_xtc, box_xtc, x_xtc, &prec_xtc);
+        // check here, maybe we should use 'read_next_xtc'
+        result_xtc = read_xtc(xd_read, natoms, &step_xtc, &time_xtc, *box_xtc, x_xtc, &prec_xtc);
 #endif
+
+    int k, l;
+    for ( k=0; k<DIM; k++ )
+        for ( l=0; l<DIM; l++ )
+            (*box_xtc)[k][l] = NM2BOHR * (*box_xtc)[k][l];
 
     if ( exdrOK != result_xtc ) {
         printf("Something went wrong reading the XTC trajectory.\nMaybe not enough snapshots?\n");

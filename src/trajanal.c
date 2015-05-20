@@ -203,13 +203,23 @@ int tanalize ( input_t * inppar )
     int frwrd = inppar->start + 1;
     char * htw = "w";
     real *dx;
+    matrix box;
+    real pbc[DIM];
+
+    for ( i=0; i<DIM; i++ )
+        pbc[i] = inppar->pbc[i];
 
     for ( i=inppar->start; i<inppar->stop; i += inppar->stride )
     {
         /* read snapshot */
         if ( inppar->xdrread ) {
-            read_xtr_forward ( xd_read, frwrd, atoms, natoms );
+            read_xtr_forward ( xd_read, frwrd, atoms, natoms, &box );
             frwrd = inppar->stride;
+
+            int k;
+            for ( k=0; k<DIM; k++ )
+                pbc[k] = box[k][k];
+
         }
         else {
             xmolreader(fxmol, snapsize, i, atoms, natoms);
@@ -232,7 +242,7 @@ int tanalize ( input_t * inppar )
             char opref[MAXSTRLEN];
             sprintf(opref, "%s%i_", inppar->outputprefix, i);
 
-            surface = instant_surface_periodic ( mask, atoms, natoms, inppar->zeta, inppar->surfacecutoff, inppar->output, opref, inppar->pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
+            surface = instant_surface_periodic ( mask, atoms, natoms, inppar->zeta, inppar->surfacecutoff, inppar->output, opref, pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
 
             if ( inppar->postinterpolate > 1 ) {
                 cube_t fine;
@@ -262,13 +272,13 @@ int tanalize ( input_t * inppar )
                 vol = get_bulk_volume ( &surface, inppar->surfacecutoff );
 
                 if ( inppar->normalization == NORM_SLAB )
-                    vol = inppar->pbc[0]*inppar->pbc[1]*inppar->pbc[2] - vol;
+                    vol = pbc[0]*pbc[1]*pbc[2] - vol;
             }
             else
-                vol = inppar->pbc[0]*inppar->pbc[1]*inppar->pbc[2];
+                vol = pbc[0]*pbc[1]*pbc[2];
 
             // check here, depending on whether we want to look at stuff in the non-solvent phase or in the solvent phase we need to take different volumes
-            // printf("%21.10f%21.10f\n", vol, inppar->pbc[0]*inppar->pbc[1]*inppar->pbc[2]);
+            // printf("%21.10f%21.10f\n", vol, pbc[0]*pbc[1]*pbc[2]);
 
             ntotvol += vol;
 
@@ -340,7 +350,7 @@ int tanalize ( input_t * inppar )
                 // each thread should have about the same amount of work, so the atomic update will not be too harmful
 #pragma omp parallel for default(none) \
                 private(r,fakemask,fakenum,ind) \
-                shared(dstnc,nfrg,refmask,frags,inppar,surface,direction,natoms,opref,densprof,hndprof,atoms,nsurf,grad,surfpts)
+                shared(dstnc,nfrg,refmask,frags,inppar,surface,direction,natoms,opref,densprof,hndprof,atoms,nsurf,grad,surfpts,pbc)
 #endif
                 for ( r=0; r<nfrg; r++ ) {
 
@@ -353,7 +363,7 @@ int tanalize ( input_t * inppar )
                         fakenum = inppar->natomsfrag[r];
                     }
 
-                    dstnc[r] = get_distance_to_surface ( &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, inppar->pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+                    dstnc[r] = get_distance_to_surface ( &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
                     ind = ( int ) floor ( dstnc[r] / inppar->profileres );
 
@@ -421,7 +431,7 @@ int tanalize ( input_t * inppar )
             smarea = avarea;
 
             partdens = (real) natdens / ( avvol );
-            // partdens = (real) natdens / ( inppar->pbc[0] * inppar->pbc[1] * inppar->pbc[2]);
+            // partdens = (real) natdens / ( pbc[0] * pbc[1] * pbc[2]);
 
             factor = (real) counter * drdprof * smarea * partdens;
 

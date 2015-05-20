@@ -46,7 +46,11 @@ void parse_cmdline(input_t * inppar, char ** argv, int argc);
 void display_usage(void);
 void xmolreader(FILE * fxmol, int bytelen, int snap, atom_t * atoms, int natoms);
 int xmol_snap_bytesize(FILE * fxmol);
-void read_xtr_forward (XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms);
+#ifdef HAVE_XDR
+#include <xdrfile/xdrfile.h>
+#include <xdrfile/xdrfile_xtc.h>
+void read_xtr_forward (XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms, matrix *box_xtc);
+#endif
 void write_xyz ( FILE * xyz, atom_t * atoms, int natoms, char * comment );
 void read_roots_file ( char * rootsfile, int * nx, int * ny );
 void get_dimensions_roots ( char * fname, int * n1, int * n2 );
