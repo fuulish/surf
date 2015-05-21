@@ -537,6 +537,10 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 else if ( strstr ( value, "surface" ) != NULL )
                     inppar->normalization = NORM_SLAB;
             }
+            else if ((keywords[key] == "load_surface" ) )
+            {
+                inppar->load_surface = atoi ( value );
+            }
             else if ((keywords[key] == "dummy"))
             {
                 real conv = 1.;
@@ -888,6 +892,7 @@ void set_input_defaults(input_t * inppar)
     inppar->normalization = NORM_AVER;
     inppar->postinterpolate = 0;
     inppar->interpolkind = INTERPOLATE_TRILINEAR;
+    inppar->load_surface = 0;
 
     int i;
     for ( i=0; i<DIM; i++ )
