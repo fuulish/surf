@@ -590,10 +590,6 @@ real get_bulk_volume ( cube_t * surface, real surfcut )
 
 cube_t local_interpolation ( cube_t *cube, real *point, int lint, int interpolkind, int ninterpol, char *outputprefix, real *pbc, int periodic )
 {
-
-    // need index of point on surface
-    // this is mnnd
-
     // find which voxel that point belongs to
 
     int ix[DIM];

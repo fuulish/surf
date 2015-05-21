@@ -353,6 +353,9 @@ int tanalize ( input_t * inppar )
                     if ( ( inppar->postinterpolate > 1 ) && ( inppar->localsurfint ) && ( fabs ( dstnc[r] ) < inppar->ldst ) ) {
 
 
+                        // need index of point on surface
+                        // this is mnnd
+
                         cube_t fine = local_interpolation ( &surface, surfpts[mnnd], inppar->lint, inppar->interpolkind, inppar->postinterpolate, inppar->outputprefix, inppar->pbc, 0 );
                         // call local interpolation routine
 
