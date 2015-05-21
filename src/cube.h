@@ -34,3 +34,4 @@ cube_t interpolate_cube_bsplines ( cube_t * original, int factor, int periodic )
 UBspline_3d_s * get_cube_bsplines ( cube_t * cube, int periodic );
 BCtype_s set_boundary_conditions_bsplines ( bc_code lp, bc_code rp, float lVal, float rVal );
 #endif
+cube_t local_interpolation ( cube_t *cube, real *point, int lint, int interpolkind, int ninterpol, char *outputprefix, real *pbc, int periodic );

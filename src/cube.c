@@ -593,3 +593,112 @@ BCtype_s set_boundary_conditions_bsplines ( bc_code lp, bc_code rp, float lVal, 
 }
 
 #endif
+
+cube_t local_interpolation ( cube_t *cube, real *point, int lint, int interpolkind, int ninterpol, char *outputprefix, real *pbc, int periodic )
+{
+    // find which voxel that point belongs to
+
+    int ix[DIM];
+    int ivx;
+    real dx[DIM];
+
+    get_box_volels_pointer ( cube, dx );
+
+    get_index_triple ( ix, point, pbc, cube->origin, cube->n, dx, periodic );
+    ivx = get_index ( cube->n, ix[0], ix[1], ix[2] );
+
+    // create fake box around that point
+    real origin[DIM];
+    int cn[DIM];
+
+    int l, m, n;
+
+    for ( l=0; l<DIM; l++ ) {
+        origin[l] = cube->voxels[ivx].coords[l] - lint * dx[l];
+        cn[l] = ( lint*2 + 1 );
+    }
+
+    cube_t cutcube, fine;
+    cutcube = initialize_cube ( origin, cube->boxv, cn, cube->atoms, cube->natoms );
+
+    // assign the data from the original cube file into small cutout
+
+    int mnx, mxx, mny, mxy, mnz, mxz;
+
+    // check here, this was just a quick work-around
+    mnx = ix[0] - lint;
+    mxx = ix[0] + lint + 1;
+
+    mny = ix[1] - lint;
+    mxy = ix[1] + lint + 1;
+
+    mnz = ix[2] - lint;
+    mxz = ix[2] + lint + 1;
+
+    // check here, maybe just don't use the periodicity at all
+    if ( !(periodic) ) {
+        if ( ( mnx < 0 ) || ( mny < 0 ) || (mnz < 0 ) || ( mxx >= cube->n[0] ) || ( mxy >= cube->n[1] ) || ( mxz >= cube->n[2] ) ) {
+            printf("Would segfault, because non-periodic and local interpolation outside of the cube boundaries, so stopping now!\n");
+            exit ( 1 );
+        }
+    }
+
+    int oindx, nindx;
+
+    int cnl = 0;
+    int cnm = 0;
+    int cnn = 0;
+
+    int il, im, in;
+
+    cnl = 0;
+    for ( l=mnx; l<mxx; l++ ) {
+        cnm = 0;
+        for ( m=mny; m<mxy; m++ ) {
+            cnn = 0;
+            for ( n=mnz; n<mxz; n++ ) {
+                // check here!!!
+                if ( periodic ) {
+                    periodify_indices ( &il, &(cube->n[0]), &l, 1 );
+                    periodify_indices ( &im, &(cube->n[1]), &m, 1 );
+                    periodify_indices ( &in, &(cube->n[2]), &n, 1 );
+                }
+
+                oindx = get_index ( cube->n, il, im, in );
+                nindx = get_index ( cutcube.n, cnl, cnm, cnn );
+
+                cutcube.voxels[nindx].data = cube->voxels[oindx].data;
+
+                cnn++;
+            }
+            cnm++;
+        }
+        cnl++;
+    }
+
+#ifdef DEBUG
+    char tmp[MAXSTRLEN];
+    sprintf(tmp, "%s%i_%s", outputprefix, r, "test_local-non-interpolation.cube");
+    write_cubefile(tmp, &cutcube);
+#endif
+    // interpolate in that region
+
+    // check here, local interpolation is always done non-periodically right now (that is no problem, because the cutout should be assigned according to periodicity and local, periodic interpolation will lead to artifacts)
+    if ( interpolkind == INTERPOLATE_TRILINEAR )
+        fine = interpolate_cube_trilinear ( &cutcube, ninterpol, 0 );
+#ifdef HAVE_EINSPLINE
+    else if ( interpolkind == INTERPOLATE_BSPLINES )
+        fine = interpolate_cube_bsplines ( &cutcube, ninterpol, 0 );
+#endif
+
+#ifdef DEBUG
+    sprintf(tmp, "%s%i_%s", outputprefix, r, "test_local-interpolation.cube");
+    write_cubefile(tmp, &fine);
+#endif
+
+    free ( cutcube.atoms );
+    free ( cutcube.voxels );
+
+    return fine;
+
+}
