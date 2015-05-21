@@ -643,9 +643,12 @@ cube_t local_interpolation ( cube_t *cube, real *point, int lint, int interpolki
         for ( m=mny; m<mxy; m++ ) {
             cnn = 0;
             for ( n=mnz; n<mxz; n++ ) {
-                periodify_indices ( &il, &(cube->n[0]), &l, 1 );
-                periodify_indices ( &im, &(cube->n[1]), &m, 1 );
-                periodify_indices ( &in, &(cube->n[2]), &n, 1 );
+                // check here!!!
+                if ( periodic ) {
+                    periodify_indices ( &il, &(cube->n[0]), &l, 1 );
+                    periodify_indices ( &im, &(cube->n[1]), &m, 1 );
+                    periodify_indices ( &in, &(cube->n[2]), &n, 1 );
+                }
 
                 oindx = get_index ( cube->n, il, im, in );
                 nindx = get_index ( cutcube.n, cnl, cnm, cnn );
@@ -666,11 +669,12 @@ cube_t local_interpolation ( cube_t *cube, real *point, int lint, int interpolki
 #endif
     // interpolate in that region
 
+    // check here, local interpolation is always done non-periodically right now (that is no problem, because the cutout should be assigned according to periodicity and local, periodic interpolation will lead to artifacts)
     if ( interpolkind == INTERPOLATE_TRILINEAR )
-        fine = interpolate_cube_trilinear ( &cutcube, ninterpol, periodic );
+        fine = interpolate_cube_trilinear ( &cutcube, ninterpol, 0 );
 #ifdef HAVE_EINSPLINE
     else if ( interpolkind == INTERPOLATE_BSPLINES )
-        fine = interpolate_cube_bsplines ( &cutcube, ninterpol, periodic );
+        fine = interpolate_cube_bsplines ( &cutcube, ninterpol, 0 );
 #endif
 
 #ifdef DEBUG

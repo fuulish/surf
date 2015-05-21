@@ -356,7 +356,7 @@ int tanalize ( input_t * inppar )
                         // need index of point on surface
                         // this is mnnd
 
-                        cube_t fine = local_interpolation ( &surface, surfpts[mnnd], inppar->lint, inppar->interpolkind, inppar->postinterpolate, inppar->outputprefix, inppar->pbc, 0 );
+                        cube_t fine = local_interpolation ( &surface, surfpts[mnnd], inppar->lint, inppar->interpolkind, inppar->postinterpolate, inppar->outputprefix, inppar->pbc, inppar->periodic );
                         // call local interpolation routine
 
                         int * drctn;
