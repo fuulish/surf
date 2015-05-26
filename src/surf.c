@@ -201,7 +201,7 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
 
         // get index of voxel where atom is sitting
         //
-        get_index_triple ( index, &(atoms[mask[a]].coords[0]), pbc, resarr, periodic );
+        get_index_triple ( index, &(atoms[mask[a]].coords[0]), pbc, surface.origin, surface.n, resarr, periodic );
 
         // then determine mni, mxi, ... and so on
 
@@ -280,7 +280,7 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     return surface;
 }
 
-real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cube_t * surface, real surfcut, int newsurf, int * surf_inds, int direction, real * area )
+real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cube_t * surface, real surfcut, int newsurf, int * surf_inds, int direction, real * area, int periodic )
 {
     int i, j, k, l;
     int baseind;
@@ -345,11 +345,25 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
     for ( i=0; i<DIM; i++ )
         surfpts[i] = (real *) malloc ( surface->nvoxels * sizeof ( real ) );
 
-    for ( i=0; i<surface->n[0]; i++ )
-        for ( j=0; j<surface->n[1]; j++ ) {
+    int mxd[DIM];
+    int mnd[DIM];
+
+    if ( periodic )
+        for ( k=0; k<DIM; k++ ) {
+            mxd[k] = surface->n[k];
+            mnd[k] = 0;
+        }
+    else
+        for ( k=0; k<DIM; k++ ) {
+            mxd[k] = surface->n[k] - 1;
+            mnd[k] = 1;
+        }
+
+    for ( i=mnd[0]; i<mxd[0]; i++ )
+        for ( j=mnd[1]; j<mxd[1]; j++ ) {
 
             baseind = surface->n[2] * ( j + surface->n[1] * i);
-            for ( k=0; k<surface->n[2]; k++ ) {
+            for ( k=mnd[2]; k<mxd[2]; k++ ) {
 
                 crrnt = baseind + k;
                 fndsrf = 0;
@@ -362,7 +376,8 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
                 mxgrd = ZERO;
 
                 for ( d=dstrt; d<dstp; d++ ) {
-                    fndsrf = check_if_surface_voxel ( &upper, &lower, tmpdt, surface, ix, d, surfcut );
+
+                    fndsrf = check_if_surface_voxel ( &upper, &lower, tmpdt, surface, ix, d, surfcut, periodic );
 
                     tpx[d] = ZERO;
                     lrdfnd += fndsrf;
@@ -370,15 +385,12 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 
                     if ( fndsrf ) {
                         grd[d] = surface->voxels[upper].data - surface->voxels[lower].data;
-                        grd[d] /= 2. * dx[d];
+                        grd[d] /= 2 * dx[d];
 
                         if ( ( fabs ( grd[d] ) ) > ( fabs ( mxgrd ) ) ) {
                             tmpdir[*nsurf] = d;
                             mxgrd = grd[d];
                             tgrd[*nsurf] = mxgrd;
-
-                            hifin = upper;
-                            lofin = lower;
 
                             for ( l=0; l<DIM; l++ )
                                 dt[l] = tmpdt[l];
@@ -394,14 +406,10 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 
                             *area += tmparea[d];
 
-                            if ( mxgrd >= 0 ) {
-                                t = lerp_to_t ( dt[1], dt[2], surfcut );
-                                tpx[d] = surface->voxels[crrnt].coords[d] + t * dx[d];
-                            }
-                            else if ( mxgrd < 0 ) {
-                                t = lerp_to_t ( dt[0], dt[1], surfcut );
-                                tpx[d] = surface->voxels[lofin].coords[d] + t * dx[d];
-                            }
+                            t = lerp_to_t ( dt[1], dt[2], surfcut );
+
+                            tpx[d] = surface->voxels[crrnt].coords[d] + t * dx[d];
+
                         }
                         else {
                             tpx[d] = surface->voxels[crrnt].coords[d];
@@ -450,7 +458,7 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
     return finalsurf;
 }
 
-real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int * direction, real * grad, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic )
+real get_distance_to_surface ( int * mnnd, cube_t * surface, int nsurf, real ** surfpts, int * direction, real * grad, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic )
 {
     int k, l;
     int crrnt[DIM];
@@ -468,13 +476,16 @@ real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int
     get_center_of_mass ( com, atoms, refmask, nref);
 
     for ( k=0; k<nsurf; k++ )
-        dsts[k] = get_distance_periodic ( surfpts[k], com, pbc );
+        if ( periodic )
+            dsts[k] = get_distance_periodic ( surfpts[k], com, pbc );
+        else
+            dsts[k] = get_distance ( surfpts[k], com );
 
     int min = 0;
 
     dstnc = find_minimum_1d_real (&min, dsts, nsurf );
 
-    get_index_triple ( crrnt, com, pbc, dx, periodic );
+    get_index_triple ( crrnt, com, pbc, surface->origin, surface->n, dx, periodic );
 
     int lower[DIM], upper[DIM];
 
@@ -497,7 +508,7 @@ real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int
     loind = get_index ( surface->n, lower[0], lower[1], lower[2] );
     hiind = get_index ( surface->n, upper[0], upper[1], upper[2] );
 
-    if ( ( ( grad[min] < 0. ) && ( com[direction[min]] > surfpts[min][direction[min]] ) ) || 
+    if ( ( ( grad[min] < 0. ) && ( com[direction[min]] > surfpts[min][direction[min]] ) ) ||
          ( ( grad[min] > 0. ) && ( com[direction[min]] < surfpts[min][direction[min]] ) ) ) {
         // for later checks if solute is above/below surface
         // printf("%5i\n", refmask[0]);
@@ -507,11 +518,12 @@ real get_distance_to_surface ( cube_t * surface, int nsurf, real ** surfpts, int
     free ( dsts );
     free ( dx );
 
+    *mnnd = min;
     return dstnc;
 
 }
 
-int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * surface, int * ix, int direction, real surfcut )
+int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * surface, int * ix, int direction, real surfcut, int periodic )
 {
     int k, l, ihi, ilo;
     signed int inds[DIM][DIM];
@@ -522,14 +534,14 @@ int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * su
         for ( l=0; l<DIM; l++ )
             inds[k][l] = ix[l];
 
+    // check here, this will invert the gradient calculation
     inds[0][direction] -= 1;
     inds[2][direction] += 1;
 
-    periodify_indices ( &(inds[0][direction]), &(surface->n[direction]), &(inds[0][direction]), 1 );
-    periodify_indices ( &(inds[2][direction]), &(surface->n[direction]), &(inds[2][direction]), 1 );
-
-    // periodify_indices ( inds[0], &(surface->n[0]), inds[0], 3 );
-    // periodify_indices ( inds[2], &(surface->n[0]), inds[2], 3 );
+    if ( periodic ) {
+        periodify_indices ( &(inds[0][direction]), &(surface->n[direction]), &(inds[0][direction]), 1 );
+        periodify_indices ( &(inds[2][direction]), &(surface->n[direction]), &(inds[2][direction]), 1 );
+    }
 
     for ( k=0; k<DIM; k++ ) {
         voxinds[k] = get_index ( surface->n, inds[k][0], inds[k][1], inds[k][2] );
@@ -546,6 +558,10 @@ int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * su
     // the way below, the middle voxels will always be close to the desired surface segment!?
     // if ( ( ( tmpdt[2] < surfcut ) && ( tmpdt[1] > surfcut ) && ( tmpdt[0] > surfcut ) ) ||
     // ( ( tmpdt[2] > surfcut ) && (tmpdt[1] > surfcut) &&  ( tmpdt[0] < surfcut ) ) )
+
+    // why exactly does this not work?
+    // if ( ( ( tmpdt[1] > surfcut ) && ( tmpdt[2] < surfcut ) ) ||
+    //      ( ( tmpdt[1] < surfcut ) && ( tmpdt[2] > surfcut ) ) )
 
     if ( ( ( tmpdt[2] > surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] < surfcut ) ) ||
          ( ( tmpdt[2] < surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] > surfcut ) ) )

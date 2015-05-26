@@ -478,18 +478,15 @@ real dot_product_nd ( real * a, real * b, int len )
     return c;
 }
 
-void get_index_triple ( int *i, real* coords, real *pbc, real *resolution, int periodic )
+void get_index_triple ( int *i, real* coords, real *pbc, real *origin, int *n, real *resolution, int periodic )
 {
     int k;
-    int n, u;
 
     for ( k=0; k<DIM; k++ ) {
-        i[k] = (int) floor ( coords[k] / resolution[k] );
+        i[k] = (int) roundf ( ( coords[k] - origin[k] ) / resolution[k] );
 
-        if ( i[k] < 0 ) {
-            n = pbc[k] / resolution[k];
-            i[k] = n - i[k];
-        }
+        if ( periodic )
+            periodify_indices ( &(i[k]), &(n[k]), &(i[k]), 1 );
     }
 }
 

@@ -278,7 +278,7 @@ void get_box_areas_pointer (real * da, cube_t * cube, real * dx )
 
 }
 
-cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
+cube_t interpolate_cube_trilinear ( cube_t * original, int factor, int periodic )
 {
     int i, j, k;
     cube_t fine;
@@ -289,7 +289,10 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
     int index;
     int x, y, z;
     int x000, x100, x010, x110, x001, x101, x011, x111;
+    int m000, m100, m010, m110, m001, m101, m011, m111;
+    real x000_dat, x100_dat, x010_dat, x110_dat, x001_dat, x101_dat, x011_dat, x111_dat;
     real xd, yd, zd;
+    real dx[DIM];
 
     real rfct = (real) factor;
 
@@ -306,6 +309,8 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
 
     fine = initialize_cube(original->origin, cboxv, cn, original->atoms, original->natoms);
 
+    get_box_volels_pointer(original, dx);
+
     count = 0;
     fctcnt = 0;
 
@@ -318,6 +323,7 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
                 if ( fctcnt == factor )
                     fctcnt = 0;
 
+                // check here, should this be roundf?
                 if ( fctcnt == 0 ) {
                     x = (int) floor((float)i/rfct);
                     y = (int) floor((float)j/rfct);
@@ -330,14 +336,17 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
                 yup = y+1;
                 zup = z+1;
 
-                if ( zup == original->n[2] )
-                    periodify_indices ( &zup, &(original->n[2]), &zup, 1);
+                if ( periodic ) {
+                    if ( zup == original->n[2] )
+                        periodify_indices ( &zup, &(original->n[2]), &zup, 1);
 
-                if ( yup == original->n[1] )
-                    periodify_indices ( &yup, &(original->n[1]), &yup, 1);
+                    if ( yup == original->n[1] )
+                        periodify_indices ( &yup, &(original->n[1]), &yup, 1);
 
-                if ( xup == original->n[0] )
-                    periodify_indices ( &xup, &(original->n[0]), &xup, 1);
+                    if ( xup == original->n[0] )
+                        periodify_indices ( &xup, &(original->n[0]), &xup, 1);
+
+                }
 
                 xd = (fine.voxels[count].coords[0] - original->voxels[index].coords[0]) / original->boxv[0][0];
                 yd = (fine.voxels[count].coords[1] - original->voxels[index].coords[1]) / original->boxv[1][1];
@@ -352,10 +361,108 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
                 x011 = (zup) + original->n[2] * ( (yup) + original->n[1] * x );
                 x111 = (zup) + original->n[2] * ( (yup) + original->n[1] * (xup) );
 
-                c00 = original->voxels[x000].data * ( 1 - xd ) + original->voxels[x100].data * xd;
-                c10 = original->voxels[x010].data * ( 1 - xd ) + original->voxels[x110].data * xd;
-                c01 = original->voxels[x001].data * ( 1 - xd ) + original->voxels[x101].data * xd;
-                c11 = original->voxels[x011].data * ( 1 - xd ) + original->voxels[x111].data * xd;
+                // this will contain the value of the voxel below for non-periodic calculation
+                // and will not contain any reasonable values
+
+                if ( periodic ) {
+                    x000_dat = original->voxels[x000].data;
+                    x100_dat = original->voxels[x100].data;
+                    x010_dat = original->voxels[x010].data;
+                    x110_dat = original->voxels[x110].data;
+                    x001_dat = original->voxels[x001].data;
+                    x101_dat = original->voxels[x101].data;
+                    x011_dat = original->voxels[x011].data;
+                    x111_dat = original->voxels[x111].data;
+                }
+                else {
+                    if ( ( zup == original->n[2] ) || ( yup == original->n[1] ) || ( xup == original->n[0] ) ) {
+                        m100 = z + original->n[2] * ( y + original->n[1] * (x-1) );
+                        m010 = z + original->n[2] * ( (y-1) + original->n[1] * x );
+                        m110 = z + original->n[2] * ( (y-1) + original->n[1] * (x-1) );
+                        m001 = (z-1) + original->n[2] * ( y + original->n[1] * x );
+                        m101 = (z-1) + original->n[2] * ( y + original->n[1] * (x-1) );
+                        m011 = (z-1) + original->n[2] * ( (y-1) + original->n[1] * x );
+                        m111 = (z-1) + original->n[2] * ( (y-1) + original->n[1] * (x-1) );
+
+                        x000_dat = original->voxels[x000].data;
+                        x100_dat = original->voxels[x000].data;
+                        x010_dat = original->voxels[x000].data;
+                        x110_dat = original->voxels[x000].data;
+                        x001_dat = original->voxels[x000].data;
+                        x101_dat = original->voxels[x000].data;
+                        x011_dat = original->voxels[x000].data;
+                        x111_dat = original->voxels[x000].data;
+
+                        //now extrapolate the new data from the gradient to the voxel below the current voxel
+
+                        // if ( ( zup == original->n[2] ) && ( yup == original->n[1] ) && ( xup == original->n[0] ) )
+                            // no voxel data needs to be changed, because everything needs to be extrapolated
+
+                        if ( ( zup == original->n[2] ) && ( yup == original->n[1] ) && ( xup != original->n[0] ) )
+                            x100_dat = original->voxels[x100].data;
+
+                        else if ( ( zup == original->n[2] ) && ( yup != original->n[1] ) && ( xup == original->n[0] ) )
+                            x010_dat = original->voxels[x010].data;
+
+                        else if ( ( zup != original->n[2] ) && ( yup == original->n[1] ) && ( xup == original->n[0] ) )
+                            x001_dat = original->voxels[x001].data;
+
+                        else if ( ( zup != original->n[2] ) && ( yup != original->n[1] ) && ( xup == original->n[0] ) )
+                            x011_dat = original->voxels[x011].data;
+
+                        else if ( ( zup != original->n[2] ) && ( yup == original->n[1] ) && ( xup != original->n[0] ) )
+                            x101_dat = original->voxels[x000].data;
+
+                        else if ( ( zup == original->n[2] ) && ( yup != original->n[1] ) && ( xup != original->n[0] ) )
+                            x110_dat = original->voxels[x110].data;
+
+                        else if ( ( zup != original->n[2] ) && ( yup != original->n[1] ) && ( xup != original->n[0] ) )
+                            x111_dat = original->voxels[x000].data;
+
+                        if ( zup == original->n[2] ) {
+                            real delz = original->voxels[x000].data - original->voxels[m001].data;
+
+                            x001_dat += 2.*delz;
+                            x101_dat += 2.*delz;
+                            x011_dat += 2.*delz;
+                            x111_dat += 2.*delz;
+
+                        }
+
+                        if ( yup == original->n[1] ) {
+                            real dely = original->voxels[x000].data - original->voxels[m010].data;
+
+                            x010_dat += 2.*dely;
+                            x110_dat += 2.*dely;
+                            x011_dat += 2.*dely;
+                            x111_dat += 2.*dely;
+                        }
+
+                        if ( xup == original->n[0] ) {
+                            real delx = original->voxels[x000].data - original->voxels[m100].data;
+
+                            x100_dat += 2.*delx;
+                            x110_dat += 2.*delx;
+                            x101_dat += 2.*delx;
+                            x111_dat += 2.*delx;
+                        }
+                    }
+                    else {
+                        x000_dat = original->voxels[x000].data;
+                        x100_dat = original->voxels[x100].data;
+                        x010_dat = original->voxels[x010].data;
+                        x110_dat = original->voxels[x110].data;
+                        x001_dat = original->voxels[x001].data;
+                        x101_dat = original->voxels[x101].data;
+                        x011_dat = original->voxels[x011].data;
+                        x111_dat = original->voxels[x111].data;
+                    }
+                }
+
+                c00 = x000_dat * ( 1 - xd ) + x100_dat * xd;
+                c10 = x010_dat * ( 1 - xd ) + x110_dat * xd;
+                c01 = x001_dat * ( 1 - xd ) + x101_dat * xd;
+                c11 = x011_dat * ( 1 - xd ) + x111_dat * xd;
 
                 c0 = c00 * ( 1 - yd) + c10 * yd;
                 c1 = c01 * ( 1 - yd) + c11 * yd;
@@ -372,7 +479,7 @@ cube_t interpolate_cube_trilinear ( cube_t * original, int factor )
 }
 
 #ifdef HAVE_EINSPLINE
-cube_t interpolate_cube_bsplines ( cube_t * original, int factor )
+cube_t interpolate_cube_bsplines ( cube_t * original, int factor, int periodic )
 {
     int i, j, k, indx;
 
@@ -385,7 +492,7 @@ cube_t interpolate_cube_bsplines ( cube_t * original, int factor )
     real rfct = (real) factor;
 
     // create 3D spline object
-	UBspline_3d_s *spline_3d_xyz = get_cube_bsplines ( original );
+	UBspline_3d_s *spline_3d_xyz = get_cube_bsplines ( original, periodic );
 
     // initialize new and fine cube (first, set dimensions, second initialize cube)
     for ( i=0; i<DIM; i++ ) {
@@ -420,7 +527,7 @@ cube_t interpolate_cube_bsplines ( cube_t * original, int factor )
     return fine;
 }
 
-UBspline_3d_s * get_cube_bsplines ( cube_t * cube )
+UBspline_3d_s * get_cube_bsplines ( cube_t * cube, int periodic )
 {
     int i, j, k;
     real dx[DIM];
@@ -442,10 +549,20 @@ UBspline_3d_s * get_cube_bsplines ( cube_t * cube )
     z_grid.end = cube->origin[2]+cube->n[2]*dx[2];
     z_grid.num = cube->n[2];
 
+    BCtype_s xBC, yBC, zBC;
+
     // boundary conditions (periodic)
-	BCtype_s xBC = {PERIODIC, PERIODIC , cube->origin[0], cube->origin[0]};
-	BCtype_s yBC = {PERIODIC, PERIODIC , cube->origin[1], cube->origin[1]};
-	BCtype_s zBC = {PERIODIC, PERIODIC , cube->origin[2], cube->origin[2]};
+    if ( periodic ) {
+	    xBC = set_boundary_conditions_bsplines ( PERIODIC, PERIODIC, cube->origin[0], cube->origin[0] );
+	    yBC = set_boundary_conditions_bsplines ( PERIODIC, PERIODIC, cube->origin[1], cube->origin[1] );
+	    zBC = set_boundary_conditions_bsplines ( PERIODIC, PERIODIC, cube->origin[2], cube->origin[2] );
+    }
+    else {
+        // check here, need to figure out correct way of getting non-periodic BSpline, this looks okayish so far
+	    xBC = set_boundary_conditions_bsplines ( NATURAL, NATURAL, cube->origin[0], cube->origin[0] );
+	    yBC = set_boundary_conditions_bsplines ( NATURAL, NATURAL, cube->origin[1], cube->origin[1] );
+	    zBC = set_boundary_conditions_bsplines ( NATURAL, NATURAL, cube->origin[2], cube->origin[2] );
+    }
 
     float * data = (float *) malloc(cube->nvoxels * sizeof ( float ));
 
@@ -461,4 +578,127 @@ UBspline_3d_s * get_cube_bsplines ( cube_t * cube )
 
     return spline_3d_xyz;
 }
+
+BCtype_s set_boundary_conditions_bsplines ( bc_code lp, bc_code rp, float lVal, float rVal )
+{
+    BCtype_s bc;
+
+    bc.lCode = lp;
+    bc.rCode = rp;
+
+    bc.lVal = lVal;
+    bc.rVal = rVal;
+
+    return bc;
+}
+
 #endif
+
+cube_t local_interpolation ( cube_t *cube, real *point, int lint, int interpolkind, int ninterpol, char *outputprefix, real *pbc, int periodic )
+{
+    // find which voxel that point belongs to
+
+    int ix[DIM];
+    int ivx;
+    real dx[DIM];
+
+    get_box_volels_pointer ( cube, dx );
+
+    get_index_triple ( ix, point, pbc, cube->origin, cube->n, dx, periodic );
+    ivx = get_index ( cube->n, ix[0], ix[1], ix[2] );
+
+    // create fake box around that point
+    real origin[DIM];
+    int cn[DIM];
+
+    int l, m, n;
+
+    for ( l=0; l<DIM; l++ ) {
+        origin[l] = cube->voxels[ivx].coords[l] - lint * dx[l];
+        cn[l] = ( lint*2 + 1 );
+    }
+
+    cube_t cutcube, fine;
+    cutcube = initialize_cube ( origin, cube->boxv, cn, cube->atoms, cube->natoms );
+
+    // assign the data from the original cube file into small cutout
+
+    int mnx, mxx, mny, mxy, mnz, mxz;
+
+    // check here, this was just a quick work-around
+    mnx = ix[0] - lint;
+    mxx = ix[0] + lint + 1;
+
+    mny = ix[1] - lint;
+    mxy = ix[1] + lint + 1;
+
+    mnz = ix[2] - lint;
+    mxz = ix[2] + lint + 1;
+
+    // check here, maybe just don't use the periodicity at all
+    if ( !(periodic) ) {
+        if ( ( mnx < 0 ) || ( mny < 0 ) || (mnz < 0 ) || ( mxx >= cube->n[0] ) || ( mxy >= cube->n[1] ) || ( mxz >= cube->n[2] ) ) {
+            printf("Would segfault, because non-periodic and local interpolation outside of the cube boundaries, so stopping now!\n");
+            exit ( 1 );
+        }
+    }
+
+    int oindx, nindx;
+
+    int cnl = 0;
+    int cnm = 0;
+    int cnn = 0;
+
+    int il, im, in;
+
+    cnl = 0;
+    for ( l=mnx; l<mxx; l++ ) {
+        cnm = 0;
+        for ( m=mny; m<mxy; m++ ) {
+            cnn = 0;
+            for ( n=mnz; n<mxz; n++ ) {
+                // check here!!!
+                if ( periodic ) {
+                    periodify_indices ( &il, &(cube->n[0]), &l, 1 );
+                    periodify_indices ( &im, &(cube->n[1]), &m, 1 );
+                    periodify_indices ( &in, &(cube->n[2]), &n, 1 );
+                }
+
+                oindx = get_index ( cube->n, il, im, in );
+                nindx = get_index ( cutcube.n, cnl, cnm, cnn );
+
+                cutcube.voxels[nindx].data = cube->voxels[oindx].data;
+
+                cnn++;
+            }
+            cnm++;
+        }
+        cnl++;
+    }
+
+#ifdef DEBUG
+    char tmp[MAXSTRLEN];
+    sprintf(tmp, "%s%i_%s", outputprefix, r, "test_local-non-interpolation.cube");
+    write_cubefile(tmp, &cutcube);
+#endif
+    // interpolate in that region
+
+    // check here, local interpolation is always done non-periodically right now (that is no problem, because the cutout should be assigned according to periodicity and local, periodic interpolation will lead to artifacts)
+    if ( interpolkind == INTERPOLATE_TRILINEAR )
+        fine = interpolate_cube_trilinear ( &cutcube, ninterpol, 0 );
+#ifdef HAVE_EINSPLINE
+    else if ( interpolkind == INTERPOLATE_BSPLINES )
+        fine = interpolate_cube_bsplines ( &cutcube, ninterpol, 0 );
+#endif
+
+#ifdef DEBUG
+    sprintf(tmp, "%s%i_%s", outputprefix, r, "test_local-interpolation.cube");
+    write_cubefile(tmp, &fine);
+#endif
+
+    free ( cutcube.atoms );
+    free ( cutcube.voxels );
+
+    return fine;
+
+}

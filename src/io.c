@@ -537,6 +537,26 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 else if ( strstr ( value, "surface" ) != NULL )
                     inppar->normalization = NORM_SLAB;
             }
+            else if ((keywords[key] == "localsurfaceinterpolation"))
+            {
+                inppar->localsurfint = 1;
+
+                real conv = 1.;
+
+                if ( strstr ( dummy, "ANG" ) != NULL ) {
+                    conv = ANG2BOHR;
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
+                }
+                else if ( strstr ( dummy, "NM" ) != NULL ) {
+                    conv = NM2BOHR;
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
+                }
+
+                inppar->ldst = conv * atof ( dummy );
+
+                dummy = strtok_r ( NULL, " ", &save_ptr );
+                inppar->lint = atoi ( dummy );
+            }
             else if ((keywords[key] == "dummy"))
             {
                 real conv = 1.;
@@ -888,6 +908,9 @@ void set_input_defaults(input_t * inppar)
     inppar->normalization = NORM_AVER;
     inppar->postinterpolate = 0;
     inppar->interpolkind = INTERPOLATE_TRILINEAR;
+    inppar->localsurfint = 0;
+    inppar->ldst = 5;
+    inppar->lint = 5;
 
     int i;
     for ( i=0; i<DIM; i++ )

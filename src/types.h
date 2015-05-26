@@ -59,6 +59,7 @@ static const char *keywords[NUMKEYS] =
     "direction",
     "surfxyz",
     "normalization",
+    "localsurfaceinterpolation",
 };
 
 typedef struct voxel_s
@@ -158,6 +159,9 @@ typedef struct input_s
     int direction;
     int surfxyz;
     int normalization;
+    int localsurfint;
+    int lint;
+    real ldst;
 } input_t;
 
 typedef struct list_s

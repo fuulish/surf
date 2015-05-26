@@ -26,10 +26,12 @@ void get_cell_pointer(cube_t * cube, real * cell);
 real * get_box_volels(cube_t * cube);
 void get_box_volels_pointer(cube_t * cube, real * dx);
 void get_box_areas_pointer (real * da, cube_t * cube, real * dx );
-cube_t interpolate_cube_trilinear ( cube_t * original, int factor );
+cube_t interpolate_cube_trilinear ( cube_t * original, int factor, int periodic );
 #ifdef HAVE_EINSPLINE
-cube_t interpolate_cube_bsplines ( cube_t * original, int factor );
+cube_t interpolate_cube_bsplines ( cube_t * original, int factor, int periodic );
 #include <einspline/bspline_base.h>
 #include <einspline/bspline_structs.h>
-UBspline_3d_s * get_cube_bsplines ( cube_t * cube );
+UBspline_3d_s * get_cube_bsplines ( cube_t * cube, int periodic );
+BCtype_s set_boundary_conditions_bsplines ( bc_code lp, bc_code rp, float lVal, float rVal );
 #endif
+cube_t local_interpolation ( cube_t *cube, real *point, int lint, int interpolkind, int ninterpol, char *outputprefix, real *pbc, int periodic );
