@@ -559,9 +559,9 @@ UBspline_3d_s * get_cube_bsplines ( cube_t * cube, int periodic )
     }
     else {
         // check here, need to figure out correct way of getting non-periodic BSpline, this looks okayish so far
-	    xBC = set_boundary_conditions_bsplines ( NATURAL, NATURAL, cube->origin[0], cube->origin[0] );
-	    yBC = set_boundary_conditions_bsplines ( NATURAL, NATURAL, cube->origin[1], cube->origin[1] );
-	    zBC = set_boundary_conditions_bsplines ( NATURAL, NATURAL, cube->origin[2], cube->origin[2] );
+	    xBC = set_boundary_conditions_bsplines ( FLAT, FLAT, cube->origin[0], cube->origin[0] );
+	    yBC = set_boundary_conditions_bsplines ( FLAT, FLAT, cube->origin[1], cube->origin[1] );
+	    zBC = set_boundary_conditions_bsplines ( FLAT, FLAT, cube->origin[2], cube->origin[2] );
     }
 
     float * data = (float *) malloc(cube->nvoxels * sizeof ( float ));
