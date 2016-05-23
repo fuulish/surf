@@ -434,7 +434,7 @@ int tanalize ( input_t * inppar )
                     sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "surfdist.dat");
                     fsdist = fopen(&tmp[0], "w");
 
-                    fprintf ( fsdist, "#            index              distance\n");
+                    fprintf ( fsdist, "#            index              distance [a.u.]\n");
                     for ( r=0; r<nfrg; r++ )
                         fprintf ( fsdist, "%21i %21.10f\n", r, dstnc[r]);
 
