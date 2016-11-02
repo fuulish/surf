@@ -560,12 +560,13 @@ int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * su
     // ( ( tmpdt[2] > surfcut ) && (tmpdt[1] > surfcut) &&  ( tmpdt[0] < surfcut ) ) )
 
     // why exactly does this not work?
-    // if ( ( ( tmpdt[1] > surfcut ) && ( tmpdt[2] < surfcut ) ) ||
-    //      ( ( tmpdt[1] < surfcut ) && ( tmpdt[2] > surfcut ) ) )
-
-    if ( ( ( tmpdt[2] > surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] < surfcut ) ) ||
-         ( ( tmpdt[2] < surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] > surfcut ) ) )
+    if ( ( ( tmpdt[1] > surfcut ) && ( tmpdt[2] < surfcut ) ) ||
+         ( ( tmpdt[0] < surfcut ) && ( tmpdt[1] > surfcut ) ) )
         fndsrf = 1;
+
+    // if ( ( ( tmpdt[2] > surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] < surfcut ) ) ||
+    //      ( ( tmpdt[2] < surfcut ) && ( tmpdt[1] < surfcut ) && ( tmpdt[0] > surfcut ) ) )
+
 #endif
 
     *upper = voxinds[2];
