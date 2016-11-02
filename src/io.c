@@ -160,7 +160,27 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                     dummy = strtok_r ( NULL, " " , &save_ptr);
                 }
 
-                inppar->zeta = conv * atof(dummy);
+                inppar->zeta = malloc( (LAST_ATOM+1) * sizeof ( double ) );
+                inppar->zetalloc = 1;
+
+                char * save_other;
+                char * dumnum;
+
+                while ( dummy != NULL ) {
+
+                    dumnum = strtok_r ( dummy, ":", &save_other);
+                    int anum = atoi(dumnum);
+                    printf("atom number: %i\n", anum);
+
+                    dumnum = strtok_r ( NULL, ":", &save_other);
+                    real zetmp = conv * atof(dumnum);
+                    printf("zeta: %14.8f\n", zetmp);
+
+                    inppar->zeta[anum] = zetmp;
+
+                    dummy = strtok_r ( NULL, " ", &save_ptr);
+                }
+
             }
             else if ((keywords[key] == "postinterpolate"))
             {
@@ -878,7 +898,8 @@ void set_input_defaults(input_t * inppar)
     strcpy(inppar->inpfile, EMPTY);
     inppar->output = 1;
     inppar->surfacecutoff = 0.016* sqr(BOHR) * BOHR;
-    inppar->zeta = 2.4/BOHR;
+    inppar->zetalloc = 0;
+    inppar->zetadef = 2.4/BOHR;
     inppar->roughsurf = 0;
     inppar->batchmode = 0;
     inppar->nkinds = 1;
@@ -1048,8 +1069,8 @@ int get_mask(int ** indices, char * maskkind, char * mask, int nkinds, atom_t * 
         }
     }
 
-    if ( strstr ( maskkind, "file" ) != NULL )
-        free(kinds);
+    // if ( strstr ( maskkind, "file" ) != NULL )
+    free(kinds);
 
     return nind;
 }

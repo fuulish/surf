@@ -38,24 +38,20 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 int tstart;
 int tstop;
 
-cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, real zeta, real surfcut, int output, char * outputprefix, real * pbc, real resolution, real accuracy, int provide_box, real * origincube, int * ncube, real boxvcube[DIM][DIM], int periodic, int provide_mask )
+cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, real *zeta, real surfcut, int output, char * outputprefix, real * pbc, real resolution, real accuracy, int provide_box, real * origincube, int * ncube, real boxvcube[DIM][DIM], int periodic, int provide_mask )
 {
     int i, j, natoms;
     int a;
     int * sindices;
     int * bindices;
     real sqzeta;
-    real trplzt;
     cube_t surface;
-    real prefactor, dummy;
+    // real prefactor, dummy, cutshft;
 
     real orig[DIM];
     real boxv[DIM][DIM];
     real refc[DIM];
     int n[DIM];
-
-    trplzt = 3*zeta;
-
 
     /* we will create an orthogonal box according to periodic boundary conditions and resolution input */
     /* i.e., it works for now only with orthogonal cells */
@@ -93,11 +89,6 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
         natoms++;
 
     surface = initialize_cube(orig, boxv, n, atoms, inpnatoms);
-
-    sqzeta = sqr(zeta);
-    real mttsqzeta = -2. * sqzeta;
-    dummy = 2. * PI * sqzeta;
-    prefactor = 1. / dummy / (sqrt(dummy));
 
     i = 1;
 
@@ -159,45 +150,55 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
     printf("%i active atoms for surface generation\n", cnt);
 #endif
 
-    real mxdst;
-    int mxvox[DIM];
-    int mx[DIM];
-    int mn[DIM];
-    int k;
     int wrki, wrkj, wrkk;
     int index[DIM];
     int tmpndx;
     real resarr[DIM];
     real tmpdst;
-    real cutshft = prefactor * exp( sqr( trplzt ) / (mttsqzeta));
 
+    int k;
     for ( k=0; k<DIM; k++ )
         resarr[k] = resolution;
 
-    mxdst = trplzt + 2*resolution;
-
-    for ( k=0 ; k<DIM; k++ ) {
-        mxvox[k] = mxdst / resolution;
-
-        if ( 2*mxvox[k] > surface.n[k] )
-            mxvox[k] -= (int) ceil ( (real) (2*mxvox[k] - surface.n[k]) / 2. );
-    }
-
-    // this should not happen anymore
-    for ( k=0; k<DIM; k++ ) {
-        if ( ( 2*mxvox[k] ) > ( surface.n[k] ) ) {
-            print_error ( PROGRAM_BROKEN, "to use box dimension smaller than two times surface calculation cutoff");
-            exit ( PROGRAM_BROKEN );
-        }
-    }
-
 #ifdef OPENMP
 #pragma omp parallel for default(none) \
-    private(a,i,j,k,wrki,wrkj,wrkk,index,mn,mx,tmpndx,distance) shared(atoms,pbc,resarr,periodic,surface,trplzt,natoms,mask,mxvox,mttsqzeta,prefactor,cutshft) // \
+    private(a,i,j,k,wrki,wrkj,wrkk,index,tmpndx,distance) shared(atoms,pbc,resarr,periodic,surface,natoms,mask,zeta,resolution) // \
         // schedule(guided, surface.n[2])
     // schedule(dynamic)
 #endif
+    //this natoms here is already the one accounting for number of atoms in mask only
     for ( a=0; a<natoms; a++ ) {
+
+        real sqzeta = sqr(zeta[mask[a]]);
+        real trplzt = 3*zeta[mask[a]];
+
+        real mttsqzeta = -2. * sqzeta;
+        real dummy = 2. * PI * sqzeta;
+
+        real prefactor = 1. / dummy / (sqrt(dummy));
+        real cutshft = prefactor * exp( sqr( trplzt ) / (mttsqzeta));
+
+        real mxdst = trplzt + 2*resolution;
+        real mxvox[DIM];
+
+        int mx[DIM];
+        int mn[DIM];
+        int k;
+
+        for ( k=0 ; k<DIM; k++ ) {
+            mxvox[k] = mxdst / resolution;
+
+            if ( 2*mxvox[k] > surface.n[k] )
+                mxvox[k] -= (int) ceil ( (real) (2*mxvox[k] - surface.n[k]) / 2. );
+        }
+
+        // this should not happen anymore
+        for ( k=0; k<DIM; k++ ) {
+            if ( ( 2*mxvox[k] ) > ( surface.n[k] ) ) {
+                print_error ( PROGRAM_BROKEN, "to use box dimension smaller than two times surface calculation cutoff");
+                exit ( PROGRAM_BROKEN );
+            }
+        }
 
         // get index of voxel where atom is sitting
         //

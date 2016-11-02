@@ -117,7 +117,9 @@ typedef struct input_s
     int nkinds;
     int refnkinds;
     real surfacecutoff;
-    real zeta;
+    real *zeta;
+    real zetadef;
+    int zetalloc;
     int roughsurf;
     char structure[MAXSTRLEN];
     char outputprefix[MAXSTRLEN];

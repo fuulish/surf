@@ -66,6 +66,8 @@ int tanalize ( input_t * inppar )
     int * mask;
     int * refmask;
 
+    real *zetatom;
+
     atom_t * atoms;
 
     i = 0;
@@ -151,6 +153,18 @@ int tanalize ( input_t * inppar )
             frags[o] = inppar->fragments[o];
             ntotfrag += inppar->natomsfrag[o];
         }
+    }
+
+    int a;
+    zetatom = malloc ( natoms * sizeof ( real ) );
+
+    if ( inppar->zetalloc ) {
+        for ( a=0; a<natoms; a++ )
+            zetatom[a] = inppar->zeta[atoms[a].number];
+    }
+    else {
+        for ( a=0; a<natoms; a++ )
+            zetatom[a] = inppar->zetadef;
     }
 
     real *densprof;
@@ -242,7 +256,7 @@ int tanalize ( input_t * inppar )
             char opref[MAXSTRLEN];
             sprintf(opref, "%s%i_", inppar->outputprefix, i);
 
-            surface = instant_surface_periodic ( mask, atoms, natoms, inppar->zeta, inppar->surfacecutoff, inppar->output, opref, pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
+            surface = instant_surface_periodic ( mask, atoms, natoms, zetatom, inppar->surfacecutoff, inppar->output, opref, pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
 
             if ( inppar->postinterpolate > 1 ) {
                 if ( ! ( inppar->localsurfint ) ) {
@@ -287,6 +301,7 @@ int tanalize ( input_t * inppar )
             /* check here, and remove hard-coded surface direction */
             int * direction;
             real * grad;
+            real * dstnc;
             int newsurf = 0;
             int nsurf = 0;
 
@@ -337,7 +352,7 @@ int tanalize ( input_t * inppar )
                 else
                     nfrg = inppar->numfrags;
 
-                real * dstnc = ( real * ) malloc ( nfrg * sizeof ( real ) );
+                dstnc = ( real * ) malloc ( nfrg * sizeof ( real ) );
 
 #ifdef OPENMP
                 // each thread should have about the same amount of work, so the atomic update will not be too harmful
@@ -453,6 +468,7 @@ int tanalize ( input_t * inppar )
                 free ( surf_inds );
 
             free ( grad );
+            free ( dstnc );
             free ( surfpts );
             free ( direction );
             free ( surface.atoms );
@@ -528,6 +544,7 @@ int tanalize ( input_t * inppar )
         }
 
         free(inppar->natomsfrag);
+        free(inppar->fragments);
     }
     else {
         free ( refmask );
@@ -536,6 +553,11 @@ int tanalize ( input_t * inppar )
     if ( inppar->tasknum == SURFDENSPROF ) {
         free ( densprof );
         free ( dx );
+    }
+
+    free ( zetatom );
+    if ( inppar->zetalloc ) {
+        free ( inppar->zeta );
     }
 
     free(mask);

@@ -1,0 +1,19 @@
+NpT
+surface aera
+solute volume
+unify input and output units
+add possibility for other input units than Bohr
+modify input reader to use, e.g., strstr or strcmp and not literal comparison
+split cube into real cube-related stuff and surface shit
+debug and parallelize new optsurf version of surface code
+check roundf and floor stuff again, somehow this is creepy to me
+    also check current rounding mode a.s.o
+
+use devtodo2 to create todo list
+add correct density profile (i.e., including orientation relative to interface)
+
+switch to CMake
+or get autotools to be more involved (more checking and so on)
+do we need to calculate the surface including overhang if we want to do the parameter tuning?
+
+estimate surface area based on tilt angle within volume element
