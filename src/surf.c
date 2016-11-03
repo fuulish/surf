@@ -181,6 +181,19 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
         real mxdst = trplzt + 2*resolution;
         real mxvox[DIM];
 
+        /* calculations for rescaling the Gaussian function */
+
+        /*
+        real nrm = 8 * PI * sqzeta;
+        nrm = nrm * nrm;
+        nrm = 1./nrm;
+
+        real missing = nrm * ( 1. - erff ( trplzt / ( 2.*sqzeta) ) );
+        real scale = 1. / (1.-missing);
+        */
+
+        /* this should be working, but it's not worth the effort right now, too little result for too much work */
+
         int mx[DIM];
         int mn[DIM];
         int k;
@@ -231,6 +244,7 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
 
                     // the below formula can be simplified, check here
 #pragma omp atomic update
+                    // surface.voxels[tmpndx].data += scale * ( prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft );
                     surface.voxels[tmpndx].data += prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft;
 
                 }
