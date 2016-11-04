@@ -17,3 +17,6 @@ or get autotools to be more involved (more checking and so on)
 do we need to calculate the surface including overhang if we want to do the parameter tuning?
 
 estimate surface area based on tilt angle within volume element
+
+load_xyz
+local surface interpolation
