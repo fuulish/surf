@@ -418,7 +418,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                     while ( dummy != NULL )
                     {
                         inppar->natomsfrag[i] = 0;
-                        char tmpfrg[MAXSTRLEN];
+                        char tmpfrg[MAXSTRLEN] = "";
 
                         int cnt = 0;
                         while ( strstr(dummy, ";") == NULL )
@@ -436,7 +436,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                         int tmplen = strlen(dummy);
                         char buffer[MAXSTRLEN] = "";
 
-                        strncpy(&buffer[0], dummy, tmplen-1);
+                        strncpy(&(buffer[0]), dummy, tmplen-1);
                         strcat(&(tmpfrg[0]), buffer);
                         strcat(&(tmpfrg[0]), ",");
 
