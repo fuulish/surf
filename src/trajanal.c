@@ -501,7 +501,7 @@ int tanalize ( input_t * inppar )
                         }
                         else {
                             tmpdat = adatarray[r][0];
-                            printf("%i %14.8f\n", r, adatarray[r][0]);
+                            // printf("%i %14.8f\n", r, adatarray[r][0]);
                         }
                     }
 
