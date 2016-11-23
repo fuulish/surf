@@ -142,10 +142,12 @@ int tanalize ( input_t * inppar )
     int ntotfrag = 0;
     int o;
     char buff[10] = "indices";
+    int tnt = 0;
 
     if ( inppar->nofrags ) {
         printf("Using indices given in 'refmask'\n");
         nref = get_mask(&refmask, inppar->refmaskkind, inppar->refmask, inppar->refnkinds, atoms, natoms);
+        tnt = nref;
 
         if ( !(nref) ) {
             printf("Cannot continue with 0 reference atoms\n");
@@ -164,6 +166,7 @@ int tanalize ( input_t * inppar )
             frags[o] = inppar->fragments[o];
             ntotfrag += inppar->natomsfrag[o];
         }
+        tnt = inppar->numfrags;
     }
 
     int a;
@@ -211,6 +214,10 @@ int tanalize ( input_t * inppar )
             rathist = (real *) calloc (ndprof, sizeof(real));
     }
 
+    int seekpoint;
+    int ncol = inppar->adatacolstop - inppar->adatacolstrt;
+    real adatarray[tnt][ncol];
+
     // real origin[DIM];
     // real boxv[DIM][DIM];
 
@@ -230,7 +237,6 @@ int tanalize ( input_t * inppar )
     int frwrd = inppar->start + 1;
     char * htw = "w";
     real *dx;
-    real adatarray[tnt];
     matrix box;
     real pbc[DIM];
 
@@ -262,7 +268,7 @@ int tanalize ( input_t * inppar )
             // }
 
             seekpoint = counter * adatlnlen * nmask;
-            read_adata(adata, inppar->adatacol, &adatarray[0], nmask, seekpoint);
+            read_adata(adata, inppar->adatacolstrt, inppar->adatacolstop, &adatarray[0][0], nmask, seekpoint);
         }
 
         if ( ( inppar->tasknum == SURFDIST ) || ( inppar->tasknum == SURFDENSPROF ) ) {
@@ -384,7 +390,7 @@ int tanalize ( input_t * inppar )
                 // each thread should have about the same amount of work, so the atomic update will not be too harmful
 #pragma omp parallel for default(none) \
                 private(r,fakemask,fakenum,ind) \
-                shared(dstnc,nfrg,refmask,frags,inppar,surface,direction,natoms,opref,densprof,hndprof,atoms,nsurf,grad,surfpts,pbc)
+                shared(dstnc,nfrg,refmask,frags,inppar,surface,direction,natoms,opref,densprof,hndprof,atoms,nsurf,grad,surfpts,pbc,ncol,rathist,adatarray,adddata)
 #endif
                 for ( r=0; r<nfrg; r++ ) {
 
@@ -400,6 +406,11 @@ int tanalize ( input_t * inppar )
                     int mnnd;
                     dstnc[r] = get_distance_to_surface ( &mnnd, &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
+                    real clspt[DIM];
+                    int g;
+
+                    for ( g=0; g<DIM; g++)
+                        clspt[g] = surfpts[mnnd][g];
 
                     if ( ( inppar->postinterpolate > 1 ) && ( inppar->localsurfint ) && ( fabs ( dstnc[r] ) < inppar->ldst ) ) {
 
@@ -449,6 +460,9 @@ int tanalize ( input_t * inppar )
 
                         dstnc[r] = get_distance_to_surface ( &mnnd, &fine, nsrf, srfpts, drctn, grd, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
+                        for ( g=0; g<DIM; g++)
+                            clspt[g] = surfpts[mnnd][g];
+
                         int l;
                         for ( l=0; l<nsrf; l++ )
                             free ( srfpts[l] );
@@ -466,8 +480,35 @@ int tanalize ( input_t * inppar )
 
                     ind = ( int ) floor ( dstnc[r] / inppar->profileres );
 
+                    real tmpdat;
+
+                    //FUDO| should we do other stuff here as well, more options for ncol?
+                    if ( adddata ) {
+                        if ( ncol == 3 ) {
+                            real dstncvec[DIM];
+                            real tmpcom[DIM];
+
+                            get_center_of_mass ( tmpcom, atoms, fakemask, fakenum);
+                            dstncvec[0] = clspt[0] - tmpcom[0];
+                            dstncvec[1] = clspt[1] - tmpcom[1];
+                            dstncvec[2] = clspt[2] - tmpcom[2];
+
+                            // printf("%5i %14.8f %14.8f\n", r, dstncvec[0], adatarray[r][0]);
+                            // printf("%5i %14.8f %14.8f\n", r, dstncvec[1], adatarray[r][1]);
+                            // printf("%5i %14.8f %14.8f\n", r, dstncvec[2], adatarray[r][2]);
+
+                            tmpdat = dstncvec[0] * adatarray[r][0] + dstncvec[1] * adatarray[r][0] + dstncvec[2] * adatarray[r][2];
+                        }
+                        else {
+                            tmpdat = adatarray[r][0];
+                            printf("%i %14.8f\n", r, adatarray[r][0]);
+                        }
+                    }
+
 #pragma omp atomic update
                     densprof[ hndprof + ind ] += 1.; // / nsurf;
+#pragma omp atomic update
+                    rathist [ hndprof + ind ] += tmpdat;
 
                 }
 
@@ -545,10 +586,17 @@ int tanalize ( input_t * inppar )
         printf("average surface area: %21.10f\n", smarea);
 
         FILE *fdprof;
+        FILE *fadatout;
+
         char tmp[MAXSTRLEN];
 
         sprintf(tmp, "%s%s", inppar->outputprefix, "densprof.dat");
         fdprof = fopen(&tmp[0], "w");
+
+        if ( adddata ) {
+            sprintf(tmp, "%s%s", inppar->outputprefix, "added.dat");
+            fadatout = fopen(&tmp[0], "w");
+        }
 
         int hndprof = ndprof / 2;
         real hdrdprof = drdprof / 2.;
@@ -557,9 +605,16 @@ int tanalize ( input_t * inppar )
             norm = factor;
 
             fprintf ( fdprof, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof+hdrdprof, densprof[i+hndprof], densprof[i+hndprof] / norm);
+            if ( adddata )
+                if ( densprof[i+hndprof] / norm > 1.e-8 )
+                    fprintf ( fadatout, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof+hdrdprof, rathist[i+hndprof], rathist[i+hndprof] / densprof[i+hndprof]);
+                else
+                    fprintf ( fadatout, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof+hdrdprof, 0., 0.);
         }
 
         fclose ( fdprof );
+        if ( adddata )
+            fclose ( fadatout );
 
     }
 
@@ -603,14 +658,16 @@ int tanalize ( input_t * inppar )
     return 0;
 }
 
-void read_adata(FILE * adata, int adatacol, real * adatarray, int nlines, int seekpoint)
+// void read_adata(FILE *adata, int colstrt, int colstop, real **adatarray, int nlines, int seekpoint)
+void read_adata(FILE *adata, int colstrt, int colstop, real *adatarray, int nlines, int seekpoint)
 {
     int i, j;
     char text[MAXSTRLEN];
     char * dummy;
     int col;
 
-    col = adatacol;
+    int ncol = colstop - colstrt;
+    int baseind = 0;
 
     fseek ( adata, seekpoint, SEEK_SET );
 
@@ -621,25 +678,34 @@ void read_adata(FILE * adata, int adatacol, real * adatarray, int nlines, int se
         fgets ( text, MAXSTRLEN, adata );
 
         // printf("%s\n", text);
-        adatarray[i] = atof(text);
+        // adatarray[i] = atof(text);
 
         /* split line adatacol times */ 
 
-        // dummy = strtok(text, " \n");
+        dummy = strtok(text, " \n");
 
-        // printf("dummy at first %s\n", dummy);
+        for ( j=0; j<colstrt; j++ )
+            dummy = strtok ( NULL, " \n");
 
-        // for ( j=0; i<col; i++ )
-        // {
-        //     dummy = strtok ( NULL, " \n");
-        //     printf("%s  ", dummy);
-        // }
+        //FUDO| maybe just use the two-dimensional array?
+
+        int cnt = 0;
+        for ( j=colstrt; j<colstop; j++ )
+        {
+            adatarray[baseind+cnt] = atof(dummy);
+            // adatarray[i][cnt] = atof(dummy);
+            dummy = strtok ( NULL, " \n");
+            cnt++;
+        }
+
         // printf("\n");
         // printf("read: %s\n", dummy);
 
         /* copy data to array */
 
         // adatarray[i] = atof(dummy);
+        
+        baseind += ncol;
     }
 
 }

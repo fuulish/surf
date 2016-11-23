@@ -52,6 +52,7 @@ static const char *keywords[NUMKEYS] =
     "refmask",
     "resolution",
     "addeddata",
+    "datacolumn",
     "profileres",
     "xdrread",
     "ignorefirst",
@@ -150,6 +151,8 @@ typedef struct input_s
     int nofrags;
     char trajectory[MAXSTRLEN];
     char addeddata[MAXSTRLEN];
+    int adatacolstrt;
+    int adatacolstop;
     int trajmode;
     real resolution;
     real profileres;
