@@ -1,0 +1,73 @@
+# created by fftool
+
+units real
+boundary p p f
+
+atom_style full
+bond_style harmonic
+angle_style harmonic
+special_bonds lj/coul 0.0 0.0 0.5
+
+pair_style hybrid lj/cut/coul/long 9.0 9.0
+pair_modify tail no
+kspace_style pppm 1.0e-4
+kspace_modify slab 3
+
+read_data data.lmp
+# read_restart restart.*.lmp
+
+change_box all z final 0 60
+displace_atoms all move 0 0 15
+
+pair_coeff    1    1 lj/cut/coul/long     0.155425     3.165500  # Ow Ow
+pair_coeff    1    2 lj/cut/coul/long     0.000000     1.779185  # Ow Hw
+pair_coeff    2    2 lj/cut/coul/long     0.000000     1.000000  # Hw Hw
+
+minimize 1.0e-4 1.0e-6 100 1000
+reset_timestep 0
+
+variable nsteps equal 10000
+variable nprint equal ${nsteps}/100
+variable ndump equal ${nsteps}/100
+# variable nrestart equal ${nsteps}/10
+
+variable TK equal 300.0
+variable PBAR equal 1.0
+
+neighbor 2.0 bin
+
+timestep 1.0
+
+velocity all create ${TK} 12345
+
+#using shake and NHC
+fix SHAKE all shake 0.0001 20 0 b 1 a 1
+fix TVSTAT all nvt temp ${TK} ${TK} 100
+
+#rigid-body E.O.M. (could be used instead of the above two)
+#fix TVSTAT all rigid/nvt/small molecule temp ${TK} ${TK} 100
+compute RDF all rdf 100 1 1
+fix RDF all ave/time 20 100 ${nsteps} c_RDF[*] file rdf.lammps mode vector
+
+# compute MSD all msd
+# fix MSD all ave/time 1 1 ${ndump} c_MSD[1] c_MSD[2] c_MSD[3] c_MSD[4] file msd.lammps
+
+compute MOL all chunk/atom molecule
+compute DIP all dipole/chunk MOL
+
+fix DIPOUT all ave/time ${ndump} 1 ${ndump} c_DIP[*] file dip.lammps mode vector
+
+dump TRAJ all custom ${ndump} dump.lammpstrj id mol type element x y z ix iy iz
+dump_modify TRAJ element O H
+
+dump XDR all xtc ${ndump} dump.xtc
+
+thermo_style multi
+thermo ${nprint}
+
+# restart ${nrestart} restart.*.lmp
+
+run ${nsteps}
+
+write_restart restart.*.lmp
+write_data data.*.lmp
