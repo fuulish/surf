@@ -20,3 +20,4 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 int tanalize (input_t * inppar);
+void read_adata(FILE * adata, int adatacol, real * adatarray, int nlines, int seekpoint);

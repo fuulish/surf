@@ -481,6 +481,10 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 strcpy(inppar->trajectory, value);
                 inppar->trajmode = 1;
             }
+            else if ((keywords[key] == "addeddata"))
+            {
+                strcpy(inppar->addeddata, value);
+            }
             else if ((keywords[key] == "resolution"))
             {
                 real conv = 1.;
@@ -914,6 +918,7 @@ void set_input_defaults(input_t * inppar)
     inppar->guessfragments = 0;
     inppar->nofrags = 1;
     strcpy(inppar->trajectory, EMPTY);
+    strcpy(inppar->addeddata, EMPTY);
     inppar->trajmode = 0;
     inppar->resolution = 0.1 / BOHR;
     inppar->profileres = 0.1 / BOHR;

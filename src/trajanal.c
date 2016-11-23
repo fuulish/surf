@@ -48,6 +48,7 @@ int tanalize ( input_t * inppar )
     XDRFILE * xd_read;
     FILE * fxmol;
     // FILE * frepxyz;
+    FILE * adata;
     FILE * fsdist;
     // FILE * fxyz;
 #ifdef DEBUG
@@ -60,8 +61,11 @@ int tanalize ( input_t * inppar )
     int nref;
     int natoms;
     int nmask;
+    int adatlnlen;
+    int adddata = 0;
     real ntotarea = ZERO;
     real ntotvol = ZERO;
+    real * rathist;
 
     int * mask;
     int * refmask;
@@ -74,6 +78,8 @@ int tanalize ( input_t * inppar )
     nref = 0;
     nmask = 0;
 
+    if ( strstr(inppar->addeddata, EMPTY) == NULL )
+        adddata = 1;
     if ( !( inppar->periodic ) )
         printf("W A R N I N G: calculation proceeds w/o periodic boundary conditions. Often this is not what you want and Frank always forgot to set 'periodic' in input\n");
 
@@ -112,6 +118,11 @@ int tanalize ( input_t * inppar )
         natoms = atoi( fgets ( text, MAXSTRLEN, fxmol ) );
         snapsize = xmol_snap_bytesize(fxmol);
         read_xmol(inppar->trajectory, &atoms);
+    }
+
+    if ( adddata ) {
+        adata = fopen(&inppar->addeddata[0], "r");
+        adatlnlen = strlen ( fgets ( text, MAXSTRLEN, adata ) );
     }
 
     nmask = get_mask(&(mask), inppar->maskkind, inppar->mask, inppar->nkinds, atoms, natoms);
@@ -196,6 +207,8 @@ int tanalize ( input_t * inppar )
 
         densprof = ( real * ) calloc ( ndprof, sizeof(real) );
 
+        if ( adddata )
+            rathist = (real *) calloc (ndprof, sizeof(real));
     }
 
     // real origin[DIM];
@@ -217,6 +230,7 @@ int tanalize ( input_t * inppar )
     int frwrd = inppar->start + 1;
     char * htw = "w";
     real *dx;
+    real adatarray[tnt];
     matrix box;
     real pbc[DIM];
 
@@ -237,6 +251,18 @@ int tanalize ( input_t * inppar )
         }
         else {
             xmolreader(fxmol, snapsize, i, atoms, natoms);
+        }
+
+        if ( adddata ) 
+        {
+
+            // if ( strstr ( inppar->task, "rdf" ) != NULL ) {
+            //     printf("Sorry, RDFs plus added data currently not implemented\n");
+            //     exit ( 1 );
+            // }
+
+            seekpoint = counter * adatlnlen * nmask;
+            read_adata(adata, inppar->adatacol, &adatarray[0], nmask, seekpoint);
         }
 
         if ( ( inppar->tasknum == SURFDIST ) || ( inppar->tasknum == SURFDENSPROF ) ) {
@@ -560,6 +586,9 @@ int tanalize ( input_t * inppar )
         free ( inppar->zeta );
     }
 
+    if ( adddata )
+        free(rathist);
+
     free(mask);
     // free(refmask);
     free(atoms);
@@ -572,4 +601,45 @@ int tanalize ( input_t * inppar )
 #endif
 
     return 0;
+}
+
+void read_adata(FILE * adata, int adatacol, real * adatarray, int nlines, int seekpoint)
+{
+    int i, j;
+    char text[MAXSTRLEN];
+    char * dummy;
+    int col;
+
+    col = adatacol;
+
+    fseek ( adata, seekpoint, SEEK_SET );
+
+    for ( i=0; i<nlines; i++ )
+    {
+        /* get line */ 
+
+        fgets ( text, MAXSTRLEN, adata );
+
+        // printf("%s\n", text);
+        adatarray[i] = atof(text);
+
+        /* split line adatacol times */ 
+
+        // dummy = strtok(text, " \n");
+
+        // printf("dummy at first %s\n", dummy);
+
+        // for ( j=0; i<col; i++ )
+        // {
+        //     dummy = strtok ( NULL, " \n");
+        //     printf("%s  ", dummy);
+        // }
+        // printf("\n");
+        // printf("read: %s\n", dummy);
+
+        /* copy data to array */
+
+        // adatarray[i] = atof(dummy);
+    }
+
 }
