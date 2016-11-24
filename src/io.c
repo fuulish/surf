@@ -579,7 +579,10 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             }
             else if ((keywords[key] == "load_surface" ) )
             {
-                inppar->load_surface = atoi ( value );
+                if ( strstr ( value, "on" ) != NULL )
+                    inppar->load_surface = 1;
+                else
+                    inppar->load_surface = 0;
             }
             else if ((keywords[key] == "dummy"))
             {

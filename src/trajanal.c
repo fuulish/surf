@@ -265,6 +265,83 @@ int tanalize ( input_t * inppar )
 
             if ( inppar->load_surface ) {
 
+                FILE *fsurf;
+
+                sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surface.xyz");
+                fsurf = fopen(&tmp[0], "r");
+
+                real area;
+
+                if((fgets(text, MAXSTRLEN, fsurf)) != NULL)
+                {
+                    nsurf = atoi(text);
+                    surfpts = (real **) malloc ( nsurf * sizeof ( real *) );
+
+                    int g;
+                    for ( g=0; g<nsurf; g++ )
+                        surfpts[g] = ( real * ) malloc ( DIM * sizeof ( real ) );
+
+                    direction =  ( int * ) malloc ( nsurf * sizeof ( int ) );
+                    grad = ( real * ) malloc ( nsurf * sizeof ( real ) );
+                }
+
+                if((fgets(text, MAXSTRLEN, fsurf)) != NULL) {
+                    char *dummy;
+
+                    dummy = strtok ( text, " \n" );
+                    vol = atof ( dummy );
+                    ntotvol += vol;
+
+                    dummy = strtok ( NULL, " \n" );
+                    area = atof ( dummy );
+                    ntotarea += area;
+                }
+
+                int g;
+                char *dummy;
+                for ( g=0; g<nsurf; g++ )
+                    if((fgets(text, MAXSTRLEN, fsurf)) != NULL) {
+
+                        dummy = strtok ( text, " \n" );
+
+                        int k;
+                        for ( k=0; k<DIM; k++ ) {
+                            dummy = strtok ( NULL, " \n");
+                            surfpts[g][k] = atof ( dummy ) / BOHR;
+                        }
+
+                        dummy = strtok ( NULL, " \n");
+                        grad[g] = atof ( dummy );
+
+                        dummy = strtok ( NULL, " \n");
+                        direction[g] = atoi ( dummy );
+                    }
+
+#ifdef DEBUG
+                if ( inppar->surfxyz ) {
+                    FILE *fsxyzal;
+
+                    sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surface_rewrite.xyz");
+                    fsxyzal = fopen(&tmp[0], "w");;
+
+                    int a, g, k;
+
+                    fprintf ( fsxyzal, "%i\n", nsurf );
+                    fprintf ( fsxyzal, "%14.8f %14.8f\n", vol, area );
+
+                    for ( g=0; g<nsurf; g++ ) {
+                        fprintf(fsxyzal, "%5s", "X");
+                        for ( k=0; k<DIM; k++ ) {
+                            fprintf ( fsxyzal, "    %21.10f", BOHR * surfpts[g][k]);
+                        }
+                        fprintf( fsxyzal, "    %21.10f    %5i\n", grad[g], direction[g]);
+                        //fprintf( fsxyzal, "\n" );
+                    }
+
+                    fclose ( fsxyzal );
+                }
+#endif
+
             }
             else {
                 surface = instant_surface_periodic ( mask, atoms, natoms, zetatom, inppar->surfacecutoff, inppar->output, opref, pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
@@ -326,14 +403,16 @@ int tanalize ( input_t * inppar )
 
                     int a, g, k;
 
-                    fprintf ( fsxyzal, "%i\n\n", nsurf );
+                    fprintf ( fsxyzal, "%i\n", nsurf );
+                    fprintf ( fsxyzal, "%14.8f %14.8f\n", vol, area );
 
                     for ( g=0; g<nsurf; g++ ) {
                         fprintf(fsxyzal, "%5s", "X");
                         for ( k=0; k<DIM; k++ ) {
                             fprintf ( fsxyzal, "    %21.10f", BOHR * surfpts[g][k]);
                         }
-                        fprintf( fsxyzal, "\n" );
+                        fprintf( fsxyzal, "    %21.10f    %5i\n", grad[g], direction[g]);
+                        //fprintf( fsxyzal, "\n" );
                     }
 
                     fclose ( fsxyzal );
