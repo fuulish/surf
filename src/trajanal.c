@@ -256,82 +256,88 @@ int tanalize ( input_t * inppar )
             char opref[MAXSTRLEN];
             sprintf(opref, "%s%i_", inppar->outputprefix, i);
 
-            surface = instant_surface_periodic ( mask, atoms, natoms, zetatom, inppar->surfacecutoff, inppar->output, opref, pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
-
-            if ( inppar->postinterpolate > 1 ) {
-                if ( ! ( inppar->localsurfint ) ) {
-                    cube_t fine;
-
-                    if ( inppar->interpolkind == INTERPOLATE_TRILINEAR )
-                        fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate, inppar->periodic );
-#ifdef HAVE_EINSPLINE
-                    else if ( inppar->interpolkind == INTERPOLATE_BSPLINES )
-                        fine = interpolate_cube_bsplines ( &surface, inppar->postinterpolate, inppar->periodic );
-#endif
-
-                    free ( surface.atoms );
-                    free ( surface.voxels );
-
-                    surface = fine;
-
-                    surface.atoms = fine.atoms;
-                    surface.voxels = fine.voxels;
-
-                    if ( inppar->output > 2 ) {
-                        sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "interpolated-instant-surface.cube");
-                        write_cubefile(tmp, &surface);
-                    }
-                }
-            }
-
-            if ( ( inppar->normalization == NORM_BULK) || ( inppar->normalization == NORM_SLAB ) ) {
-                vol = get_bulk_volume ( &surface, inppar->surfacecutoff );
-
-                if ( inppar->normalization == NORM_SLAB )
-                    vol = pbc[0]*pbc[1]*pbc[2] - vol;
-            }
-            else
-                vol = pbc[0]*pbc[1]*pbc[2];
-
-            // check here, depending on whether we want to look at stuff in the non-solvent phase or in the solvent phase we need to take different volumes
-            // printf("%21.10f%21.10f\n", vol, pbc[0]*pbc[1]*pbc[2]);
-
-            ntotvol += vol;
-
-            /* check here, and remove hard-coded surface direction */
             int * direction;
             real * grad;
             real * dstnc;
-            int newsurf = 0;
+            real ** surfpts;
+            int newsurf= 0;
             int nsurf = 0;
 
-            real area = ZERO;
-            real ** surfpts;
+            if ( inppar->load_surface ) {
 
-            surfpts = get_2d_representation_ils ( &nsurf, &direction, &grad, &surface, inppar->surfacecutoff, newsurf, surf_inds, inppar->direction, &area, inppar->periodic );
+            }
+            else {
+                surface = instant_surface_periodic ( mask, atoms, natoms, zetatom, inppar->surfacecutoff, inppar->output, opref, pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
 
-            ntotarea += area;
+                if ( inppar->postinterpolate > 1 ) {
+                    if ( ! ( inppar->localsurfint ) ) {
+                        cube_t fine;
 
-            // use function write_combined_xmol
-            if ( inppar->surfxyz ) {
-                FILE *fsxyzal;
+                        if ( inppar->interpolkind == INTERPOLATE_TRILINEAR )
+                            fine = interpolate_cube_trilinear ( &surface, inppar->postinterpolate, inppar->periodic );
+#ifdef HAVE_EINSPLINE
+                        else if ( inppar->interpolkind == INTERPOLATE_BSPLINES )
+                            fine = interpolate_cube_bsplines ( &surface, inppar->postinterpolate, inppar->periodic );
+#endif
 
-                sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surface.xyz");
-                fsxyzal = fopen(&tmp[0], "w");;
+                        free ( surface.atoms );
+                        free ( surface.voxels );
 
-                int a, g, k;
+                        surface = fine;
 
-                fprintf ( fsxyzal, "%i\n\n", nsurf );
+                        surface.atoms = fine.atoms;
+                        surface.voxels = fine.voxels;
 
-                for ( g=0; g<nsurf; g++ ) {
-                    fprintf(fsxyzal, "%5s", "X");
-                    for ( k=0; k<DIM; k++ ) {
-                        fprintf ( fsxyzal, "    %21.10f", BOHR * surfpts[g][k]);
+                        if ( inppar->output > 2 ) {
+                            sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "interpolated-instant-surface.cube");
+                            write_cubefile(tmp, &surface);
+                        }
                     }
-                    fprintf( fsxyzal, "\n" );
                 }
 
-                fclose ( fsxyzal );
+                if ( ( inppar->normalization == NORM_BULK) || ( inppar->normalization == NORM_SLAB ) ) {
+                    vol = get_bulk_volume ( &surface, inppar->surfacecutoff );
+
+                    if ( inppar->normalization == NORM_SLAB )
+                        vol = pbc[0]*pbc[1]*pbc[2] - vol;
+                }
+                else
+                    vol = pbc[0]*pbc[1]*pbc[2];
+
+                // check here, depending on whether we want to look at stuff in the non-solvent phase or in the solvent phase we need to take different volumes
+                // printf("%21.10f%21.10f\n", vol, pbc[0]*pbc[1]*pbc[2]);
+
+                ntotvol += vol;
+
+                /* check here, and remove hard-coded surface direction */
+
+                real area = ZERO;
+
+                surfpts = get_2d_representation_ils ( &nsurf, &direction, &grad, &surface, inppar->surfacecutoff, newsurf, surf_inds, inppar->direction, &area, inppar->periodic );
+
+                ntotarea += area;
+
+                // use function write_combined_xmol
+                if ( inppar->surfxyz ) {
+                    FILE *fsxyzal;
+
+                    sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surface.xyz");
+                    fsxyzal = fopen(&tmp[0], "w");;
+
+                    int a, g, k;
+
+                    fprintf ( fsxyzal, "%i\n\n", nsurf );
+
+                    for ( g=0; g<nsurf; g++ ) {
+                        fprintf(fsxyzal, "%5s", "X");
+                        for ( k=0; k<DIM; k++ ) {
+                            fprintf ( fsxyzal, "    %21.10f", BOHR * surfpts[g][k]);
+                        }
+                        fprintf( fsxyzal, "\n" );
+                    }
+
+                    fclose ( fsxyzal );
+                }
             }
 
             if ( inppar->tasknum == SURFDENSPROF ) {
@@ -372,7 +378,8 @@ int tanalize ( input_t * inppar )
                     }
 
                     int mnnd;
-                    dstnc[r] = get_distance_to_surface ( &mnnd, &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+                    dstnc[r] = get_distance_to_surface ( &mnnd, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+                    // dstnc[r] = get_distance_to_surface ( &mnnd, &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
 
                     if ( ( inppar->postinterpolate > 1 ) && ( inppar->localsurfint ) && ( fabs ( dstnc[r] ) < inppar->ldst ) ) {
@@ -421,7 +428,8 @@ int tanalize ( input_t * inppar )
 
                         int mnnd;
 
-                        dstnc[r] = get_distance_to_surface ( &mnnd, &fine, nsrf, srfpts, drctn, grd, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+                        dstnc[r] = get_distance_to_surface ( &mnnd, nsrf, srfpts, drctn, grd, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
+                        // dstnc[r] = get_distance_to_surface ( &mnnd, &fine, nsrf, srfpts, drctn, grd, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
                         int l;
                         for ( l=0; l<nsrf; l++ )

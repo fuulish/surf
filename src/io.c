@@ -577,6 +577,10 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 dummy = strtok_r ( NULL, " ", &save_ptr );
                 inppar->lint = atoi ( dummy );
             }
+            else if ((keywords[key] == "load_surface" ) )
+            {
+                inppar->load_surface = atoi ( value );
+            }
             else if ((keywords[key] == "dummy"))
             {
                 real conv = 1.;
@@ -930,6 +934,7 @@ void set_input_defaults(input_t * inppar)
     inppar->postinterpolate = 0;
     inppar->interpolkind = INTERPOLATE_TRILINEAR;
     inppar->localsurfint = 0;
+    inppar->load_surface = 0;
     inppar->ldst = 5;
     inppar->lint = 5;
 
