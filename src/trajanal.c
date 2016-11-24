@@ -353,6 +353,8 @@ int tanalize ( input_t * inppar )
                         direction[g] = atoi ( dummy );
                     }
 
+                fclose(fsurf);
+
 #ifdef DEBUG
                 if ( inppar->surfxyz ) {
                     FILE *fsxyzal;
@@ -610,8 +612,9 @@ int tanalize ( input_t * inppar )
 
 #pragma omp atomic update
                     densprof[ hndprof + ind ] += 1.; // / nsurf;
+                    if ( adddata )
 #pragma omp atomic update
-                    rathist [ hndprof + ind ] += tmpdat;
+                        rathist [ hndprof + ind ] += tmpdat;
 
                 }
 
@@ -641,8 +644,10 @@ int tanalize ( input_t * inppar )
             free ( dstnc );
             free ( surfpts );
             free ( direction );
-            free ( surface.atoms );
-            free ( surface.voxels );
+            if ( !( inppar->load_surface ) ) {
+                free ( surface.atoms );
+                free ( surface.voxels );
+            }
         }
 
         printf("%4.2f %% done\r", (real) counter / ntot * 100.);

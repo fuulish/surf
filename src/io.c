@@ -953,6 +953,7 @@ void set_input_defaults(input_t * inppar)
     inppar->surfacecutoff = 0.016* sqr(BOHR) * BOHR;
     inppar->zetalloc = 0;
     inppar->zetadef = 2.4/BOHR;
+    inppar->masslloc = 0;
     inppar->roughsurf = 0;
     inppar->batchmode = 0;
     inppar->nkinds = 1;
