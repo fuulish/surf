@@ -493,15 +493,27 @@ int tanalize ( input_t * inppar )
                             real tmpcom[DIM];
 
                             get_center_of_mass ( tmpcom, atoms, fakemask, fakenum);
-                            dstncvec[0] = clspt[0] - tmpcom[0];
                             dstncvec[1] = clspt[1] - tmpcom[1];
                             dstncvec[2] = clspt[2] - tmpcom[2];
+
+                            real nrm_a = 0.;
+                            real nrm_b = 0.;
+
+                            for ( g=0; g<ncol; g++ ) {
+                               dstncvec[g] = clspt[g] - tmpcom[g];
+                               nrm_a += dstncvec[g]*dstncvec[g];
+                               nrm_b += adatarray[r][g]*adatarray[r][g];
+                            }
+
+                            nrm_a = sqrt(nrm_a);
+                            nrm_b = sqrt(nrm_b);
 
                             // printf("%5i %14.8f %14.8f\n", r, dstncvec[0], adatarray[r][0]);
                             // printf("%5i %14.8f %14.8f\n", r, dstncvec[1], adatarray[r][1]);
                             // printf("%5i %14.8f %14.8f\n", r, dstncvec[2], adatarray[r][2]);
 
                             tmpdat = dstncvec[0] * adatarray[r][0] + dstncvec[1] * adatarray[r][0] + dstncvec[2] * adatarray[r][2];
+                            tmpdat /= (nrm_a * nrm_b);
                         }
                         else {
                             tmpdat = adatarray[r][0];
