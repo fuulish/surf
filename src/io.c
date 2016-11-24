@@ -147,6 +147,41 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 inppar->surfacecutoff = atof(dummy) / ( sqr ( conv ) * conv );
             }
+            else if ((keywords[key] == "mass"))
+            {
+                real conv = 1.;
+
+                if ( strstr ( dummy, "ANG" ) != NULL ) {
+                    conv = ANG2BOHR;
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
+                }
+                else if ( strstr ( dummy, "NM" ) != NULL ) {
+                    conv = NM2BOHR;
+                    dummy = strtok_r ( NULL, " " , &save_ptr);
+                }
+
+                inppar->mass = malloc( (LAST_ATOM+1) * sizeof ( double ) );
+                inppar->masslloc = 1;
+
+                char * save_other;
+                char * dumnum;
+
+                while ( dummy != NULL ) {
+
+                    dumnum = strtok_r ( dummy, ":", &save_other);
+                    int anum = atoi(dumnum);
+                    printf("atom number: %i\n", anum);
+
+                    dumnum = strtok_r ( NULL, ":", &save_other);
+                    real zetmp = conv * atof(dumnum);
+                    printf("mass: %14.8f\n", zetmp);
+
+                    inppar->mass[anum] = zetmp;
+
+                    dummy = strtok_r ( NULL, " ", &save_ptr);
+                }
+
+            }
             else if ((keywords[key] == "zeta"))
             {
                 real conv = 1.;

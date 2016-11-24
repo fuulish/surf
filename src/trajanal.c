@@ -181,6 +181,10 @@ int tanalize ( input_t * inppar )
             zetatom[a] = inppar->zetadef;
     }
 
+    if ( inppar->masslloc )
+        for ( a=0; a<natoms; a++ )
+            atoms[a].mass = inppar->mass[atoms[a].number];
+
     real *densprof;
     real mxdim;
     int ndprof;
@@ -640,6 +644,9 @@ int tanalize ( input_t * inppar )
     if ( inppar->zetalloc ) {
         free ( inppar->zeta );
     }
+
+    if ( inppar->masslloc )
+        free ( inppar->mass );
 
     if ( adddata )
         free(rathist);

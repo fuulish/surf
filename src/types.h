@@ -35,6 +35,7 @@ static const char *keywords[NUMKEYS] =
     "structure",
     "surfacecutoff",
     "zeta",
+    "mass",
     "roughsurf",
     "batch",
     "oprefix",
@@ -122,6 +123,8 @@ typedef struct input_s
     real *zeta;
     real zetadef;
     int zetalloc;
+    real *mass;
+    int masslloc;
     int roughsurf;
     char structure[MAXSTRLEN];
     char outputprefix[MAXSTRLEN];

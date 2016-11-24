@@ -26,9 +26,9 @@ pair_coeff    2    2 lj/cut/coul/long     0.000000     1.000000  # Hw Hw
 minimize 1.0e-4 1.0e-6 100 1000
 reset_timestep 0
 
-variable nsteps equal 10000
-variable nprint equal ${nsteps}/100
-variable ndump equal ${nsteps}/100
+variable nsteps equal 100000
+variable nprint equal ${nsteps}/1000
+variable ndump equal ${nsteps}/1000
 # variable nrestart equal ${nsteps}/10
 
 variable TK equal 300.0
