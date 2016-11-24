@@ -473,7 +473,8 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
     return finalsurf;
 }
 
-real get_distance_to_surface ( int * mnnd, cube_t * surface, int nsurf, real ** surfpts, int * direction, real * grad, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic )
+real get_distance_to_surface ( int * mnnd, int nsurf, real ** surfpts, int * direction, real * grad, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic )
+// real get_distance_to_surface ( int * mnnd, cube_t * surface, int nsurf, real ** surfpts, int * direction, real * grad, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic )
 {
     int k, l;
     int crrnt[DIM];
@@ -481,7 +482,7 @@ real get_distance_to_surface ( int * mnnd, cube_t * surface, int nsurf, real ** 
     real ** updi;
     real * dx;
 
-    dx = get_box_volels(surface);
+    // dx = get_box_volels(surface);
     real * dsts = ( real * ) malloc ( nsurf * sizeof ( real ) );
 
     real spos[DIM];
@@ -500,28 +501,28 @@ real get_distance_to_surface ( int * mnnd, cube_t * surface, int nsurf, real ** 
 
     dstnc = find_minimum_1d_real (&min, dsts, nsurf );
 
-    get_index_triple ( crrnt, com, pbc, surface->origin, surface->n, dx, periodic );
+    // get_index_triple ( crrnt, com, pbc, surface->origin, surface->n, dx, periodic );
 
-    int lower[DIM], upper[DIM];
+    // int lower[DIM], upper[DIM];
 
-    for ( l=0; l<DIM; l++ ) {
-        if ( l == direction[min] ) {
-            lower[l] = crrnt[l] - 1;
-            upper[l] = crrnt[l] + 1;
-        }
-        else {
-            lower[l] = crrnt[l];
-            upper[l] = crrnt[l];
-        }
-    }
+    // for ( l=0; l<DIM; l++ ) {
+    //     if ( l == direction[min] ) {
+    //         lower[l] = crrnt[l] - 1;
+    //         upper[l] = crrnt[l] + 1;
+    //     }
+    //     else {
+    //         lower[l] = crrnt[l];
+    //         upper[l] = crrnt[l];
+    //     }
+    // }
 
-    int loind, hiind;
+    // int loind, hiind;
 
-    periodify_indices ( lower, surface->n, lower, DIM );
-    periodify_indices ( upper, surface->n, upper, DIM );
+    // periodify_indices ( lower, surface->n, lower, DIM );
+    // periodify_indices ( upper, surface->n, upper, DIM );
 
-    loind = get_index ( surface->n, lower[0], lower[1], lower[2] );
-    hiind = get_index ( surface->n, upper[0], upper[1], upper[2] );
+    // loind = get_index ( surface->n, lower[0], lower[1], lower[2] );
+    // hiind = get_index ( surface->n, upper[0], upper[1], upper[2] );
 
     if ( ( ( grad[min] < 0. ) && ( com[direction[min]] > surfpts[min][direction[min]] ) ) ||
          ( ( grad[min] > 0. ) && ( com[direction[min]] < surfpts[min][direction[min]] ) ) ) {
@@ -531,7 +532,7 @@ real get_distance_to_surface ( int * mnnd, cube_t * surface, int nsurf, real ** 
     }
 
     free ( dsts );
-    free ( dx );
+    // free ( dx );
 
     *mnnd = min;
     return dstnc;

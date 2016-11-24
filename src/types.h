@@ -63,6 +63,7 @@ static const char *keywords[NUMKEYS] =
     "surfxyz",
     "normalization",
     "localsurfaceinterpolation",
+    "load_surface",
 };
 
 typedef struct voxel_s
@@ -172,6 +173,7 @@ typedef struct input_s
     int localsurfint;
     int lint;
     real ldst;
+    int load_surface;
 } input_t;
 
 typedef struct list_s
