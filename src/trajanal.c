@@ -266,13 +266,19 @@ int tanalize ( input_t * inppar )
         if ( adddata ) 
         {
 
+            int nfrg;
+            if ( inppar->nofrags )
+                nfrg = nref;
+            else
+                nfrg = inppar->numfrags;
+
             // if ( strstr ( inppar->task, "rdf" ) != NULL ) {
             //     printf("Sorry, RDFs plus added data currently not implemented\n");
             //     exit ( 1 );
             // }
 
-            seekpoint = counter * adatlnlen * nmask;
-            read_adata(adata, inppar->adatacolstrt, inppar->adatacolstop, &adatarray[0][0], nmask, seekpoint);
+            seekpoint = counter * adatlnlen * nfrg;
+            read_adata(adata, inppar->adatacolstrt, inppar->adatacolstop, &adatarray[0][0], nfrg, seekpoint);
         }
 
         if ( ( inppar->tasknum == SURFDIST ) || ( inppar->tasknum == SURFDENSPROF ) ) {
@@ -303,7 +309,7 @@ int tanalize ( input_t * inppar )
 
                 FILE *fsurf;
 
-                sprintf(tmp, "%s%i_%s", inppar->outputprefix, i, "atrep_surface.xyz");
+                sprintf(tmp, "%s%i_%s", inppar->loadprefix, i, "atrep_surface.xyz");
                 fsurf = fopen(&tmp[0], "r");
 
                 real area;
@@ -582,19 +588,27 @@ int tanalize ( input_t * inppar )
                             real tmpcom[DIM];
 
                             get_center_of_mass ( tmpcom, atoms, fakemask, fakenum);
-                            dstncvec[1] = clspt[1] - tmpcom[1];
-                            dstncvec[2] = clspt[2] - tmpcom[2];
 
                             real nrm_a = 0.;
                             real nrm_b = 0.;
 
+                            if ( inppar->periodic )
+                                get_distance_vector_periodic ( dstncvec, clspt, tmpcom, pbc );
+                            else
+                                for ( g=0; g<ncol; g++ )
+                                    dstncvec[g] = clspt[g] - tmpcom[g];
+
+                            // FUDO| periodicity 
                             for ( g=0; g<ncol; g++ ) {
-                               dstncvec[g] = clspt[g] - tmpcom[g];
+                               // dstncvec[g] = clspt[g] - tmpcom[g];
                                nrm_a += dstncvec[g]*dstncvec[g];
                                nrm_b += adatarray[r][g]*adatarray[r][g];
                             }
 
                             nrm_a = sqrt(nrm_a);
+                            if ( fabsf ( nrm_a - dstnc[r] ) > 1.e-06 )
+                                printf("Distances not congruent, something's wrong %14.8f %14.8f\n", nrm_a, dstnc[r]);
+
                             nrm_b = sqrt(nrm_b);
 
                             // printf("%5i %14.8f %14.8f\n", r, dstncvec[0], adatarray[r][0]);

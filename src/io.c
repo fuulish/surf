@@ -629,6 +629,16 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                     inppar->load_surface = 1;
                 else
                     inppar->load_surface = 0;
+
+                dummy = strtok_r ( NULL, " \n", &save_ptr );
+                
+                if ( dummy != NULL )
+                    strcpy(inppar->loadprefix, dummy);
+                else {
+                    printf("Please provide loadprefix as second argument\n");
+                    exit(1);
+                }
+
             }
             else if ((keywords[key] == "dummy"))
             {
@@ -949,6 +959,7 @@ void set_input_defaults(input_t * inppar)
     strcpy(inppar->maskkind, "notatoms");
     strcpy(inppar->refmaskkind, "notatoms");
     strcpy(inppar->inpfile, EMPTY);
+    strcpy(inppar->loadprefix, EMPTY);
     inppar->output = 1;
     inppar->surfacecutoff = 0.016* sqr(BOHR) * BOHR;
     inppar->zetalloc = 0;

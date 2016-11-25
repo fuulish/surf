@@ -174,6 +174,7 @@ typedef struct input_s
     int lint;
     real ldst;
     int load_surface;
+    char loadprefix[MAXSTRLEN];
 } input_t;
 
 typedef struct list_s
