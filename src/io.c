@@ -26,8 +26,6 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include "atom_param.h"
 #include "io.h"
 #include "errors.h"
-#include <xdrfile/xdrfile.h>
-#include <xdrfile/xdrfile_xtc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1629,10 +1627,8 @@ void read_xtr_forward ( XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms
     x_xtc = calloc(natoms, sizeof(x_xtc[0]));
 
     for ( i=0; i<frwrd; i++ )
-#ifdef HAVE_XDRFILE
         // check here, maybe we should use 'read_next_xtc'
         result_xtc = read_xtc(xd_read, natoms, &step_xtc, &time_xtc, *box_xtc, x_xtc, &prec_xtc);
-#endif
 
     int k, l;
     for ( k=0; k<DIM; k++ )

@@ -20,7 +20,6 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
-#include <xdrfile/xdrfile.h>
 
 void parse_input_file(input_t *, char *);
 void set_input_value(input_t *, char *, char *);
@@ -46,7 +45,7 @@ void parse_cmdline(input_t * inppar, char ** argv, int argc);
 void display_usage(void);
 void xmolreader(FILE * fxmol, int bytelen, int snap, atom_t * atoms, int natoms);
 int xmol_snap_bytesize(FILE * fxmol);
-#ifdef HAVE_XDR
+#ifdef HAVE_XDRFILE
 #include <xdrfile/xdrfile.h>
 #include <xdrfile/xdrfile_xtc.h>
 void read_xtr_forward (XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms, matrix *box_xtc);
