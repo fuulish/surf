@@ -1605,6 +1605,8 @@ int xmol_snap_bytesize(FILE * fxmol)
     return bytelen;
 }
 
+
+#ifdef HAVE_XDRFILE
 void read_xtr_forward ( XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms, matrix *box_xtc )
 {
     int i, j;
@@ -1650,6 +1652,7 @@ void read_xtr_forward ( XDRFILE * xd_read, int frwrd, atom_t * atoms, int natoms
     free ( x_xtc );
     // convert to useable format (for our purpose
 }
+#endif
 
 void write_xyz ( FILE * xyz, atom_t * atoms, int natoms, char * comment )
 {

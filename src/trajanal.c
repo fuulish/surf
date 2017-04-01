@@ -30,8 +30,10 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include "molmanipul.h"
 #include "trajanal.h"
 #include "time.h"
+#ifdef HAVE_XDRFILE
 #include <xdrfile/xdrfile.h>
 #include <xdrfile/xdrfile_xtc.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,7 +47,9 @@ int tstop;
 int tanalize ( input_t * inppar )
 {
     int snapsize;
+#ifdef HAVE_XDRFILE
     XDRFILE * xd_read;
+#endif
     FILE * fxmol;
     // FILE * frepxyz;
     FILE * adata;
@@ -98,7 +102,6 @@ int tanalize ( input_t * inppar )
 #ifdef HAVE_XDRFILE
         xd_read = xdrfile_open ( &inppar->trajectory[0], "r" );
         result_xtc = read_xtc_natoms( &inppar->trajectory[0], &natoms_xtc);
-#endif
 
         if ( exdrOK != result_xtc ) {
             printf("Something went wrong opening XDR file\n"); // Error
@@ -109,6 +112,7 @@ int tanalize ( input_t * inppar )
             printf("XDR file and xyz file do not contain the same number of atoms\nNot continuing\n");
             exit ( 1 );
         }
+#endif
 
         fclose ( fxmol );
 
@@ -241,7 +245,9 @@ int tanalize ( input_t * inppar )
     int frwrd = inppar->start + 1;
     char * htw = "w";
     real *dx;
+#ifdef HAVE_XDRFILE
     matrix box;
+#endif
     real pbc[DIM];
 
     for ( i=0; i<DIM; i++ )
@@ -251,13 +257,14 @@ int tanalize ( input_t * inppar )
     {
         /* read snapshot */
         if ( inppar->xdrread ) {
+#ifdef HAVE_XDRFILE
             read_xtr_forward ( xd_read, frwrd, atoms, natoms, &box );
             frwrd = inppar->stride;
 
             int k;
             for ( k=0; k<DIM; k++ )
                 pbc[k] = box[k][k];
-
+#endif
         }
         else {
             xmolreader(fxmol, snapsize, i, atoms, natoms);
