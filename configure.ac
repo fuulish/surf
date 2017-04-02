@@ -20,7 +20,7 @@ AC_ARG_ENABLE([depends],
               AS_HELP_STRING([--enable-depends], [enable single precision]))
 
               AS_IF([test "x$enable_depends" = "xyes"], [
-                     LIBS="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a $LIBS"
+                     LIBS="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a $PWD/depends/lib/libnlopt.a $LIBS"
                 C_INCLUDE_PATH="$C_INCLUDE_PATH:$PWD/depends/include"
                 CFLAGS="$CFLAGS -I$PWD/depends/include"
                 CXXFLAGS="$CXXFLAGS -I$PWD/depends/include"
@@ -59,6 +59,16 @@ AC_ARG_ENABLE([depends],
 ### AC_SUBST([AM_CFLAGS])
 ### AC_SUBST([AM_CXXFLAGS])
 ### AC_SUBST([AM_LDFLAGS])
+
+AC_ARG_ENABLE([nlopt],
+              AS_HELP_STRING([--enable-nlopt], [enable nlopt library support]))
+
+              AS_IF([test "x$enable_nlopt" = "xyes"], [
+              AC_SEARCH_LIBS([nlopt_optimize], [nlopt], [CFLAGS="$CFLAGS -DHAVE_NLOPT"], [
+                AC_MSG_ERROR([unable to find the nlopt_optimize function. Is nlopt library installed?])
+              ])
+
+])
 
 AC_ARG_ENABLE([xdr],
               AS_HELP_STRING([--enable-xdr], [enable XDR file support]))

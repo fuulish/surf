@@ -2,12 +2,17 @@ default:
 	@echo 'Choose one of the following targets'
 	@echo '* xdrfile downloads and compiles xdrfile 1.1.4'
 	@echo '* einspline downloads and compiles EINSPLINE 0.9.2'
+	@echo '* nlopt downloads and compiles nlopt 2.4.2'
+
+.PHONY: nlopt xdrfile einspline
+
+nlopt: lib/libnlopt.a
 
 xdrfile: lib/libxdrfile.a
 
 einspline: lib/libeinspline.a
 
-all: xdrfile einspline
+all: xdrfile einspline nlopt
 
 # Build einspline from scratch
 
@@ -33,5 +38,15 @@ xdrfile-1.1.4: xdrfile-1.1.4.tar.gz
 xdrfile-1.1.4.tar.gz:
 	wget 'ftp://ftp.gromacs.org/pub/contrib/xdrfile-1.1.4.tar.gz' -O xdrfile-1.1.4.tar.gz
 
+lib/libnlopt.a: nlopt-2.4.2
+	cd nlopt-2.4.2&& CONFIG_SHELL=/bin/sh ./configure --prefix=$(PWD)
+	cd nlopt-2.4.2&& $(MAKE) install
+
+nlopt-2.4.2: nlopt-2.4.2.tar.gz
+	tar -xzvf nlopt-2.4.2.tar.gz
+
+nlopt-2.4.2.tar.gz:
+	wget 'http://ab-initio.mit.edu/nlopt/nlopt-2.4.2.tar.gz' -O nlopt-2.4.2.tar.gz
+
 clean:
-	rm -rf einspline-0.9.2* xdrfile-1.1.4* bin include lib
+	-rm -rf einspline-0.9.2* xdrfile-1.1.4* nlopt-2.4.2* bin include lib

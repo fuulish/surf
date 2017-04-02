@@ -651,6 +651,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -676,6 +677,7 @@ enable_option_checking
 enable_silent_rules
 enable_dependency_tracking
 enable_depends
+enable_nlopt
 enable_xdr
 enable_einspline
 enable_float
@@ -728,6 +730,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -980,6 +983,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1117,7 +1129,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1270,6 +1282,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1311,6 +1324,7 @@ Optional Features:
   --disable-dependency-tracking
                           speeds up one-time build
   --enable-depends        enable single precision
+  --enable-nlopt          enable nlopt library support
   --enable-xdr            enable XDR file support
   --enable-einspline      enable EINSPLINE file support
   --enable-float          enable single precision
@@ -1842,7 +1856,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-am__api_version='1.14'
+am__api_version='1.15'
 
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
@@ -2063,7 +2077,7 @@ else
 $as_echo "$as_me: WARNING: 'missing' script is too old or missing" >&2;}
 fi
 
-if test x"${install_sh}" != xset; then
+if test x"${install_sh+set}" != xset; then
   case $am_aux_dir in
   *\ * | *\	*)
     install_sh="\${SHELL} '$am_aux_dir/install-sh'" ;;
@@ -2391,8 +2405,8 @@ MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}
 # <http://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
 mkdir_p='$(MKDIR_P)'
 
-# We need awk for the "check" target.  The system "awk" is bad on
-# some platforms.
+# We need awk for the "check" target (and possibly the TAP driver).  The
+# system "awk" is bad on some platforms.
 # Always define AMTAR for backward compatibility.  Yes, it's still used
 # in the wild :-(  We should find a proper way to deprecate it ...
 AMTAR='$${TAR-tar}'
@@ -3434,7 +3448,7 @@ fi
 
               if test "x$enable_depends" = "xyes"; then :
 
-                     LIBS="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a $LIBS"
+                     LIBS="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a $PWD/depends/lib/libnlopt.a $LIBS"
                 C_INCLUDE_PATH="$C_INCLUDE_PATH:$PWD/depends/include"
                 CFLAGS="$CFLAGS -I$PWD/depends/include"
                 CXXFLAGS="$CXXFLAGS -I$PWD/depends/include"
@@ -3474,6 +3488,78 @@ fi
 ### AC_SUBST([AM_CFLAGS])
 ### AC_SUBST([AM_CXXFLAGS])
 ### AC_SUBST([AM_LDFLAGS])
+
+# Check whether --enable-nlopt was given.
+if test "${enable_nlopt+set}" = set; then :
+  enableval=$enable_nlopt;
+fi
+
+
+              if test "x$enable_nlopt" = "xyes"; then :
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing nlopt_optimize" >&5
+$as_echo_n "checking for library containing nlopt_optimize... " >&6; }
+if ${ac_cv_search_nlopt_optimize+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char nlopt_optimize ();
+int
+main ()
+{
+return nlopt_optimize ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' nlopt; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_nlopt_optimize=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_nlopt_optimize+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_nlopt_optimize+:} false; then :
+
+else
+  ac_cv_search_nlopt_optimize=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_nlopt_optimize" >&5
+$as_echo "$ac_cv_search_nlopt_optimize" >&6; }
+ac_res=$ac_cv_search_nlopt_optimize
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  CFLAGS="$CFLAGS -DHAVE_NLOPT"
+else
+
+                as_fn_error $? "unable to find the nlopt_optimize function. Is nlopt library installed?" "$LINENO" 5
+
+fi
+
+
+
+fi
 
 # Check whether --enable-xdr was given.
 if test "${enable_xdr+set}" = set; then :
