@@ -604,3 +604,25 @@ real get_bulk_volume ( cube_t * surface, real surfcut )
 
     return vol;
 }
+
+#ifdef HAVE_NLOPT
+void get_opt_distance_to_surface( )
+{
+  /* 
+   * data that needs be passed to this function are:
+   *  everything needed to construct a surface
+   *  a good initial guess for the surface point
+   *
+   *  pass surface stuff in a data structure, instead of a whole lot of parameters
+   *    --> makes accessing the stuff easier also from NLOPT library
+   *
+   *  initial guess for surface point from minimum distance guess above
+   */
+}
+#endif
+
+/* get value of coarse-grained density at certain point in space */
+//FUDO| it might be helpful to keep something like a neighbor list for the optimization procedure, maybe not
+double get_coarse_grained_density( )
+{
+}

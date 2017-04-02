@@ -638,6 +638,18 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 }
 
             }
+#ifdef HAVE_NLOPT
+            else if ((keywords[key] == "opt_surfdist" ) )
+            {
+                if ( strstr ( value, "on" ) != NULL )
+                    inppar->opt_surfdist = 1;
+                else
+                    inppar->opt_surfdist = 0;
+
+                // dummy = strtok_r ( NULL, " \n", &save_ptr );
+
+            }
+#endif
             else if ((keywords[key] == "dummy"))
             {
                 real conv = 1.;
@@ -997,6 +1009,7 @@ void set_input_defaults(input_t * inppar)
     inppar->interpolkind = INTERPOLATE_TRILINEAR;
     inppar->localsurfint = 0;
     inppar->load_surface = 0;
+    inppar->opt_surfdist = 0;
     inppar->ldst = 5;
     inppar->lint = 5;
 

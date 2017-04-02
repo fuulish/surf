@@ -24,7 +24,7 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #define FLEN sizeof(float)
 #define CLEN sizeof(char[1])
 #define DLLEN sizeof(long real)
-#define NUMKEYS 35
+#define NUMKEYS 36
 #define EPS 1.e-6
 #define ZERO 0.
 #define INTZERO 0

@@ -508,16 +508,32 @@ int tanalize ( input_t * inppar )
                     }
 
                     int mnnd;
+
+                    /* this one needs to be done to get a good guess for the surface point we are looking for */
                     dstnc[r] = get_distance_to_surface ( &mnnd, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
                     // dstnc[r] = get_distance_to_surface ( &mnnd, &surface, nsurf, surfpts, direction, grad, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
                     real clspt[DIM];
-                    int g;
 
-                    for ( g=0; g<DIM; g++)
-                        clspt[g] = surfpts[mnnd][g];
+                    if ( inppar->opt_surfdist ) {
+                      /* create data struct containing all the input parameters */
 
-                    if ( ( inppar->postinterpolate > 1 ) && ( inppar->localsurfint ) && ( fabs ( dstnc[r] ) < inppar->ldst ) ) {
+                      /* optimize the function under given constraints */
+#ifdef HAVE_NLOPT
+#endif
+                      /* save point in clspt for later use */
+
+                      //FUDO| check if we need to save something else
+                      //FUDO| where else is mnnd used?!
+
+                    }
+                    else {
+                      int g;
+                      for ( g=0; g<DIM; g++)
+                          clspt[g] = surfpts[mnnd][g];
+                    }
+
+                    if ( !(inppar->opt_surfdist) && ( inppar->postinterpolate > 1 ) && ( inppar->localsurfint ) && ( fabs ( dstnc[r] ) < inppar->ldst ) ) {
 
 
                         // need index of point on surface
@@ -566,6 +582,7 @@ int tanalize ( input_t * inppar )
                         dstnc[r] = get_distance_to_surface ( &mnnd, nsrf, srfpts, drctn, grd, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
                         // dstnc[r] = get_distance_to_surface ( &mnnd, &fine, nsrf, srfpts, drctn, grd, atoms, fakemask, fakenum, natoms, pbc, inppar->output, opref, inppar->surfacecutoff, inppar->periodic );
 
+                        int g;
                         for ( g=0; g<DIM; g++)
                             clspt[g] = surfpts[mnnd][g];
 
@@ -598,6 +615,7 @@ int tanalize ( input_t * inppar )
 
                             real nrm_a = 0.;
                             real nrm_b = 0.;
+                            int g;
 
                             if ( inppar->periodic )
                                 get_distance_vector_periodic ( dstncvec, clspt, tmpcom, pbc );

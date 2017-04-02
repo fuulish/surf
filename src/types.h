@@ -64,6 +64,7 @@ static const char *keywords[NUMKEYS] =
     "normalization",
     "localsurfaceinterpolation",
     "load_surface",
+    "opt_surfdist",
 };
 
 typedef struct voxel_s
@@ -174,6 +175,7 @@ typedef struct input_s
     int lint;
     real ldst;
     int load_surface;
+    int opt_surfdist;
     char loadprefix[MAXSTRLEN];
 } input_t;
 
