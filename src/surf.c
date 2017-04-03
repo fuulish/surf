@@ -839,7 +839,7 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
   cons_data.resolution = resolution;
   cons_data.periodic = periodic;
 
-  nlopt_add_equality_constraint(opt, myconstraint, &cons_data, 1e-4);
+  nlopt_add_equality_constraint(opt, myconstraint, &cons_data, 1e-6);
 
   // my_constraint_data_type cons_data[DIM];
 
@@ -858,18 +858,18 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
   // nlopt_add_equality_constraint(opt, myconstraint, &cons_data[1], 1e-8);
   // nlopt_add_equality_constraint(opt, myconstraint, &cons_data[2], 1e-8);
   
-  nlopt_set_xtol_rel(opt, 1e-2);
+  nlopt_set_xtol_rel(opt, 1e-4);
   // nlopt_set_maxtime(opt, 1.);
   
   double x[3] = { init_guess[0], init_guess[1], init_guess[2] };  /* some initial guess */
   double minf; /* the minimum objective value, upon return */
   
-  printf("STARTING OPTIMIZATION %g,%g,%g\n", init_guess[0], init_guess[1], init_guess[2]);
+  // printf("STARTING OPTIMIZATION %g,%g,%g\n", init_guess[0], init_guess[1], init_guess[2]);
   if (nlopt_optimize(opt, x, &minf) < 0) {
       printf("nlopt failed!\n");
   }
   else {
-      printf("found minimum at f(%g,%g,%g) = %0.10g\n", x[0], x[1], x[2], minf);
+      // printf("found minimum at f(%g,%g,%g) = %0.10g\n", x[0], x[1], x[2], minf);
   }
   
   nlopt_destroy(opt);

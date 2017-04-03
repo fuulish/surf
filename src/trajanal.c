@@ -522,11 +522,22 @@ int tanalize ( input_t * inppar )
                     if ( inppar->opt_surfdist ) {
                       /* optimize the function under given constraints */
 #ifdef HAVE_NLOPT
-                      printf("R BEFORE: %i \n", r);
+                      // printf("R BEFORE: %i \n", r);
                       real com[DIM];
                       get_center_of_mass ( com, atoms, fakemask, fakenum);
+
                       dstnc[r] = get_opt_distance_to_surface( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->resolution, inppar->periodic, dx );
-                      printf("AFTER\n");
+
+                      int index[DIM];
+                      get_index_triple ( index, com, pbc, surface.origin, surface.n, dx, inppar->periodic );
+
+                      int tmpndx = get_index ( surface.n, index[0], index[1], index[2]);
+
+                      //mnnd is not the index here
+                      if ( surface.voxels[tmpndx].data < inppar->surfacecutoff )
+                        dstnc[r] *= -1.;
+
+                      // printf("AFTER\n");
 #endif
                       /* save point in clspt for later use */
 
