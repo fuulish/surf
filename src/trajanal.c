@@ -526,7 +526,7 @@ int tanalize ( input_t * inppar )
                       real com[DIM];
                       get_center_of_mass ( com, atoms, fakemask, fakenum);
 
-                      dstnc[r] = get_opt_distance_to_surface( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->resolution, inppar->periodic, dx );
+                      dstnc[r] = get_opt_distance_to_surface( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->resolution, inppar->periodic, dx, inppar->xtol, inppar->ctol );
 
                       int index[DIM];
                       get_index_triple ( index, com, pbc, surface.origin, surface.n, dx, inppar->periodic );

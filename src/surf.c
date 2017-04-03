@@ -642,6 +642,15 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
         real sqzeta = sqr(zeta[mask[a]]);
         real trplzt = 3*zeta[mask[a]];
 
+        real dx[DIM];
+        if ( periodic )
+            distance = get_distance_vector_periodic ( dx, mepos, &(atoms[mask[a]].coords[0]), pbc );
+        else
+            distance = get_distance_vector ( dx, mepos, &(atoms[mask[a]].coords[0]) );
+
+        if ( distance > trplzt )
+            continue;
+
         real mttsqzeta = -2. * sqzeta;
         real dummy = 2. * PI * sqzeta;
 
@@ -660,15 +669,6 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
         */
 
         /* this should be working, but it's not worth the effort right now, too little result for too much work */
-
-        real dx[DIM];
-        if ( periodic )
-            distance = get_distance_vector_periodic ( dx, mepos, &(atoms[mask[a]].coords[0]), pbc );
-        else
-            distance = get_distance_vector ( dx, mepos, &(atoms[mask[a]].coords[0]) );
-
-        if ( distance > trplzt )
-            continue;
 
         real tmpdens = prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft;
         // the below formula can be simplified, check here
@@ -747,7 +747,7 @@ double myconstraint(unsigned n, const double *x, double *grad, void *data)
  }
 
 #ifdef HAVE_NLOPT
-real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, real resolution, int periodic, real *bnds )
+real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, real resolution, int periodic, real *bnds, double xtol, double ctol )
 {
   /* 
    * data that needs be passed to this function are:
@@ -760,8 +760,8 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
    *  initial guess for surface point from minimum distance guess above
    */
 
-  double lb[3] = { init_guess[0] - 2. * bnds[0], init_guess[1] - 2. * bnds[1], init_guess[2] - 2. * bnds[2] }; /* lower bounds */
-  double ub[3] = { init_guess[0] + 2. * bnds[0], init_guess[1] + 2. * bnds[1], init_guess[2] + 2. * bnds[2] }; /* upper bounds */
+  double lb[3] = { init_guess[0] - bnds[0], init_guess[1] - bnds[1], init_guess[2] - bnds[2] }; /* lower bounds */
+  double ub[3] = { init_guess[0] + bnds[0], init_guess[1] + bnds[1], init_guess[2] + bnds[2] }; /* upper bounds */
 
   nlopt_opt opt;
 
@@ -788,9 +788,9 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
   cons_data.resolution = resolution;
   cons_data.periodic = periodic;
 
-  nlopt_add_equality_constraint(opt, myconstraint, &cons_data, 1e-6);
+  nlopt_add_equality_constraint(opt, myconstraint, &cons_data, ctol);
 
-  nlopt_set_xtol_rel(opt, 1e-4);
+  nlopt_set_xtol_rel(opt, xtol);
   // nlopt_set_maxtime(opt, 1.);
   
   double x[3] = { init_guess[0], init_guess[1], init_guess[2] };  /* some initial guess */

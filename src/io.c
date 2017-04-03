@@ -646,7 +646,16 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 else
                     inppar->opt_surfdist = 0;
 
-                // dummy = strtok_r ( NULL, " \n", &save_ptr );
+                dummy = strtok_r ( NULL, " \n", &save_ptr );
+
+                if ( dummy != NULL ) {
+                  inppar->xtol = atof( dummy );
+
+                  dummy = strtok_r ( NULL, " \n", &save_ptr );
+                  inppar->ctol = atof( dummy );
+
+                  // printf("tolerances: %g %g\n", inppar->xtol, inppar->ctol);
+                }
 
             }
 #endif
@@ -1010,6 +1019,8 @@ void set_input_defaults(input_t * inppar)
     inppar->localsurfint = 0;
     inppar->load_surface = 0;
     inppar->opt_surfdist = 0;
+    inppar->xtol = 1.e-4;
+    inppar->ctol = 1.e-6;
     inppar->ldst = 5;
     inppar->lint = 5;
 
