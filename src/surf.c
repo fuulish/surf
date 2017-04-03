@@ -797,8 +797,8 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
   // opt = nlopt_create(NLOPT_GN_ISRES, DIM); /* algorithm and dimensionality */
   // opt = nlopt_create(NLOPT_LD_SLSQP, DIM); /* algorithm and dimensionality */
   // opt = nlopt_create(NLOPT_LN_COBYLA, DIM); /* algorithm and dimensionality */
-  // opt = nlopt_create(NLOPT_LD_MMA, DIM); /* algorithm and dimensionality */
-  opt = nlopt_create(NLOPT_LD_CCSAQ, DIM); /* algorithm and dimensionality */
+  opt = nlopt_create(NLOPT_LD_MMA, DIM); /* algorithm and dimensionality */
+  // opt = nlopt_create(NLOPT_LD_CCSAQ, DIM); /* algorithm and dimensionality */
 
   nlopt_set_lower_bounds(opt, lb);
   nlopt_set_upper_bounds(opt, ub);
@@ -819,7 +819,7 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
   nlopt_add_inequality_constraint(opt, myconstraint, &cons_data, ctol);
 
   nlopt_set_xtol_rel(opt, xtol);
-  // nlopt_set_maxtime(opt, 1.);
+  nlopt_set_maxtime(opt, 1.);
   
   double x[3] = { init_guess[0], init_guess[1], init_guess[2] };  /* some initial guess */
   double minf; /* the minimum objective value, upon return */
