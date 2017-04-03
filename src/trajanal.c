@@ -494,7 +494,7 @@ int tanalize ( input_t * inppar )
                 // each thread should have about the same amount of work, so the atomic update will not be too harmful
 #pragma omp parallel for default(none) \
                 private(r,fakemask,fakenum,ind) \
-                shared(dstnc,nfrg,refmask,frags,inppar,surface,direction,natoms,opref,densprof,hndprof,atoms,nsurf,grad,surfpts,pbc,ncol,rathist,adatarray,adddata,zetatom,mask)
+                shared(dstnc,nfrg,refmask,frags,inppar,surface,direction,natoms,opref,densprof,hndprof,atoms,nsurf,grad,surfpts,pbc,ncol,rathist,adatarray,adddata,zetatom,mask,dx)
 #endif
                 for ( r=0; r<nfrg; r++ ) {
 
