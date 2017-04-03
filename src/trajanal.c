@@ -526,12 +526,12 @@ int tanalize ( input_t * inppar )
                       real com[DIM];
                       get_center_of_mass ( com, atoms, fakemask, fakenum);
 
-                      dstnc[r] = get_opt_distance_to_surface( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->resolution, inppar->periodic, dx, inppar->xtol, inppar->ctol );
-
                       int index[DIM];
                       get_index_triple ( index, com, pbc, surface.origin, surface.n, dx, inppar->periodic );
 
                       int tmpndx = get_index ( surface.n, index[0], index[1], index[2]);
+
+                      dstnc[r] = get_opt_distance_to_surface( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->resolution, inppar->periodic, dx, inppar->xtol, inppar->ctol, surface.voxels[tmpndx].data );
 
                       //mnnd is not the index here
                       if ( surface.voxels[tmpndx].data < inppar->surfacecutoff )

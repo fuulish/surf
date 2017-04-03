@@ -705,6 +705,7 @@ typedef struct {
   real * pbc;
   real resolution;
   int periodic;
+  int issurf;
 } my_constraint_data_type;
 
 double myfunc( unsigned n, const double *x, double *grad, void *my_func_data )
@@ -731,6 +732,7 @@ double myfunc( unsigned n, const double *x, double *grad, void *my_func_data )
   return dst;
 }
 
+/*
 double myconstraint(unsigned n, const double *x, double *grad, void *data)
 {
     my_constraint_data_type *d = (my_constraint_data_type *) data;
@@ -744,10 +746,32 @@ double myconstraint(unsigned n, const double *x, double *grad, void *data)
       //FUDO| this is handled internally in get_coarse_grained_density
     }
     return density - d->surfcut;
- }
+}
+*/
+
+double myconstraint(unsigned n, const double *x, double *grad, void *data)
+{
+    my_constraint_data_type *d = (my_constraint_data_type *) data;
+    real density;
+
+    real *mepos = (real *) x;
+
+    density = get_coarse_grained_density( mepos, d->mask, d->atoms, d->zeta, d->surfcut, d->pbc, d->resolution, d->periodic, grad );
+
+    if (grad) {
+      //FUDO| this is handled internally in get_coarse_grained_density
+    }
+
+    //FUDO| this needs to be turned around if the point is located above the surface (i.e., within the surface region)
+
+    if ( d->issurf )
+      return d->surfcut - density;
+    else
+      return density - d->surfcut;
+}
 
 #ifdef HAVE_NLOPT
-real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, real resolution, int periodic, real *bnds, double xtol, double ctol )
+real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, real resolution, int periodic, real *bnds, double xtol, double ctol, double sval )
 {
   /* 
    * data that needs be passed to this function are:
@@ -772,7 +796,9 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
   
   // opt = nlopt_create(NLOPT_GN_ISRES, DIM); /* algorithm and dimensionality */
   // opt = nlopt_create(NLOPT_LD_SLSQP, DIM); /* algorithm and dimensionality */
-  opt = nlopt_create(NLOPT_LN_COBYLA, DIM); /* algorithm and dimensionality */
+  // opt = nlopt_create(NLOPT_LN_COBYLA, DIM); /* algorithm and dimensionality */
+  // opt = nlopt_create(NLOPT_LD_MMA, DIM); /* algorithm and dimensionality */
+  opt = nlopt_create(NLOPT_LD_CCSAQ, DIM); /* algorithm and dimensionality */
 
   nlopt_set_lower_bounds(opt, lb);
   nlopt_set_upper_bounds(opt, ub);
@@ -787,8 +813,10 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
   cons_data.pbc = pbc;
   cons_data.resolution = resolution;
   cons_data.periodic = periodic;
+  cons_data.issurf = (sval < surfcut);
 
-  nlopt_add_equality_constraint(opt, myconstraint, &cons_data, ctol);
+  // nlopt_add_equality_constraint(opt, myconstraint, &cons_data, ctol);
+  nlopt_add_inequality_constraint(opt, myconstraint, &cons_data, ctol);
 
   nlopt_set_xtol_rel(opt, xtol);
   // nlopt_set_maxtime(opt, 1.);
