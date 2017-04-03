@@ -35,6 +35,10 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <math.h>
 
+#ifdef HAVE_NLOPT
+#include <nlopt.h>
+#endif
+
 int tstart;
 int tstop;
 
@@ -604,26 +608,9 @@ real get_bulk_volume ( cube_t * surface, real surfcut )
 
     return vol;
 }
-
-#ifdef HAVE_NLOPT
-void get_opt_distance_to_surface( )
-{
-  /* 
-   * data that needs be passed to this function are:
-   *  everything needed to construct a surface
-   *  a good initial guess for the surface point
-   *
-   *  pass surface stuff in a data structure, instead of a whole lot of parameters
-   *    --> makes accessing the stuff easier also from NLOPT library
-   *
-   *  initial guess for surface point from minimum distance guess above
-   */
-}
-#endif
-
 /* get value of coarse-grained density at certain point in space */
 //FUDO| it might be helpful to keep something like a neighbor list for the optimization procedure, maybe not
-double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, real *zeta, real surfcut, real * pbc, real resolution, int periodic )
+double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, real *zeta, real surfcut, real * pbc, real resolution, int periodic, double *grad )
 {
     int natoms;
     int a;
@@ -643,13 +630,13 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
     real distance;
     real density = 0.;
 
-#ifdef OPENMP
-#pragma omp parallel for default(none) \
-    private(a,distance) shared(atoms,pbc,periodic,surface,natoms,mask,zeta,resolution,mepos,density) // \
-        // schedule(guided, surface.n[2])
-    // schedule(dynamic)
-#endif
-    //this natoms here is already the one accounting for number of atoms in mask only
+// #ifdef OPENMP
+// #pragma omp parallel for default(none) \
+//     private(a,distance) shared(atoms,pbc,periodic,surface,natoms,mask,zeta,resolution,mepos,density,grad) // \
+//         // schedule(guided, surface.n[2])
+//     // schedule(dynamic)
+// #endif
+//     //this natoms here is already the one accounting for number of atoms in mask only
     for ( a=0; a<natoms; a++ ) {
 
         real sqzeta = sqr(zeta[mask[a]]);
@@ -674,20 +661,225 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
 
         /* this should be working, but it's not worth the effort right now, too little result for too much work */
 
+        real dx[DIM];
         if ( periodic )
-            distance = get_distance_periodic ( mepos, &(atoms[mask[a]].coords[0]), pbc );
+            distance = get_distance_vector_periodic ( dx, mepos, &(atoms[mask[a]].coords[0]), pbc );
         else
-            distance = get_distance ( mepos, &(atoms[mask[a]].coords[0]) );
+            distance = get_distance_vector ( dx, mepos, &(atoms[mask[a]].coords[0]) );
 
         if ( distance > trplzt )
             continue;
 
+        real tmpdens = prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft;
         // the below formula can be simplified, check here
 #pragma omp atomic update
         // density += scale * ( prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft );
-        density += prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft;
-    }
+        density += tmpdens;
 
+        //FUDO| implement gradient
+        if ( grad != NULL ) {
+          // calculate gradient and save result in grad array
+          // can make use of tmpdens and distance, but need distance vector (function for that?)
+
+          real fact = -2. / mttsqzeta;
+
+          grad[0] = dx[0] * fact * tmpdens;
+          grad[1] = dx[1] * fact * tmpdens;
+          grad[2] = dx[2] * fact * tmpdens;
+        }
+    }
 
     return density;
 }
+
+typedef struct {
+  real *ref;
+  real *pbc;
+} my_func_data_type;
+
+typedef struct {
+  int * mask;
+  atom_t * atoms;
+  real *zeta;
+  real surfcut;
+  real * pbc;
+  real resolution;
+  int periodic;
+} my_constraint_data_type;
+
+double myfunc( unsigned n, const double *x, double *grad, void *my_func_data )
+{
+
+  my_func_data_type *d = (my_func_data_type *) my_func_data;
+
+  real dx[DIM];
+
+  //FUDO| remove this typecast by using const in all of the get_distance functions, whenever appropriate
+  real *tx = (real *) x;
+  double dst = get_distance_vector_periodic( dx, tx, d->ref, d->pbc );
+
+  // double dst = sqrt( dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
+
+  if ( grad ) {
+    double rinv = 1. / dst;
+
+    grad[0] = rinv * dx[0];
+    grad[1] = rinv * dx[1];
+    grad[2] = rinv * dx[2];
+  }
+
+  return dst;
+}
+
+double myconstraint(unsigned n, const double *x, double *grad, void *data)
+{
+    my_constraint_data_type *d = (my_constraint_data_type *) data;
+    real density;
+
+    real *mepos = (real *) x;
+
+    density = get_coarse_grained_density( mepos, d->mask, d->atoms, d->zeta, d->surfcut, d->pbc, d->resolution, d->periodic, grad );
+
+    if (grad) {
+      //FUDO| this is handled internally in get_coarse_grained_density
+    }
+    return density - d->surfcut;
+ }
+
+// double myfunc(unsigned n, const double *x, double *grad, void *my_func_data)
+// {
+//     if (grad) {
+//         grad[0] = 0.0;
+//         grad[1] = 0.5 / sqrt(x[1]);
+//     }
+//     return sqrt(x[1]);
+// }
+// 
+// typedef struct {
+//     double a, b;
+// } my_constraint_data;
+// 
+// double myconstraint(unsigned n, const double *x, double *grad, void *data)
+// {
+//     my_constraint_data *d = (my_constraint_data *) data;
+//     double a = d->a, b = d->b;
+//     if (grad) {
+//         grad[0] = 3 * a * (a*x[0] + b) * (a*x[0] + b);
+//         grad[1] = -1.0;
+//     }
+//     return ((a*x[0] + b) * (a*x[0] + b) * (a*x[0] + b) - x[1]);
+//  }
+// 
+// double lb[2] = { -HUGE_VAL, 0 }; /* lower bounds */
+// nlopt_opt opt;
+// 
+// opt = nlopt_create(NLOPT_LD_MMA, 2); /* algorithm and dimensionality */
+// nlopt_set_lower_bounds(opt, lb);
+// nlopt_set_min_objective(opt, myfunc, NULL);
+// 
+// my_constraint_data data[2] = { {2,0}, {-1,1} };
+// 
+// nlopt_add_inequality_constraint(opt, myconstraint, &data[0], 1e-8);
+// nlopt_add_inequality_constraint(opt, myconstraint, &data[1], 1e-8);
+// 
+// 
+// nlopt_set_xtol_rel(opt, 1e-4);
+// 
+// double x[2] = { 1.234, 5.678 };  /* some initial guess */
+// double minf; /* the minimum objective value, upon return */
+// 
+// if (nlopt_optimize(opt, x, &minf) < 0) {
+//     printf("nlopt failed!\n");
+// }
+// else {
+//     printf("found minimum at f(%g,%g) = %0.10g\n", x[0], x[1], minf);
+// }
+// 
+// nlopt_destroy(opt);
+
+#ifdef HAVE_NLOPT
+real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, real resolution, int periodic, real *bnds )
+{
+  /* 
+   * data that needs be passed to this function are:
+   *  everything needed to construct a surface
+   *  a good initial guess for the surface point
+   *
+   *  pass surface stuff in a data structure, instead of a whole lot of parameters
+   *    --> makes accessing the stuff easier also from NLOPT library
+   *
+   *  initial guess for surface point from minimum distance guess above
+   */
+
+  double lb[3] = { init_guess[0] - 2. * bnds[0], init_guess[1] - 2. * bnds[1], init_guess[2] - 2. * bnds[2] }; /* lower bounds */
+  double ub[3] = { init_guess[0] + 2. * bnds[0], init_guess[1] + 2. * bnds[1], init_guess[2] + 2. * bnds[2] }; /* upper bounds */
+
+  nlopt_opt opt;
+
+  my_func_data_type fdata;
+
+  fdata.ref = mepos;
+  fdata.pbc = pbc;
+  
+  // opt = nlopt_create(NLOPT_GN_ISRES, DIM); /* algorithm and dimensionality */
+  // opt = nlopt_create(NLOPT_LD_SLSQP, DIM); /* algorithm and dimensionality */
+  opt = nlopt_create(NLOPT_LN_COBYLA, DIM); /* algorithm and dimensionality */
+
+  nlopt_set_lower_bounds(opt, lb);
+  nlopt_set_upper_bounds(opt, ub);
+
+  nlopt_set_min_objective(opt, myfunc, &fdata);
+  
+  my_constraint_data_type cons_data;
+  cons_data.mask = mask;
+  cons_data.atoms = atoms;
+  cons_data.zeta = zeta;
+  cons_data.surfcut = surfcut;
+  cons_data.pbc = pbc;
+  cons_data.resolution = resolution;
+  cons_data.periodic = periodic;
+
+  nlopt_add_equality_constraint(opt, myconstraint, &cons_data, 1e-4);
+
+  // my_constraint_data_type cons_data[DIM];
+
+  // int d;
+  // for ( d=0; d<DIM; d++ ) {
+  //   cons_data[d].mask = mask;
+  //   cons_data[d].atoms = atoms;
+  //   cons_data[d].zeta = zeta;
+  //   cons_data[d].surfcut = surfcut;
+  //   cons_data[d].pbc = pbc;
+  //   cons_data[d].resolution = resolution;
+  //   cons_data[d].periodic = periodic;
+  // }
+  
+  // nlopt_add_equality_constraint(opt, myconstraint, &cons_data[0], 1e-8);
+  // nlopt_add_equality_constraint(opt, myconstraint, &cons_data[1], 1e-8);
+  // nlopt_add_equality_constraint(opt, myconstraint, &cons_data[2], 1e-8);
+  
+  nlopt_set_xtol_rel(opt, 1e-2);
+  // nlopt_set_maxtime(opt, 1.);
+  
+  double x[3] = { init_guess[0], init_guess[1], init_guess[2] };  /* some initial guess */
+  double minf; /* the minimum objective value, upon return */
+  
+  printf("STARTING OPTIMIZATION %g,%g,%g\n", init_guess[0], init_guess[1], init_guess[2]);
+  if (nlopt_optimize(opt, x, &minf) < 0) {
+      printf("nlopt failed!\n");
+  }
+  else {
+      printf("found minimum at f(%g,%g,%g) = %0.10g\n", x[0], x[1], x[2], minf);
+  }
+  
+  nlopt_destroy(opt);
+
+  init_guess[0] = x[0];
+  init_guess[1] = x[1];
+  init_guess[2] = x[2];
+
+  return minf;
+
+}
+#endif
+

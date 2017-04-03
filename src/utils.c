@@ -239,8 +239,25 @@ real get_distance_periodic (real * coord1, real * coord2, real * pbc)
         distance += sqr ( rxij );
     }
 
-    distance = sqrt ( distance );
+    distance = sqrt ( distance ); 
+    return distance;
+}
 
+real get_distance_vector (real * dist, real * coord1, real * coord2)
+{
+    int i;
+    real distance = ZERO;
+    real rxij;
+
+    for ( i=0; i<DIM; i++ ) {
+        rxij = coord1[i] - coord2[i];
+
+        dist[i] = rxij;
+
+        distance += sqr ( rxij );
+    }
+
+    distance = sqrt ( distance ); 
     return distance;
 }
 
@@ -255,7 +272,12 @@ real get_distance_vector_periodic (real * dist, real * coord1, real * coord2, re
         rxij -= pbc[i] * roundf( rxij / pbc[i] );
 
         dist[i] = rxij;
+
+        distance += sqr ( rxij );
     }
+
+    distance = sqrt ( distance ); 
+    return distance;
 }
 
 real get_distance_periodic_1d (real coord1, real coord2, real pbc)

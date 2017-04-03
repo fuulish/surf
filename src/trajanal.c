@@ -494,7 +494,7 @@ int tanalize ( input_t * inppar )
                 // each thread should have about the same amount of work, so the atomic update will not be too harmful
 #pragma omp parallel for default(none) \
                 private(r,fakemask,fakenum,ind) \
-                shared(dstnc,nfrg,refmask,frags,inppar,surface,direction,natoms,opref,densprof,hndprof,atoms,nsurf,grad,surfpts,pbc,ncol,rathist,adatarray,adddata)
+                shared(dstnc,nfrg,refmask,frags,inppar,surface,direction,natoms,opref,densprof,hndprof,atoms,nsurf,grad,surfpts,pbc,ncol,rathist,adatarray,adddata,zetatom,mask)
 #endif
                 for ( r=0; r<nfrg; r++ ) {
 
@@ -515,22 +515,24 @@ int tanalize ( input_t * inppar )
 
                     real clspt[DIM];
 
-                    if ( inppar->opt_surfdist ) {
-                      /* create data struct containing all the input parameters */
+                    int g;
+                    for ( g=0; g<DIM; g++)
+                        clspt[g] = surfpts[mnnd][g];
 
+                    if ( inppar->opt_surfdist ) {
                       /* optimize the function under given constraints */
 #ifdef HAVE_NLOPT
+                      printf("R BEFORE: %i \n", r);
+                      real com[DIM];
+                      get_center_of_mass ( com, atoms, fakemask, fakenum);
+                      dstnc[r] = get_opt_distance_to_surface( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->resolution, inppar->periodic, dx );
+                      printf("AFTER\n");
 #endif
                       /* save point in clspt for later use */
 
                       //FUDO| check if we need to save something else
                       //FUDO| where else is mnnd used?!
 
-                    }
-                    else {
-                      int g;
-                      for ( g=0; g<DIM; g++)
-                          clspt[g] = surfpts[mnnd][g];
                     }
 
                     if ( !(inppar->opt_surfdist) && ( inppar->postinterpolate > 1 ) && ( inppar->localsurfint ) && ( fabs ( dstnc[r] ) < inppar->ldst ) ) {
