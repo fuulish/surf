@@ -623,6 +623,71 @@ void get_opt_distance_to_surface( )
 
 /* get value of coarse-grained density at certain point in space */
 //FUDO| it might be helpful to keep something like a neighbor list for the optimization procedure, maybe not
-double get_coarse_grained_density( )
+double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, real *zeta, real surfcut, real * pbc, real resolution, int periodic )
 {
+    int natoms;
+    int a;
+    cube_t surface;
+    // real prefactor, dummy, cutshft;
+
+    natoms = 0;
+    while ( mask[natoms] != -1 )
+        natoms++;
+
+    real dx[DIM];
+    real cubpbc[DIM];
+
+    get_cell_pointer ( &surface, cubpbc );
+    get_box_volels_pointer ( &surface, dx );
+
+    real distance;
+    real density = 0.;
+
+#ifdef OPENMP
+#pragma omp parallel for default(none) \
+    private(a,distance) shared(atoms,pbc,periodic,surface,natoms,mask,zeta,resolution,mepos,density) // \
+        // schedule(guided, surface.n[2])
+    // schedule(dynamic)
+#endif
+    //this natoms here is already the one accounting for number of atoms in mask only
+    for ( a=0; a<natoms; a++ ) {
+
+        real sqzeta = sqr(zeta[mask[a]]);
+        real trplzt = 3*zeta[mask[a]];
+
+        real mttsqzeta = -2. * sqzeta;
+        real dummy = 2. * PI * sqzeta;
+
+        real prefactor = 1. / dummy / (sqrt(dummy));
+        real cutshft = prefactor * exp( sqr( trplzt ) / (mttsqzeta));
+
+        /* calculations for rescaling the Gaussian function */
+
+        /*
+        real nrm = 8 * PI * sqzeta;
+        nrm = nrm * nrm;
+        nrm = 1./nrm;
+
+        real missing = nrm * ( 1. - erff ( trplzt / ( 2.*sqzeta) ) );
+        real scale = 1. / (1.-missing);
+        */
+
+        /* this should be working, but it's not worth the effort right now, too little result for too much work */
+
+        if ( periodic )
+            distance = get_distance_periodic ( mepos, &(atoms[mask[a]].coords[0]), pbc );
+        else
+            distance = get_distance ( mepos, &(atoms[mask[a]].coords[0]) );
+
+        if ( distance > trplzt )
+            continue;
+
+        // the below formula can be simplified, check here
+#pragma omp atomic update
+        // density += scale * ( prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft );
+        density += prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft;
+    }
+
+
+    return density;
 }
