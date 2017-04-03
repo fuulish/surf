@@ -176,6 +176,8 @@ typedef struct input_s
     real ldst;
     int load_surface;
     int opt_surfdist;
+    double xtol;
+    double ctol;
     char loadprefix[MAXSTRLEN];
 } input_t;
 
