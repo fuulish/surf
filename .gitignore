@@ -38,14 +38,7 @@ Thumbs.db
 
 bin
 
-Makefile
-config.h
-config.status
-src/.deps/
-src/Makefile
 src/surf
-stamp-h1
-autom4te.cache
 
 tests/0_
 src/new-stuff.c
