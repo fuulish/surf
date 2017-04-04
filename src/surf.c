@@ -698,6 +698,7 @@ typedef struct {
   real surfcut;
   real * pbc;
   int periodic;
+  real *ref;
 } my_constraint_data_type;
 
 double myfunc( unsigned n, const double *x, double *grad, void *my_func_data )
@@ -802,6 +803,105 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
   init_guess[2] = x[2];
 
   return minf;
+
+}
+#endif
+
+#ifdef HAVE_GSL
+int multivariate_f (const gsl_vector * x, void *params, gsl_vector * f)
+{
+
+  my_constraint_data_type *d = (my_constraint_data_type *) params;
+
+  real grad[DIM];
+  real spos[DIM];
+
+  spos[0] = gsl_vector_get (x, 0);
+  spos[1] = gsl_vector_get (x, 1);
+  spos[2] = gsl_vector_get (x, 2);
+
+  real lambda = gsl_vector_get( x, 3 );
+
+  real density = get_coarse_grained_density( spos, d->mask, d->atoms, d->zeta, d->pbc, d->periodic, grad );
+
+  real dx[DIM];
+  real dst = get_distance_vector_periodic( dx, d->ref, spos, d->pbc );
+  real dinv = 1. / dst;
+
+  const double y0 = grad[0] * lambda + dinv * dx[0];
+  const double y1 = grad[1] * lambda + dinv * dx[1];
+  const double y2 = grad[2] * lambda + dinv * dx[2];
+  const double y3 = density - d->surfcut;
+
+  gsl_vector_set (f, 0, y0);
+  gsl_vector_set (f, 1, y1);
+  gsl_vector_set (f, 2, y2);
+  gsl_vector_set (f, 3, y3);
+
+  return GSL_SUCCESS;
+}
+
+real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, double xtol, double ctol )
+{
+  my_constraint_data_type cons_data;
+  cons_data.mask = mask;
+  cons_data.atoms = atoms;
+  cons_data.zeta = zeta;
+  cons_data.surfcut = surfcut;
+  cons_data.pbc = pbc;
+  cons_data.periodic = periodic;
+  cons_data.ref = mepos;
+
+  const gsl_multiroot_fsolver_type *T;
+  gsl_multiroot_fsolver *s;
+
+  int status;
+  size_t i, iter = 0;
+
+  const size_t n = 4;
+
+  gsl_multiroot_function f = {&multivariate_f, n, &cons_data};
+
+  double x_init[4] = {init_guess[0], init_guess[1], init_guess[2], 1.};
+  gsl_vector *x = gsl_vector_alloc (n);
+
+  gsl_vector_set (x, 0, x_init[0]);
+  gsl_vector_set (x, 1, x_init[1]);
+  gsl_vector_set (x, 2, x_init[2]);
+  gsl_vector_set (x, 3, x_init[3]);
+
+  T = gsl_multiroot_fsolver_hybrids;
+  s = gsl_multiroot_fsolver_alloc (T, n);
+  gsl_multiroot_fsolver_set (s, &f, x);
+
+  print_state (iter, s);
+
+  do
+    {
+      iter++;
+      status = gsl_multiroot_fsolver_iterate (s);
+
+      print_state (iter, s);
+
+      if (status)   /* check if solver is stuck */
+        break;
+
+      status = 
+        gsl_multiroot_test_residual (s->f, 1e-7);
+    }
+  while (status == GSL_CONTINUE && iter < 1000);
+
+  printf ("status = %s\n", gsl_strerror (status));
+
+  gsl_multiroot_fsolver_free (s);
+
+  init_guess[0] = gsl_vector_get( x, 0 );
+  init_guess[1] = gsl_vector_get( x, 1 );
+  init_guess[2] = gsl_vector_get( x, 2 );
+
+  gsl_vector_free (x);
+
+  return sqrt( init_guess[0]*init_guess[0] + init_guess[1]*init_guess[1] + init_guess[2]*init_guess[2] );
 
 }
 #endif
