@@ -610,11 +610,10 @@ real get_bulk_volume ( cube_t * surface, real surfcut )
 }
 /* get value of coarse-grained density at certain point in space */
 //FUDO| it might be helpful to keep something like a neighbor list for the optimization procedure, maybe not
-double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, real *zeta, real surfcut, real * pbc, real resolution, int periodic, double *grad )
+double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, real *zeta, real * pbc, int periodic, double *grad )
 {
     int natoms;
     int a;
-    cube_t surface;
     // real prefactor, dummy, cutshft;
 
     natoms = 0;
@@ -622,17 +621,13 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
         natoms++;
 
     real dx[DIM];
-    real cubpbc[DIM];
-
-    get_cell_pointer ( &surface, cubpbc );
-    get_box_volels_pointer ( &surface, dx );
 
     real distance;
-    real density = 0.;
+    real density = 0.0;
 
 // #ifdef OPENMP
 // #pragma omp parallel for default(none) \
-//     private(a,distance) shared(atoms,pbc,periodic,surface,natoms,mask,zeta,resolution,mepos,density,grad) // \
+//     private(a,distance) shared(atoms,pbc,periodic,surface,natoms,mask,zeta,mepos,density,grad) // \
 //         // schedule(guided, surface.n[2])
 //     // schedule(dynamic)
 // #endif
@@ -676,10 +671,9 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
         // density += scale * ( prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft );
         density += tmpdens;
 
-        //FUDO| implement gradient
         if ( grad != NULL ) {
-          // calculate gradient and save result in grad array
-          // can make use of tmpdens and distance, but need distance vector (function for that?)
+          /* calculate gradient and save result in grad array
+           * can make use of tmpdens and distance vector */
 
           real fact = -2. / mttsqzeta;
 
@@ -703,7 +697,6 @@ typedef struct {
   real *zeta;
   real surfcut;
   real * pbc;
-  real resolution;
   int periodic;
 } my_constraint_data_type;
 
@@ -738,7 +731,7 @@ double myconstraint(unsigned n, const double *x, double *grad, void *data)
 
     real *mepos = (real *) x;
 
-    density = get_coarse_grained_density( mepos, d->mask, d->atoms, d->zeta, d->surfcut, d->pbc, d->resolution, d->periodic, grad );
+    density = get_coarse_grained_density( mepos, d->mask, d->atoms, d->zeta, d->pbc, d->periodic, grad );
 
     if (grad) {
       //FUDO| this is handled internally in get_coarse_grained_density
@@ -747,7 +740,7 @@ double myconstraint(unsigned n, const double *x, double *grad, void *data)
  }
 
 #ifdef HAVE_NLOPT
-real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, real resolution, int periodic, real *bnds, double xtol, double ctol )
+real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, double xtol, double ctol )
 {
   /* 
    * data that needs be passed to this function are:
@@ -785,7 +778,6 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
   cons_data.zeta = zeta;
   cons_data.surfcut = surfcut;
   cons_data.pbc = pbc;
-  cons_data.resolution = resolution;
   cons_data.periodic = periodic;
 
   nlopt_add_equality_constraint(opt, myconstraint, &cons_data, ctol);

@@ -24,8 +24,7 @@ real ** get_2d_representation_ils ( int * nsurf, int ** drctn, real ** grad, cub
 real get_distance_to_surface ( int * mnnd, int nsurf, real ** surfpts, int * direction, real * grad, atom_t * atoms, int * refmask, int nref, int natoms, real * pbc, int output, char * opref, real surfcut, int periodic );
 int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * surface, int * ix, int direction, real surfcut, int periodic );
 real get_bulk_volume ( cube_t * surface, real surfcut );
+double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, real *zeta, real * pbc, int periodic, double * grad );
 #ifdef HAVE_NLOPT
-void get_opt_distance( );
+real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, real xtol, real ctol );
 #endif
-double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, real *zeta, real surfcut, real * pbc, real resolution, int periodic, double * grad );
-real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, real resolution, int periodic, real *bnds, real xtol, real ctol );
