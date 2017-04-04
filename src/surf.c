@@ -904,5 +904,15 @@ real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *m
   return sqrt( init_guess[0]*init_guess[0] + init_guess[1]*init_guess[1] + init_guess[2]*init_guess[2] );
 
 }
-#endif
 
+int print_state (size_t iter, gsl_multiroot_fsolver * s)
+{
+  printf ("iter = %3u x = % .3f % .3f "
+          "f(x) = % .3e % .3e\n",
+          iter,
+          gsl_vector_get (s->x, 0), 
+          gsl_vector_get (s->x, 1),
+          gsl_vector_get (s->f, 0), 
+          gsl_vector_get (s->f, 1));
+}
+#endif
