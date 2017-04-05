@@ -35,10 +35,6 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <math.h>
 
-#ifdef HAVE_NLOPT
-#include <nlopt.h>
-#endif
-
 int tstart;
 int tstop;
 
@@ -256,6 +252,123 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
 
     if ( !( periodic ) )
         free ( actatoms );
+
+    char buf[MAXSTRLEN];
+
+    if ( output > 1 )
+    {
+        sprintf(buf, "%s%s", outputprefix, "instant-surface.cube");
+        write_cubefile(buf, &surface);
+    }
+
+    bindices = cubes_larger_than ( surfcut, &surface);
+    sindices = invert_indices ( surface.nvoxels, bindices );
+
+    if ( provide_mask ) {
+        i = 0;
+        while ( bindices[i] != -1 ) {
+            surface.voxels[bindices[i]].data = ZERO;
+            i++;
+        }
+    }
+
+    i = 0;
+    int nsurf = 0;
+    while ( sindices[i] != -1 ) {
+        if ( provide_mask )
+            surface.voxels[sindices[i]].data = ONE;
+        i++;
+        nsurf = i;
+    }
+
+#if DEBUG
+    printf("%i voxels belong to surface and occupy a volume of %21.10f Bohr^3\n", nsurf, nsurf*surface.dv);
+#endif
+
+    if ( ( provide_mask ) && ( output > 2) ) {
+        sprintf(buf, "%s%s", outputprefix, "instant-surface-plain.cube");
+        write_cubefile(buf, &surface);
+    }
+
+    free ( sindices );
+    free ( bindices );
+    return surface;
+}
+
+cube_t instant_surface_periodic_simple ( int * mask, atom_t * atoms, int inpnatoms, real *zeta, real surfcut, int output, char * outputprefix, real * pbc, real resolution, real accuracy, int provide_box, real * origincube, int * ncube, real boxvcube[DIM][DIM], int periodic, int provide_mask )
+{
+    int i, j, natoms;
+    int a;
+    int * sindices;
+    int * bindices;
+    real sqzeta;
+    cube_t surface;
+    // real prefactor, dummy, cutshft;
+
+    real orig[DIM];
+    real boxv[DIM][DIM];
+    real refc[DIM];
+    int n[DIM];
+
+    /* we will create an orthogonal box according to periodic boundary conditions and resolution input */
+    /* i.e., it works for now only with orthogonal cells */
+    if ( provide_box ) {
+        for ( i=0; i<DIM; i++ ) {
+
+            orig[i] = origincube[i];
+            // check here if there is a nicer reference center, e.g., center of actual cube we are working with
+            refc[i] = pbc[i] / 2.;
+            n[i] = ncube[i];
+
+            for ( j=0; j<DIM; j++ ) {
+                boxv[i][j] = boxvcube[i][j];
+            }
+        }
+    }
+    else {
+        for ( i=0; i<DIM; i++ ) {
+
+            orig[i] = ZERO;
+            refc[i] = pbc[i] / 2.;
+            n[i] = pbc[i] / resolution;
+
+            for ( j=0; j<DIM; j++ ) {
+                if ( i == j )
+                    boxv[i][j] = pbc[i] / n[i];
+                else
+                    boxv[i][j] = ZERO;
+            }
+        }
+    }
+
+    natoms = 0;
+    while ( mask[natoms] != -1 )
+        natoms++;
+
+    surface = initialize_cube(orig, boxv, n, atoms, inpnatoms);
+
+    int wrki, wrkj, wrkk;
+    int index[DIM];
+    int tmpndx;
+    real resarr[DIM];
+    real tmpdst;
+
+    int k;
+    for ( k=0; k<DIM; k++ )
+        resarr[k] = resolution;
+
+#ifdef OPENMP
+#pragma omp parallel for default(none) \
+    private(i) shared(atoms,pbc,periodic,surface,natoms,mask,zeta) // \
+        // schedule(guided, surface.n[2])
+    // schedule(dynamic)
+#endif
+    //this natoms here is already the one accounting for number of atoms in mask only
+
+
+    for ( i=0; i<surface.nvoxels; i++ ) {
+      surface.voxels[i].data = get_coarse_grained_density( &(surface.voxels[i].coords[0]), mask, atoms, zeta, pbc, periodic, NULL );
+    }
 
     char buf[MAXSTRLEN];
 

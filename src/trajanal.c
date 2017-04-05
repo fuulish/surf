@@ -396,6 +396,7 @@ int tanalize ( input_t * inppar )
             }
             else {
                 surface = instant_surface_periodic ( mask, atoms, natoms, zetatom, inppar->surfacecutoff, inppar->output, opref, pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
+                // surface = instant_surface_periodic_simple ( mask, atoms, natoms, zetatom, inppar->surfacecutoff, inppar->output, opref, pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
 
                 if ( inppar->postinterpolate > 1 ) {
                     if ( ! ( inppar->localsurfint ) ) {
