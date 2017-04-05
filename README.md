@@ -18,11 +18,6 @@ Build options
 Option                             | Description
 :--------------------------------- | :----------------------------------------
 `-DENABLE_OPENMP=ON`               | Enable OpenMP support (on by default)
-`-DENABLE_OPTSURF=ON`              | Enable optimized surface calculation
-
-The latest, optimized surface calculation is about an order of magnitude
-faster, and gave for all tested systems numerically identical results to the
-naive version of the code. It is not completely debugged, yet.
 
 Installation is currently not supported, just run the binary from the build directory.
 

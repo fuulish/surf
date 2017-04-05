@@ -9,9 +9,4 @@ if (OPENMP_FOUND AND ENABLE_OPENMP)
     add_definitions(-DOPENMP)
 endif()
 
-option(ENABLE_OPTSURF "Use optimized surface calculation" OFF)
-if (ENABLE_OPENMP)
-    add_definitions(-DOPTSURF)
-endif()
-
 add_subdirectory(src)
