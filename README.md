@@ -10,6 +10,8 @@ For a basic build, just do:
     $ cmake .. [options]
     $ make
 
+Use `make VERBOSE=1` to see the actual compilation commands.
+
 Build options
 -------------
 
