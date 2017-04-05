@@ -632,6 +632,12 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
 //     // schedule(dynamic)
 // #endif
 //     //this natoms here is already the one accounting for number of atoms in mask only
+    if ( grad != NULL ) {
+      grad[0] = 0.;
+      grad[1] = 0.;
+      grad[2] = 0.;
+    }
+
     for ( a=0; a<natoms; a++ ) {
 
         real sqzeta = sqr(zeta[mask[a]]);
@@ -677,9 +683,9 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
 
           real fact = -2. / mttsqzeta;
 
-          grad[0] = dx[0] * fact * tmpdens;
-          grad[1] = dx[1] * fact * tmpdens;
-          grad[2] = dx[2] * fact * tmpdens;
+          grad[0] += dx[0] * fact * tmpdens;
+          grad[1] += dx[1] * fact * tmpdens;
+          grad[2] += dx[2] * fact * tmpdens;
         }
     }
 
@@ -851,6 +857,15 @@ real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *m
   cons_data.pbc = pbc;
   cons_data.periodic = periodic;
   cons_data.ref = mepos;
+  real dx[DIM];
+  real dst;
+
+  dx[0] = init_guess[0] - mepos[0];
+  dx[1] = init_guess[1] - mepos[1];
+  dx[2] = init_guess[2] - mepos[2];
+
+  dst = sqrt( dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2] );
+  // printf("DISTANCE BEFORE: %f\n", dst);
 
   const gsl_multiroot_fsolver_type *T;
   gsl_multiroot_fsolver *s;
@@ -874,14 +889,14 @@ real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *m
   s = gsl_multiroot_fsolver_alloc (T, n);
   gsl_multiroot_fsolver_set (s, &f, x);
 
-  print_state (iter, s);
+  // print_state (iter, s);
 
   do
     {
       iter++;
       status = gsl_multiroot_fsolver_iterate (s);
 
-      print_state (iter, s);
+      // print_state (iter, s);
 
       if (status)   /* check if solver is stuck */
         break;
@@ -891,28 +906,39 @@ real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *m
     }
   while (status == GSL_CONTINUE && iter < 1000);
 
-  printf ("status = %s\n", gsl_strerror (status));
+  // printf ("status = %s\n", gsl_strerror (status));
+
+  init_guess[0] = gsl_vector_get( s->x, 0 );
+  init_guess[1] = gsl_vector_get( s->x, 1 );
+  init_guess[2] = gsl_vector_get( s->x, 2 );
 
   gsl_multiroot_fsolver_free (s);
-
-  init_guess[0] = gsl_vector_get( x, 0 );
-  init_guess[1] = gsl_vector_get( x, 1 );
-  init_guess[2] = gsl_vector_get( x, 2 );
-
   gsl_vector_free (x);
 
-  return sqrt( init_guess[0]*init_guess[0] + init_guess[1]*init_guess[1] + init_guess[2]*init_guess[2] );
+  dx[0] = init_guess[0] - mepos[0];
+  dx[1] = init_guess[1] - mepos[1];
+  dx[2] = init_guess[2] - mepos[2];
+
+  dst = sqrt( dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2] );
+
+  // printf("DISTANCE AFTER: %f\n", dst);
+
+  return dst;
 
 }
 
 int print_state (size_t iter, gsl_multiroot_fsolver * s)
 {
-  printf ("iter = %3u x = % .3f % .3f "
-          "f(x) = % .3e % .3e\n",
+  printf ("iter = %3u x = % .3f % .3f % .3f % .3f"
+          "f(x) = % .3e % .3e % .3e % .3e\n",
           iter,
           gsl_vector_get (s->x, 0), 
           gsl_vector_get (s->x, 1),
+          gsl_vector_get (s->x, 2),
+          gsl_vector_get (s->x, 3),
           gsl_vector_get (s->f, 0), 
-          gsl_vector_get (s->f, 1));
+          gsl_vector_get (s->f, 1),
+          gsl_vector_get (s->f, 2),
+          gsl_vector_get (s->f, 3));
 }
 #endif

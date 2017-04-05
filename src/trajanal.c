@@ -519,14 +519,29 @@ int tanalize ( input_t * inppar )
                     for ( g=0; g<DIM; g++)
                         clspt[g] = surfpts[mnnd][g];
 
-                    if ( inppar->opt_surfdist ) {
+                    // if ( ( inppar->opt_surfdist ) ) {
+                    if ( ( inppar->opt_surfdist ) && ( dstnc[r] < 10. ) ) {
                       /* optimize the function under given constraints */
 #ifdef HAVE_NLOPT
                       // printf("R BEFORE: %i \n", r);
                       real com[DIM];
                       get_center_of_mass ( com, atoms, fakemask, fakenum);
 
-                      dstnc[r] = get_opt_distance_to_surface( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->periodic, dx, inppar->xtol, inppar->ctol );
+                      real tdist = dstnc[r];
+
+                      // dstnc[r] = get_opt_distance_to_surface( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->periodic, dx, inppar->xtol, inppar->ctol );
+#ifdef HAVE_GSL
+                      dstnc[r] = get_opt_distance_to_surface_lagrange( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->periodic, dx, inppar->xtol, inppar->ctol );
+#endif
+
+                      ind = ( int ) floor ( dstnc[r] / inppar->profileres );
+                      int myndx = hndprof + ind;
+                      printf( "DIST before: %f after: %f\n", tdist, dstnc[r] );
+                      if ( ( myndx < 0 ) || ( myndx >= ndprof ) ) {
+                        printf( "WE HAVE A WEINER %g %g\n", tdist, dstnc[r] );
+                        dstnc[r] = tdist;
+                      }
+
 
                       int index[DIM];
                       get_index_triple ( index, com, pbc, surface.origin, surface.n, dx, inppar->periodic );

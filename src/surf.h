@@ -32,6 +32,6 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multiroots.h>
 int multivariate_f (const gsl_vector * x, void *params, gsl_vector * f);
-real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, real xtol, real ctol );
+real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, real xtol, real ctol );
 int print_state (size_t iter, gsl_multiroot_fsolver * s);
 #endif
