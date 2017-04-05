@@ -625,6 +625,12 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
     real distance;
     real density = 0.0;
 
+    if ( grad != NULL ) {
+      grad[0] = 0.;
+      grad[1] = 0.;
+      grad[2] = 0.;
+    }
+
 // #ifdef OPENMP
 // #pragma omp parallel for default(none) \
 //     private(a,distance) shared(atoms,pbc,periodic,surface,natoms,mask,zeta,mepos,density,grad) // \
@@ -677,9 +683,9 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
 
           real fact = -2. / mttsqzeta;
 
-          grad[0] = dx[0] * fact * tmpdens;
-          grad[1] = dx[1] * fact * tmpdens;
-          grad[2] = dx[2] * fact * tmpdens;
+          grad[0] += dx[0] * fact * tmpdens;
+          grad[1] += dx[1] * fact * tmpdens;
+          grad[2] += dx[2] * fact * tmpdens;
         }
     }
 
