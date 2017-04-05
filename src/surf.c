@@ -747,7 +747,7 @@ double myconstraint(unsigned n, const double *x, double *grad, void *data)
  }
 
 #ifdef HAVE_NLOPT
-real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, double xtol, double ctol )
+real get_opt_distance_to_surface_nlopt( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, double xtol, double ctol )
 {
   /* 
    * data that needs be passed to this function are:
@@ -847,7 +847,9 @@ int multivariate_f (const gsl_vector * x, void *params, gsl_vector * f)
   return GSL_SUCCESS;
 }
 
-real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, double xtol, double ctol )
+// #define GSL_SQRT_DBL_EPSILON   1.4901161193847656e-06
+
+real get_opt_distance_to_surface_gsl( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, double xtol, double ctol )
 {
   my_constraint_data_type cons_data;
   cons_data.mask = mask;
@@ -857,6 +859,7 @@ real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *m
   cons_data.pbc = pbc;
   cons_data.periodic = periodic;
   cons_data.ref = mepos;
+
   real dx[DIM];
   real dst;
 
@@ -865,7 +868,6 @@ real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *m
   dx[2] = init_guess[2] - mepos[2];
 
   dst = sqrt( dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2] );
-  // printf("DISTANCE BEFORE: %f\n", dst);
 
   const gsl_multiroot_fsolver_type *T;
   gsl_multiroot_fsolver *s;
@@ -885,7 +887,10 @@ real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *m
   gsl_vector_set (x, 2, x_init[2]);
   gsl_vector_set (x, 3, x_init[3]);
 
+  // T = gsl_multiroot_fsolver_hybrid;
   T = gsl_multiroot_fsolver_hybrids;
+  // T = gsl_multiroot_fsolver_dnewton;
+  // T = gsl_multiroot_fsolver_broyden;
   s = gsl_multiroot_fsolver_alloc (T, n);
   gsl_multiroot_fsolver_set (s, &f, x);
 
@@ -902,7 +907,7 @@ real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *m
         break;
 
       status = 
-        gsl_multiroot_test_residual (s->f, 1e-7);
+        gsl_multiroot_test_residual (s->f, xtol);
     }
   while (status == GSL_CONTINUE && iter < 1000);
 
@@ -919,9 +924,12 @@ real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *m
   dx[1] = init_guess[1] - mepos[1];
   dx[2] = init_guess[2] - mepos[2];
 
-  dst = sqrt( dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2] );
+  dst = get_distance_periodic( init_guess, mepos, pbc );
 
-  // printf("DISTANCE AFTER: %f\n", dst);
+  // FUDO| in principle could do sign-flip here as well
+  // real density = get_coarse_grained_density( init_guess, cons_data.mask, cons_data.atoms, cons_data.zeta, cons_data.pbc, cons_data.periodic, NULL );
+  // if ( ( density - surfcut ) > xtol )
+  //   printf("density value: %f surfcut: %f iterations: %i distance: %g\n", density, surfcut, iter, dst);
 
   return dst;
 

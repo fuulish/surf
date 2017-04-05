@@ -26,12 +26,12 @@ int check_if_surface_voxel ( int * upper, int * lower, real * tmpdt, cube_t * su
 real get_bulk_volume ( cube_t * surface, real surfcut );
 double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, real *zeta, real * pbc, int periodic, double * grad );
 #ifdef HAVE_NLOPT
-real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, real xtol, real ctol );
+real get_opt_distance_to_surface_nlopt( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, real xtol, real ctol );
 #endif
 #ifdef HAVE_GSL
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multiroots.h>
 int multivariate_f (const gsl_vector * x, void *params, gsl_vector * f);
-real get_opt_distance_to_surface_lagrange( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, real xtol, real ctol );
+real get_opt_distance_to_surface_gsl( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, real xtol, real ctol );
 int print_state (size_t iter, gsl_multiroot_fsolver * s);
 #endif

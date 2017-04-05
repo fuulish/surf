@@ -519,41 +519,42 @@ int tanalize ( input_t * inppar )
                     for ( g=0; g<DIM; g++)
                         clspt[g] = surfpts[mnnd][g];
 
-                    // if ( ( inppar->opt_surfdist ) ) {
-                    if ( ( inppar->opt_surfdist ) && ( dstnc[r] < 10. ) ) {
+                    if ( ( inppar->opt_surfdist ) ) {
+                    // if ( ( inppar->opt_surfdist ) && ( dstnc[r] < 2. ) ) {
                       /* optimize the function under given constraints */
-#ifdef HAVE_NLOPT
                       // printf("R BEFORE: %i \n", r);
                       real com[DIM];
                       get_center_of_mass ( com, atoms, fakemask, fakenum);
 
                       real tdist = dstnc[r];
 
-                      // dstnc[r] = get_opt_distance_to_surface( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->periodic, dx, inppar->xtol, inppar->ctol );
-#ifdef HAVE_GSL
-                      dstnc[r] = get_opt_distance_to_surface_lagrange( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->periodic, dx, inppar->xtol, inppar->ctol );
+#ifdef HAVE_NLOPT
+                      if ( inppar->opt_surfdist == 1 ) {
+                        dstnc[r] = get_opt_distance_to_surface_nlopt( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->periodic, dx, inppar->xtol, inppar->ctol );
+                      }
 #endif
 
-                      ind = ( int ) floor ( dstnc[r] / inppar->profileres );
-                      int myndx = hndprof + ind;
-                      printf( "DIST before: %f after: %f\n", tdist, dstnc[r] );
-                      if ( ( myndx < 0 ) || ( myndx >= ndprof ) ) {
-                        printf( "WE HAVE A WEINER %g %g\n", tdist, dstnc[r] );
-                        dstnc[r] = tdist;
+#ifdef HAVE_GSL
+                      if ( inppar->opt_surfdist == 2 ) {
+                        dstnc[r] = get_opt_distance_to_surface_gsl( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->periodic, dx, inppar->xtol, inppar->ctol );
                       }
+#endif
 
+                      //FUDO| just use get_coarse_grained_density( ) here to get value at my point
+                      // int index[DIM];
+                      // get_index_triple ( index, com, pbc, surface.origin, surface.n, dx, inppar->periodic );
 
-                      int index[DIM];
-                      get_index_triple ( index, com, pbc, surface.origin, surface.n, dx, inppar->periodic );
-
-                      int tmpndx = get_index ( surface.n, index[0], index[1], index[2]);
+                      // int tmpndx = get_index ( surface.n, index[0], index[1], index[2]);
 
                       //mnnd is not the index here
-                      if ( surface.voxels[tmpndx].data < inppar->surfacecutoff )
+                      // if ( surface.voxels[tmpndx].data < inppar->surfacecutoff )
+
+                      real mysurf = get_coarse_grained_density( com, mask, atoms, zetatom, pbc, inppar->periodic, NULL );
+
+                      if ( mysurf < inppar->surfacecutoff )
                         dstnc[r] *= -1.;
 
                       // printf("AFTER\n");
-#endif
                       /* save point in clspt for later use */
 
                       //FUDO| check if we need to save something else
