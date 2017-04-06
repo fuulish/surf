@@ -19,15 +19,17 @@ endif()
 
 find_package(PkgConfig REQUIRED)
 
+option(ENABLE_NLOPT "Use NLOPT library" OFF)
 pkg_search_module(NLOPT nlopt)
-
-if (NLOPT_FOUND)
+if (NLOPT_FOUND AND ENABLE_NLOPT)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${NLOPT_C_FLAGS}")
     add_definitions(-DHAVE_NLOPT)
 endif()
 
+option(ENABLE_EINSPLINE "Use EINSPLINE library" OFF)
 pkg_search_module(EINSPLINE einspline)
-
-if (EINSPLINE_FOUND)
+if (EINSPLINE_FOUND AND ENABLE_EINSPLINE)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EINSPLINE_C_FLAGS}")
     add_definitions(-DHAVE_EINSPLINE)
 endif()
 

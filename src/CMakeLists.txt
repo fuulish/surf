@@ -9,13 +9,13 @@ add_executable(surf ${sources})
 
 target_link_libraries(surf xdrfile m)
 
-if (NLOPT_FOUND)
+if (NLOPT_FOUND AND ENABLE_NLOPT)
     target_link_libraries(surf ${NLOPT_LIBRARIES})
     target_include_directories(surf PUBLIC ${NLOPT_INCLUDE_DIRS})
     target_compile_options(surf PUBLIC ${NLOPT_CFLAGS_OTHER})
 endif()
 
-if (EINSPLINE_FOUND)
+if (EINSPLINE_FOUND AND ENABLE_EINSPLINE)
     target_link_libraries(surf ${EINSPLINE_LIBRARIES})
     target_include_directories(surf PUBLIC ${EINSPLINE_INCLUDE_DIRS})
     target_compile_options(surf PUBLIC ${EINSPLINE_CFLAGS_OTHER})
