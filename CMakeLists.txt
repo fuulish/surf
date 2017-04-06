@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
+cmake_policy(SET CMP0012 NEW)
 
 project (surf)
 
@@ -12,7 +13,22 @@ endif()
 option(ENABLE_GSL "Use GNU Scientific Library" ON)
 find_package (GSL)
 if (GSL_FOUND  AND ENABLE_GSL)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GSL_C_FLAGS}")
     add_definitions(-DHAVE_GSL)
+endif()
+
+find_package(PkgConfig REQUIRED)
+
+pkg_search_module(NLOPT nlopt)
+
+if (NLOPT_FOUND)
+    add_definitions(-DHAVE_NLOPT)
+endif()
+
+pkg_search_module(EINSPLINE einspline)
+
+if (EINSPLINE_FOUND)
+    add_definitions(-DHAVE_EINSPLINE)
 endif()
 
 add_subdirectory(src)
