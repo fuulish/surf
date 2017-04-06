@@ -9,4 +9,10 @@ if (OPENMP_FOUND AND ENABLE_OPENMP)
     add_definitions(-DOPENMP)
 endif()
 
+option(ENABLE_GSL "Use GNU Scientific Library" ON)
+find_package (GSL)
+if (GSL_FOUND  AND ENABLE_GSL)
+    add_definitions(-DHAVE_GSL)
+endif()
+
 add_subdirectory(src)
