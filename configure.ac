@@ -20,7 +20,7 @@ AC_ARG_ENABLE([depends],
               AS_HELP_STRING([--enable-depends], [enable single precision]))
 
               AS_IF([test "x$enable_depends" = "xyes"], [
-                     LIBS="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a $PWD/depends/lib/libnlopt.a $PWD/depends/lib/libgsl.a $PWD/depends/lib/libgslcblas.a $LIBS"
+                     LIBS="$PWD/depends/lib/libeinspline.a $PWD/depends/lib/libxdrfile.a $PWD/depends/lib/libnlopt.a $LIBS"
                 C_INCLUDE_PATH="$C_INCLUDE_PATH:$PWD/depends/include"
                 CFLAGS="$CFLAGS -I$PWD/depends/include"
                 CXXFLAGS="$CXXFLAGS -I$PWD/depends/include"
@@ -80,16 +80,6 @@ AC_ARG_ENABLE([xdr],
 
 ])
 
-AC_ARG_ENABLE([gsl],
-              AS_HELP_STRING([--enable-gsl], [enable GSL support]))
-
-              AS_IF([test "x$enable_gsl" = "xyes"], [
-              AC_SEARCH_LIBS([gsl_check_range], [gsl], [CFLAGS="$CFLAGS -DHAVE_GSL"], [
-                AC_MSG_ERROR([unable to find the create_UBspline_3d_s function. Is gsl library installed?])
-              ])
-
-])
-
 AC_ARG_ENABLE([einspline],
               AS_HELP_STRING([--enable-einspline], [enable EINSPLINE file support]))
 
@@ -114,20 +104,20 @@ AC_ARG_ENABLE([openmp],
               CFLAGS="$CFLAGS -DOPENMP -fopenmp"
 ])
 
-# AC_ARG_ENABLE([gsl],
-#               AS_HELP_STRING([--enable-gsl], [enable GSL support]))
-# 
-#               AS_IF([test "x$enable_gsl" = "xyes"], [
-# #AC_CHECK_LIB([m],[cos])
-# #AC_CHECK_LIB([gslcblas],[cblas_dgemm])
-# #AC_CHECK_LIB([gsl],[gsl_blas_dgemm])
-#               AC_SEARCH_LIBS([cblas_dgemm], [gslcblas], [CFLAGS="$CFLAGS -DHAVE_GSL"], [
-#               AC_MSG_ERROR([unable to find the GSL CBLAS.])
-#               ])
-#               #check here, this is a bit strange, why does it work this way, but not the other way around?
-#               AC_SEARCH_LIBS([gsl_check_range], [gsl], [], [
-#               AC_MSG_ERROR([unable to find the GSL.])
-#               ])
-# ])
+AC_ARG_ENABLE([gsl],
+              AS_HELP_STRING([--enable-gsl], [enable GSL support]))
+
+              AS_IF([test "x$enable_gsl" = "xyes"], [
+#AC_CHECK_LIB([m],[cos])
+#AC_CHECK_LIB([gslcblas],[cblas_dgemm])
+#AC_CHECK_LIB([gsl],[gsl_blas_dgemm])
+              AC_SEARCH_LIBS([cblas_dgemm], [gslcblas], [CFLAGS="$CFLAGS -DHAVE_GSL"], [
+              AC_MSG_ERROR([unable to find the GSL CBLAS.])
+              ])
+              #check here, this is a bit strange, why does it work this way, but not the other way around?
+              AC_SEARCH_LIBS([gsl_check_range], [gsl], [], [
+              AC_MSG_ERROR([unable to find the GSL.])
+              ])
+])
 
 AC_OUTPUT
