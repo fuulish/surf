@@ -520,14 +520,12 @@ int tanalize ( input_t * inppar )
                     for ( g=0; g<DIM; g++)
                         clspt[g] = surfpts[mnnd][g];
 
-                    if ( ( inppar->opt_surfdist ) ) {
+                    if ( inppar->opt_surfdist ) {
                     // if ( ( inppar->opt_surfdist ) && ( dstnc[r] < 2. ) ) {
                       /* optimize the function under given constraints */
                       // printf("R BEFORE: %i \n", r);
                       real com[DIM];
                       get_center_of_mass ( com, atoms, fakemask, fakenum);
-
-                      real tdist = dstnc[r];
 
 #ifdef HAVE_NLOPT
                       if ( inppar->opt_surfdist == 1 ) {
@@ -541,25 +539,10 @@ int tanalize ( input_t * inppar )
                       }
 #endif
 
-                      //FUDO| just use get_coarse_grained_density( ) here to get value at my point
-                      // int index[DIM];
-                      // get_index_triple ( index, com, pbc, surface.origin, surface.n, dx, inppar->periodic );
-
-                      // int tmpndx = get_index ( surface.n, index[0], index[1], index[2]);
-
-                      //mnnd is not the index here
-                      // if ( surface.voxels[tmpndx].data < inppar->surfacecutoff )
-
                       real mysurf = get_coarse_grained_density( com, mask, atoms, zetatom, pbc, inppar->periodic, NULL );
 
                       if ( mysurf < inppar->surfacecutoff )
                         dstnc[r] *= -1.;
-
-                      // printf("AFTER\n");
-                      /* save point in clspt for later use */
-
-                      //FUDO| check if we need to save something else
-                      //FUDO| where else is mnnd used?!
 
                     }
 
