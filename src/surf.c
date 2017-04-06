@@ -751,11 +751,6 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
 //     // schedule(dynamic)
 // #endif
 //     //this natoms here is already the one accounting for number of atoms in mask only
-    if ( grad != NULL ) {
-      grad[0] = 0.;
-      grad[1] = 0.;
-      grad[2] = 0.;
-    }
 
     for ( a=0; a<natoms; a++ ) {
 
