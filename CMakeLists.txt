@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
 cmake_policy(SET CMP0012 NEW)
-set(CMAKE_C_FLAGS "-O2")
 
 project (surf)
 
@@ -31,5 +30,7 @@ pkg_search_module(EINSPLINE einspline)
 if (EINSPLINE_FOUND)
     add_definitions(-DHAVE_EINSPLINE)
 endif()
+
+set(CMAKE_C_FLAGS "-O2")
 
 add_subdirectory(src)
