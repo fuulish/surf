@@ -638,13 +638,33 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 }
 
             }
-#ifdef HAVE_NLOPT
             else if ((keywords[key] == "opt_surfdist" ) )
             {
-                if ( strstr ( value, "on" ) != NULL )
+                if ( strstr ( value, "nlopt" ) != NULL )
                     inppar->opt_surfdist = 1;
+                else if ( strstr ( value, "gsl" ) != NULL )
+                    inppar->opt_surfdist = 2;
                 else
                     inppar->opt_surfdist = 0;
+
+#ifndef HAVE_NLOPT
+                if ( inppar->opt_surfdist == 1 ) {
+                  print_error( MISSING_LIBRARY, "nlopt" );
+                  exit ( MISSING_LIBRARY );
+                }
+#endif
+
+#ifndef HAVE_GSL
+                if ( inppar->opt_surfdist == 2 ) {
+                  print_error( MISSING_LIBRARY, "gsl" );
+                  exit ( MISSING_LIBRARY );
+                }
+#endif
+
+                if ( inppar->opt_surfdist == 0 ) {
+                  print_error( MISSING_INPUT_PARAM, "nlopt or gsl" );
+                  exit ( MISSING_INPUT_PARAM );
+                }
 
                 dummy = strtok_r ( NULL, " \n", &save_ptr );
 
@@ -658,7 +678,6 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 }
 
             }
-#endif
             else if ((keywords[key] == "dummy"))
             {
                 real conv = 1.;

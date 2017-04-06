@@ -396,6 +396,7 @@ int tanalize ( input_t * inppar )
             }
             else {
                 surface = instant_surface_periodic ( mask, atoms, natoms, zetatom, inppar->surfacecutoff, inppar->output, opref, pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
+                // surface = instant_surface_periodic_simple ( mask, atoms, natoms, zetatom, inppar->surfacecutoff, inppar->output, opref, pbc, inppar->resolution, inppar->accuracy, 0, fake_origin, fake_n, fake_boxv, inppar->periodic, 0 );
 
                 if ( inppar->postinterpolate > 1 ) {
                     if ( ! ( inppar->localsurfint ) ) {
@@ -520,29 +521,28 @@ int tanalize ( input_t * inppar )
                         clspt[g] = surfpts[mnnd][g];
 
                     if ( inppar->opt_surfdist ) {
+                    // if ( ( inppar->opt_surfdist ) && ( dstnc[r] < 2. ) ) {
                       /* optimize the function under given constraints */
-#ifdef HAVE_NLOPT
                       // printf("R BEFORE: %i \n", r);
                       real com[DIM];
                       get_center_of_mass ( com, atoms, fakemask, fakenum);
 
-                      dstnc[r] = get_opt_distance_to_surface( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->periodic, dx, inppar->xtol, inppar->ctol );
-
-                      int index[DIM];
-                      get_index_triple ( index, com, pbc, surface.origin, surface.n, dx, inppar->periodic );
-
-                      int tmpndx = get_index ( surface.n, index[0], index[1], index[2]);
-
-                      //mnnd is not the index here
-                      if ( surface.voxels[tmpndx].data < inppar->surfacecutoff )
-                        dstnc[r] *= -1.;
-
-                      // printf("AFTER\n");
+#ifdef HAVE_NLOPT
+                      if ( inppar->opt_surfdist == 1 ) {
+                        dstnc[r] = get_opt_distance_to_surface_nlopt( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->periodic, dx, inppar->xtol, inppar->ctol );
+                      }
 #endif
-                      /* save point in clspt for later use */
 
-                      //FUDO| check if we need to save something else
-                      //FUDO| where else is mnnd used?!
+#ifdef HAVE_GSL
+                      if ( inppar->opt_surfdist == 2 ) {
+                        dstnc[r] = get_opt_distance_to_surface_gsl( clspt, com, mask, atoms, zetatom, inppar->surfacecutoff, pbc, inppar->periodic, dx, inppar->xtol, inppar->ctol );
+                      }
+#endif
+
+                      real mysurf = get_coarse_grained_density( com, mask, atoms, zetatom, pbc, inppar->periodic, NULL );
+
+                      if ( mysurf < inppar->surfacecutoff )
+                        dstnc[r] *= -1.;
 
                     }
 

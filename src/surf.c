@@ -35,10 +35,6 @@ along with SURF.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <math.h>
 
-#ifdef HAVE_NLOPT
-#include <nlopt.h>
-#endif
-
 int tstart;
 int tstop;
 
@@ -256,6 +252,123 @@ cube_t instant_surface_periodic ( int * mask, atom_t * atoms, int inpnatoms, rea
 
     if ( !( periodic ) )
         free ( actatoms );
+
+    char buf[MAXSTRLEN];
+
+    if ( output > 1 )
+    {
+        sprintf(buf, "%s%s", outputprefix, "instant-surface.cube");
+        write_cubefile(buf, &surface);
+    }
+
+    bindices = cubes_larger_than ( surfcut, &surface);
+    sindices = invert_indices ( surface.nvoxels, bindices );
+
+    if ( provide_mask ) {
+        i = 0;
+        while ( bindices[i] != -1 ) {
+            surface.voxels[bindices[i]].data = ZERO;
+            i++;
+        }
+    }
+
+    i = 0;
+    int nsurf = 0;
+    while ( sindices[i] != -1 ) {
+        if ( provide_mask )
+            surface.voxels[sindices[i]].data = ONE;
+        i++;
+        nsurf = i;
+    }
+
+#if DEBUG
+    printf("%i voxels belong to surface and occupy a volume of %21.10f Bohr^3\n", nsurf, nsurf*surface.dv);
+#endif
+
+    if ( ( provide_mask ) && ( output > 2) ) {
+        sprintf(buf, "%s%s", outputprefix, "instant-surface-plain.cube");
+        write_cubefile(buf, &surface);
+    }
+
+    free ( sindices );
+    free ( bindices );
+    return surface;
+}
+
+cube_t instant_surface_periodic_simple ( int * mask, atom_t * atoms, int inpnatoms, real *zeta, real surfcut, int output, char * outputprefix, real * pbc, real resolution, real accuracy, int provide_box, real * origincube, int * ncube, real boxvcube[DIM][DIM], int periodic, int provide_mask )
+{
+    int i, j, natoms;
+    int a;
+    int * sindices;
+    int * bindices;
+    real sqzeta;
+    cube_t surface;
+    // real prefactor, dummy, cutshft;
+
+    real orig[DIM];
+    real boxv[DIM][DIM];
+    real refc[DIM];
+    int n[DIM];
+
+    /* we will create an orthogonal box according to periodic boundary conditions and resolution input */
+    /* i.e., it works for now only with orthogonal cells */
+    if ( provide_box ) {
+        for ( i=0; i<DIM; i++ ) {
+
+            orig[i] = origincube[i];
+            // check here if there is a nicer reference center, e.g., center of actual cube we are working with
+            refc[i] = pbc[i] / 2.;
+            n[i] = ncube[i];
+
+            for ( j=0; j<DIM; j++ ) {
+                boxv[i][j] = boxvcube[i][j];
+            }
+        }
+    }
+    else {
+        for ( i=0; i<DIM; i++ ) {
+
+            orig[i] = ZERO;
+            refc[i] = pbc[i] / 2.;
+            n[i] = pbc[i] / resolution;
+
+            for ( j=0; j<DIM; j++ ) {
+                if ( i == j )
+                    boxv[i][j] = pbc[i] / n[i];
+                else
+                    boxv[i][j] = ZERO;
+            }
+        }
+    }
+
+    natoms = 0;
+    while ( mask[natoms] != -1 )
+        natoms++;
+
+    surface = initialize_cube(orig, boxv, n, atoms, inpnatoms);
+
+    int wrki, wrkj, wrkk;
+    int index[DIM];
+    int tmpndx;
+    real resarr[DIM];
+    real tmpdst;
+
+    int k;
+    for ( k=0; k<DIM; k++ )
+        resarr[k] = resolution;
+
+#ifdef OPENMP
+#pragma omp parallel for default(none) \
+    private(i) shared(atoms,pbc,periodic,surface,natoms,mask,zeta) // \
+        // schedule(guided, surface.n[2])
+    // schedule(dynamic)
+#endif
+    //this natoms here is already the one accounting for number of atoms in mask only
+
+
+    for ( i=0; i<surface.nvoxels; i++ ) {
+      surface.voxels[i].data = get_coarse_grained_density( &(surface.voxels[i].coords[0]), mask, atoms, zeta, pbc, periodic, NULL );
+    }
 
     char buf[MAXSTRLEN];
 
@@ -638,6 +751,12 @@ double get_coarse_grained_density( double *mepos, int * mask, atom_t * atoms, re
 //     // schedule(dynamic)
 // #endif
 //     //this natoms here is already the one accounting for number of atoms in mask only
+    if ( grad != NULL ) {
+      grad[0] = 0.;
+      grad[1] = 0.;
+      grad[2] = 0.;
+    }
+
     for ( a=0; a<natoms; a++ ) {
 
         real sqzeta = sqr(zeta[mask[a]]);
@@ -704,6 +823,7 @@ typedef struct {
   real surfcut;
   real * pbc;
   int periodic;
+  real *ref;
 } my_constraint_data_type;
 
 double myfunc( unsigned n, const double *x, double *grad, void *my_func_data )
@@ -746,7 +866,7 @@ double myconstraint(unsigned n, const double *x, double *grad, void *data)
  }
 
 #ifdef HAVE_NLOPT
-real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, double xtol, double ctol )
+real get_opt_distance_to_surface_nlopt( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, double xtol, double ctol )
 {
   /* 
    * data that needs be passed to this function are:
@@ -812,3 +932,140 @@ real get_opt_distance_to_surface( real *init_guess, real *mepos, int *mask, atom
 }
 #endif
 
+#ifdef HAVE_GSL
+int multivariate_f (const gsl_vector * x, void *params, gsl_vector * f)
+{
+
+  my_constraint_data_type *d = (my_constraint_data_type *) params;
+
+  real grad[DIM];
+  real spos[DIM];
+
+  spos[0] = gsl_vector_get (x, 0);
+  spos[1] = gsl_vector_get (x, 1);
+  spos[2] = gsl_vector_get (x, 2);
+
+  real lambda = gsl_vector_get( x, 3 );
+
+  real density = get_coarse_grained_density( spos, d->mask, d->atoms, d->zeta, d->pbc, d->periodic, grad );
+
+  real dx[DIM];
+  real dst = get_distance_vector_periodic( dx, d->ref, spos, d->pbc );
+  real dinv = 1. / dst;
+
+  const double y0 = grad[0] * lambda + dinv * dx[0];
+  const double y1 = grad[1] * lambda + dinv * dx[1];
+  const double y2 = grad[2] * lambda + dinv * dx[2];
+  const double y3 = density - d->surfcut;
+
+  gsl_vector_set (f, 0, y0);
+  gsl_vector_set (f, 1, y1);
+  gsl_vector_set (f, 2, y2);
+  gsl_vector_set (f, 3, y3);
+
+  return GSL_SUCCESS;
+}
+
+// #define GSL_SQRT_DBL_EPSILON   1.4901161193847656e-06
+
+real get_opt_distance_to_surface_gsl( real *init_guess, real *mepos, int *mask, atom_t * atoms, real *zeta, real surfcut, real *pbc, int periodic, real *bnds, double xtol, double ctol )
+{
+  my_constraint_data_type cons_data;
+  cons_data.mask = mask;
+  cons_data.atoms = atoms;
+  cons_data.zeta = zeta;
+  cons_data.surfcut = surfcut;
+  cons_data.pbc = pbc;
+  cons_data.periodic = periodic;
+  cons_data.ref = mepos;
+
+  real dx[DIM];
+  real dst;
+
+  dx[0] = init_guess[0] - mepos[0];
+  dx[1] = init_guess[1] - mepos[1];
+  dx[2] = init_guess[2] - mepos[2];
+
+  dst = sqrt( dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2] );
+
+  const gsl_multiroot_fsolver_type *T;
+  gsl_multiroot_fsolver *s;
+
+  int status;
+  size_t i, iter = 0;
+
+  const size_t n = 4;
+
+  gsl_multiroot_function f = {&multivariate_f, n, &cons_data};
+
+  double x_init[4] = {init_guess[0], init_guess[1], init_guess[2], 1.};
+  gsl_vector *x = gsl_vector_alloc (n);
+
+  gsl_vector_set (x, 0, x_init[0]);
+  gsl_vector_set (x, 1, x_init[1]);
+  gsl_vector_set (x, 2, x_init[2]);
+  gsl_vector_set (x, 3, x_init[3]);
+
+  // T = gsl_multiroot_fsolver_hybrid;
+  T = gsl_multiroot_fsolver_hybrids;
+  // T = gsl_multiroot_fsolver_dnewton;
+  // T = gsl_multiroot_fsolver_broyden;
+  s = gsl_multiroot_fsolver_alloc (T, n);
+  gsl_multiroot_fsolver_set (s, &f, x);
+
+  // print_state (iter, s);
+
+  do
+    {
+      iter++;
+      status = gsl_multiroot_fsolver_iterate (s);
+
+      // print_state (iter, s);
+
+      if (status)   /* check if solver is stuck */
+        break;
+
+      status = 
+        gsl_multiroot_test_residual (s->f, xtol);
+    }
+  while (status == GSL_CONTINUE && iter < 1000);
+
+  // printf ("status = %s\n", gsl_strerror (status));
+
+  init_guess[0] = gsl_vector_get( s->x, 0 );
+  init_guess[1] = gsl_vector_get( s->x, 1 );
+  init_guess[2] = gsl_vector_get( s->x, 2 );
+
+  gsl_multiroot_fsolver_free (s);
+  gsl_vector_free (x);
+
+  dx[0] = init_guess[0] - mepos[0];
+  dx[1] = init_guess[1] - mepos[1];
+  dx[2] = init_guess[2] - mepos[2];
+
+  dst = get_distance_periodic( init_guess, mepos, pbc );
+
+  // FUDO| in principle could do sign-flip here as well
+  // real density = get_coarse_grained_density( init_guess, cons_data.mask, cons_data.atoms, cons_data.zeta, cons_data.pbc, cons_data.periodic, NULL );
+  // if ( ( density - surfcut ) > xtol )
+  //   printf("density value: %f surfcut: %f iterations: %i distance: %g\n", density, surfcut, iter, dst);
+
+  return dst;
+
+}
+
+int print_state (size_t iter, gsl_multiroot_fsolver * s)
+{
+  printf ("iter = %3u x = % .3f % .3f % .3f % .3f"
+          "f(x) = % .3e % .3e % .3e % .3e\n",
+          iter,
+          gsl_vector_get (s->x, 0), 
+          gsl_vector_get (s->x, 1),
+          gsl_vector_get (s->x, 2),
+          gsl_vector_get (s->x, 3),
+          gsl_vector_get (s->f, 0), 
+          gsl_vector_get (s->f, 1),
+          gsl_vector_get (s->f, 2),
+          gsl_vector_get (s->f, 3));
+}
+#endif
