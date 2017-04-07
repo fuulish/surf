@@ -1,22 +1,31 @@
-Installation notes:
--------------------
+Build and installation
+======================
 
-Three valueable configure options:
-    --enable-openmp - enables OPENMP for surface construction
-    --enable-gsl    - enables GSL support (not used right now)
-    --enable-xdr    - enable support for XTC file *READING*
+Build using CMake in a separate directory (out of source build).
+That keeps the source tree clean and allows separating multiple builds.
+For a basic build, just do:
 
-so run
-    ./configure --enable-openmp --enable-xdr
-    make
-    make install ('installed' under <SURF>/bin)
+    $ mkdir build
+    $ cd build
+    $ cmake .. [options]
+    $ make
 
-    For latest, optimized surface calculation add the flad -DOPTSURF to CFLAGS.
-    It is about an order of magnitude faster, and gave for all tested systems numerically 
-    identical results to the naive version of the code.
-    It is not completely debugged, yet.
+Use `make VERBOSE=1` to see the actual compilation commands.
 
-possible input options:
+Build options
+-------------
+
+Option                             | Description
+:--------------------------------- | :----------------------------------------
+`-DENABLE_OPENMP=ON`               | Enable OpenMP support (on by default)
+
+Installation is currently not supported, just run the binary from the build directory.
+
+
+Input file
+==========
+
+Possible input options:
 (have to be given in lower case (I know, I know) then ' = ' and then input value (see also tests directory))
 
     option          valid keywords
