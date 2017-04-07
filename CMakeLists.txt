@@ -15,6 +15,7 @@ find_optional_package(OpenMP)
 
 if (NOT DISABLE_OPENMP AND OPENMP_FOUND)
     add_definitions(-DOPENMP)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 endif()
 
 find_optional_package(GSL)
