@@ -9,6 +9,7 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/)
 include(FindOptionalPackage)
+include(FindOptionalPkgPackage)
 
 find_optional_package(OpenMP)
 
@@ -24,17 +25,15 @@ endif()
 
 find_package(PkgConfig REQUIRED)
 
-option(ENABLE_NLOPT "Use NLOPT optimization library" OFF)
+find_optional_pkg_package(NLOPT)
 
-if(ENABLE_NLOPT)
-    pkg_search_module(NLOPT nlopt REQUIRED)
+if (NOT DISABLE_NLOPT AND NLOPT_FOUND)
     add_definitions(-DHAVE_NLOPT)
 endif()
 
-option(ENABLE_EINSPLINE "Use EINSPLINE interpolation library" OFF)
+find_optional_pkg_package(EINSPLINE)
 
-if(ENABLE_EINSPLINE)
-    pkg_search_module(EINSPLINE einspline REQUIRED)
+if (NOT DISABLE_EINSPLINE AND EINSPLINE_FOUND)
     add_definitions(-DHAVE_EINSPLINE)
 endif()
 
