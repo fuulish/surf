@@ -9,16 +9,24 @@ add_executable(surf ${sources})
 
 target_link_libraries(surf xdrfile m)
 
-if (NLOPT_FOUND AND ENABLE_NLOPT)
-    target_link_libraries(surf ${NLOPT_LIBRARIES})
-    target_include_directories(surf PUBLIC ${NLOPT_INCLUDE_DIRS})
-    target_compile_options(surf PUBLIC ${NLOPT_CFLAGS_OTHER})
+if (OPENMP_FOUND AND NOT DISABLE_OPENMP)
+    target_link_libraries(surf ${OpenMP_LIBRARIES})
+    target_include_directories(surf PUBLIC ${OpenMP_INCLUDE_DIRS})
 endif()
 
-if (EINSPLINE_FOUND AND ENABLE_EINSPLINE)
+if (GSL_FOUND AND NOT DISABLE_GSL)
+    target_link_libraries(surf ${GSL_LIBRARIES})
+    target_include_directories(surf PUBLIC ${GSL_INCLUDE_DIRS})
+endif()
+
+if (NLOPT_FOUND AND NOT DISABLE_NLOPT)
+    target_link_libraries(surf ${NLOPT_LIBRARIES})
+    target_include_directories(surf PUBLIC ${NLOPT_INCLUDE_DIRS})
+endif()
+
+if (EINSPLINE_FOUND AND NOT DISABLE_EINSPLINE)
     target_link_libraries(surf ${EINSPLINE_LIBRARIES})
     target_include_directories(surf PUBLIC ${EINSPLINE_INCLUDE_DIRS})
-    target_compile_options(surf PUBLIC ${EINSPLINE_CFLAGS_OTHER})
 endif()
 
 install(TARGETS surf DESTINATION bin)
