@@ -61,4 +61,4 @@ gsl-2.3.tar.gz:
 	wget 'ftp://ftp.gnu.org/gnu/gsl/gsl-2.3.tar.gz' -O gsl-2.3.tar.gz
 
 clean:
-	-rm -rf einspline-0.9.2* xdrfile-1.1.4* nlopt-2.4.2* bin include lib
+	-rm -rf einspline-0.9.2* xdrfile-1.1.4* nlopt-2.4.2* bin include lib share
