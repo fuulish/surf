@@ -638,7 +638,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 }
 
             }
-            else if ((keywords[key] == "opt_surfdist" ) )
+            else if (strcmp(keywords[key], "opt_surfdist") == 0)
             {
                 if ( strstr ( value, "nlopt" ) != NULL )
                     inppar->opt_surfdist = 1;
