@@ -29,7 +29,7 @@ int ** allocate_matrix_int_2d ( int dim1, int dim2 );
 void free_matrix_int_2d ( int ** mat, int dim1 );
 int find_minimum_d(real *, int *);
 real get_distance_periodic (real * coord1, real * coord2, real * pbc);
-real get_distance_vector_periodic (real * dist, real * coord1, real * coord2, real * pbc);
+void get_distance_vector_periodic (real * dist, real * coord1, real * coord2, real * pbc);
 real get_distance_periodic_1d (real coord1, real coord2, real pbc);
 real get_distance(real * coord1, real * coord2);
 real find_minimum_1d_real ( int * mini, real * values, int maxi );

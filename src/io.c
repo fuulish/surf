@@ -97,21 +97,21 @@ void set_input_value(input_t *inppar, char *variable, char *value)
             value = dummy;
 
             printf("%s is set to: '%s'\n", variable, value);
-            if ((keywords[key] == "task"))
+            if (strcmp(keywords[key], "task") == 0)
             {
                 strcpy(inppar->task, value);
                 inppar-> tasknum = assign_task ( inppar->task );
             }
-            else if ((keywords[key] == "structure"))
+            else if (strcmp(keywords[key], "structure") == 0)
             {
                 strcpy(inppar->structure, value);
             }
-            else if ((keywords[key] == "oprefix"))
+            else if (strcmp(keywords[key], "oprefix") == 0)
             {
                 strcpy(inppar->outputprefix, value);
             }
             // likely obsolete, old keyword, check here
-            else if ((keywords[key] == "surfrefinement"))
+            else if (strcmp(keywords[key], "surfrefinement") == 0)
             {
                 real conv = 1.;
 
@@ -126,11 +126,11 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 inppar->surfrefinement = conv * atof(dummy);
             }
-            else if ((keywords[key] == "refinementitpl"))
+            else if (strcmp(keywords[key], "refinementitpl") == 0)
             {
                 inppar->refineitpl = atoi(value);
             }
-            else if ((keywords[key] == "surfacecutoff"))
+            else if (strcmp(keywords[key], "surfacecutoff") == 0)
             {
                 real conv = 1.;
 
@@ -145,7 +145,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 inppar->surfacecutoff = atof(dummy) / ( sqr ( conv ) * conv );
             }
-            else if ((keywords[key] == "mass"))
+            else if (strcmp(keywords[key], "mass") == 0)
             {
                 real conv = 1.;
 
@@ -180,7 +180,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 }
 
             }
-            else if ((keywords[key] == "zeta"))
+            else if (strcmp(keywords[key], "zeta") == 0)
             {
                 real conv = 1.;
 
@@ -215,7 +215,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 }
 
             }
-            else if ((keywords[key] == "postinterpolate"))
+            else if (strcmp(keywords[key], "postinterpolate") == 0)
             {
                 inppar->postinterpolate = atoi(value);
 
@@ -233,11 +233,11 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                     }
                 }
             }
-            else if ((keywords[key] == "roughsurf"))
+            else if (strcmp(keywords[key], "roughsurf") == 0)
             {
                 inppar->roughsurf = atoi(value);
             }
-            else if ((keywords[key] == "pbc"))
+            else if (strcmp(keywords[key], "pbc") == 0)
             {
                 inppar->pbcset = 1;
                 /* check here, maybe we don't always want to set inppar->periodic, when we set pbc, but I dunno */
@@ -268,7 +268,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                         inppar->pbc[i] = inppar->pbc[0];
 
             }
-            else if ((keywords[key] == "solcenter"))
+            else if (strcmp(keywords[key], "solcenter") == 0)
             {
                 inppar->solset = 1;
                 int i=0;
@@ -286,7 +286,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                         inppar->solcenter[i] = inppar->solcenter[0];
 
             }
-            else if ((keywords[key] == "refcenter"))
+            else if (strcmp(keywords[key], "refcenter") == 0)
             {
                 int i=0;
 
@@ -300,7 +300,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 inppar->refcenterset = 1;
             }
-            else if ((keywords[key] == "mask"))
+            else if (strcmp(keywords[key], "mask") == 0)
             {
                 strcpy(inppar->maskkind, value);
 
@@ -321,7 +321,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                     inppar->nkinds++;
                 }
             }
-            else if ((keywords[key] == "refmask"))
+            else if (strcmp(keywords[key], "refmask") == 0)
             {
                 strcpy(inppar->refmaskkind, value);
 
@@ -342,7 +342,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                     inppar->refnkinds++;
                 }
             }
-            else if ((keywords[key] == "batch"))
+            else if (strcmp(keywords[key], "batch") == 0)
             {
                 inppar->start = atoi(value);
                 inppar->batchmode = 1;
@@ -353,7 +353,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 dummy = strtok_r(NULL, " ", &save_ptr);
                 inppar->stride = atoi(dummy);
             }
-            else if ((keywords[key] == "output"))
+            else if (strcmp(keywords[key], "output") == 0)
             {
                 if (strstr(value, "silent") != NULL) {
                     inppar->output = 0;
@@ -366,7 +366,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 else if (strstr(value, "debug") != NULL)
                     inppar->output = 3;
             }
-            else if ((keywords[key] == "fragments"))
+            else if (strcmp(keywords[key], "fragments") == 0)
             {
                 inppar->nofrags = 0;
 
@@ -493,39 +493,39 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                     }
                 }
             }
-            else if ((keywords[key] == "periodic"))
+            else if (strcmp(keywords[key], "periodic") == 0)
             {
                 inppar->periodic = atoi(value);
             }
-            else if ((keywords[key] == "wrap"))
+            else if (strcmp(keywords[key], "wrap") == 0)
             {
                 inppar->wrap = atoi(value);
             }
-            else if ((keywords[key] == "blfudge"))
+            else if (strcmp(keywords[key], "blfudge") == 0)
             {
                 inppar->blfudge = atof(value);
             }
-            else if ((keywords[key] == "guessfragments"))
+            else if (strcmp(keywords[key], "guessfragments") == 0)
             {
                 inppar->guessfragments = atoi(value);
             }
-            else if ((keywords[key] == "trajectory"))
+            else if (strcmp(keywords[key], "trajectory") == 0)
             {
                 strcpy(inppar->trajectory, value);
                 inppar->trajmode = 1;
             }
-            else if ((keywords[key] == "addeddata"))
+            else if (strcmp(keywords[key], "addeddata") == 0)
             {
                 strcpy(inppar->addeddata, value);
             }
-            else if ((keywords[key] == "datacolumn"))
+            else if (strcmp(keywords[key], "datacolumn") == 0)
             {
                 inppar->adatacolstrt = atoi(value);
 
                 dummy = strtok_r(NULL, " ", &save_ptr);
                 inppar->adatacolstop = atoi(dummy);
             }
-            else if ((keywords[key] == "resolution"))
+            else if (strcmp(keywords[key], "resolution") == 0)
             {
                 real conv = 1.;
 
@@ -540,7 +540,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 inppar->resolution = conv * atof( dummy );
             }
-            else if ((keywords[key] == "profileres"))
+            else if (strcmp(keywords[key], "profileres") == 0)
             {
                 real conv = 1.;
 
@@ -555,7 +555,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 inppar->profileres = conv * atof( dummy );
             }
-            else if ((keywords[key] == "xdrread"))
+            else if (strcmp(keywords[key], "xdrread") == 0)
             {
 #ifdef HAVE_XDRFILE
                 inppar->xdrread = atoi(value);
@@ -564,12 +564,12 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 exit ( 1 );
 #endif
             }
-            else if ((keywords[key] == "ignorefirst"))
+            else if (strcmp(keywords[key], "ignorefirst") == 0)
             {
                 inppar->gnrfrst = atoi(value);
             }
             // obsolete keyword, check here
-            else if ((keywords[key] == "accuracy"))
+            else if (strcmp(keywords[key], "accuracy") == 0)
             {
                 real conv = 1.;
 
@@ -584,15 +584,15 @@ void set_input_value(input_t *inppar, char *variable, char *value)
 
                 inppar->accuracy = conv * atof ( dummy );
             }
-            else if ((keywords[key] == "direction"))
+            else if (strcmp(keywords[key], "direction") == 0)
             {
                 inppar->direction = atoi ( value );
             }
-            else if ((keywords[key] == "surfxyz"))
+            else if (strcmp(keywords[key], "surfxyz") == 0)
             {
                 inppar->surfxyz = atoi ( value );
             }
-            else if ((keywords[key] == "normalization"))
+            else if (strcmp(keywords[key], "normalization") == 0)
             {
                 if ( strstr ( value, "average" ) != NULL )
                     inppar->normalization = NORM_AVER;
@@ -601,7 +601,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 else if ( strstr ( value, "surface" ) != NULL )
                     inppar->normalization = NORM_SLAB;
             }
-            else if ((keywords[key] == "localsurfaceinterpolation"))
+            else if (strcmp(keywords[key], "localsurfaceinterpolation") == 0)
             {
                 inppar->localsurfint = 1;
 
@@ -621,7 +621,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 dummy = strtok_r ( NULL, " ", &save_ptr );
                 inppar->lint = atoi ( dummy );
             }
-            else if ((keywords[key] == "load_surface" ) )
+            else if (strcmp(keywords[key], "load_surface") == 0)
             {
                 if ( strstr ( value, "on" ) != NULL )
                     inppar->load_surface = 1;
@@ -638,7 +638,7 @@ void set_input_value(input_t *inppar, char *variable, char *value)
                 }
 
             }
-            else if ((keywords[key] == "dummy"))
+            else if (strcmp(keywords[key], "dummy") == 0)
             {
                 real conv = 1.;
                 int j;
