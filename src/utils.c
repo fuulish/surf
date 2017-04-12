@@ -261,7 +261,7 @@ real get_distance_vector (real * dist, real * coord1, real * coord2)
     return distance;
 }
 
-void get_distance_vector_periodic (real * dist, real * coord1, real * coord2, real * pbc)
+real get_distance_vector_periodic (real * dist, real * coord1, real * coord2, real * pbc)
 {
     int i;
     real distance = ZERO;
