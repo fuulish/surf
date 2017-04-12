@@ -765,11 +765,13 @@ int tanalize ( input_t * inppar )
             norm = factor;
 
             fprintf ( fdprof, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof+hdrdprof, densprof[i+hndprof], densprof[i+hndprof] / norm);
-            if ( adddata )
-                if ( densprof[i+hndprof] / norm > 1.e-8 )
+            if ( adddata ) {
+                if ( densprof[i+hndprof] / norm > 1.e-8 ) {
                     fprintf ( fadatout, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof+hdrdprof, rathist[i+hndprof], rathist[i+hndprof] / densprof[i+hndprof]);
-                else
+                } else {
                     fprintf ( fadatout, "%21.10f %21.10f %21.10f\n", BOHR*i*drdprof+hdrdprof, 0., 0.);
+                }
+            }
         }
 
         fclose ( fdprof );
