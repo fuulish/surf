@@ -1,5 +1,6 @@
 import numpy as np
-from ext import coarse_grained_density
+from _surf import coarse_grained_density
+from ase.units import Bohr
 
 class ILI(object):
     """
@@ -85,6 +86,25 @@ class ILI(object):
         """
 
         return None
+
+    @staticmethod
+    def pointsFromCube(cubefile):
+        xc, yc, zc = cubefile.coord_grid(0.,0.,0.)
+
+        xc = xc[:,0,0].astype('float64')
+        yc = yc[0,:,0].astype('float64')
+        zc = zc[0,0,:].astype('float64')
+
+        X, Y, Z = np.meshgrid(xc, yc, zc, indexing='ij')
+
+        points = []
+
+        for x, y, z in zip(X.flatten(), Y.flatten(), Z.flatten()):
+            points.append(np.array([x,y,z])*Bohr)
+
+        points = np.array(points)
+
+        return points
 
 default_zeta = {
     'O' : 2.5, # Angstrom
