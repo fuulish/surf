@@ -42,9 +42,8 @@ class ILI(object):
     @surfaceCutoff.getter
     def surfaceCutoff(self):
         if self._surfaceCutoff is None:
-            # insert here clever way to automatically do that
 
-            cgd = self.coarseGrainedDensity(self.atoms.positions)
+            cgd = self.coarseGrainedDensity(self.atoms[self.imask].positions)
             self._surfaceCutoff = np.average(cgd) / 2.
 
         return self._surfaceCutoff
