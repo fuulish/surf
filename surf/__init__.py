@@ -1,4 +1,4 @@
-
+import numpy as np
 
 class ILI(object):
     """
@@ -24,6 +24,9 @@ class ILI(object):
 
         if self.mask is None:
             self.mask = [True]*len(atoms)
+
+        # NOTE: equivalent integer mask:
+        self.imask = [i for i, v in enumerate(self.mask) if v]
 
         if self.zeta is None:
             self.zeta = np.array([default_zeta[z] for z in self.atoms.get_chemical_symbols()])
