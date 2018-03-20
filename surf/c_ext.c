@@ -17,8 +17,6 @@ double c_coarse_grained_density( double *mepos, double *pos, double *zeta, long 
     int a;
     // double prefactor, dummy, cutshft;
 
-    double dx[DIM];
-
     double distance;
     double density = 0.0;
 
@@ -67,9 +65,9 @@ double c_coarse_grained_density( double *mepos, double *pos, double *zeta, long 
 
           double fact = -2. / mttsqzeta;
 
-          grad[0] += dx[0] * fact * tmpdens;
-          grad[1] += dx[1] * fact * tmpdens;
-          grad[2] += dx[2] * fact * tmpdens;
+          grad[0] += dst[0] * fact * tmpdens;
+          grad[1] += dst[1] * fact * tmpdens;
+          grad[2] += dst[2] * fact * tmpdens;
         }
     }
 

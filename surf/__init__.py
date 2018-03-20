@@ -61,7 +61,6 @@ class ILI(object):
         pos = self.atoms[self.imask].positions.flatten().astype('float64')
         zeta = self.zeta[self.imask]
         natoms = len(zeta)
-        print("NUMBER OF ATOMS: ", natoms, len(self.atoms))
         pbc = np.diag(self.atoms.get_cell()).astype('float64')
 
         cgd = []
