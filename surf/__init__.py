@@ -42,7 +42,9 @@ class ILI(object):
     def surfaceCutoff(self):
         if self._surfaceCutoff is None:
             # insert here clever way to automatically do that
-            pass
+
+            cgd = self.coarseGrainedDensity(self.atoms.positions)
+            self._surfaceCutoff = np.average(cgd) / 2.
 
         return self._surfaceCutoff
 
@@ -55,11 +57,12 @@ class ILI(object):
         calculate the coarse grained density at a set of specified input points
         """
 
-        points = points.flatten().astype('float64')
-        natoms = len(self.atoms)
-        pos = self.atoms[self.mask].positions.flatten().astype('float64')
-        zeta = self.zeta[self.mask]
-        pbc = np.diag(atoms.get_cell()).astype('float64')
+        points = points #.flatten().astype('float64')
+        pos = self.atoms[self.imask].positions.flatten().astype('float64')
+        zeta = self.zeta[self.imask]
+        natoms = len(zeta)
+        print("NUMBER OF ATOMS: ", natoms, len(self.atoms))
+        pbc = np.diag(self.atoms.get_cell()).astype('float64')
 
         cgd = []
 

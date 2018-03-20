@@ -5,6 +5,7 @@
 
 #define sqr(x) ((x)*(x))
 #define DIM 3
+#define PI 3.141592653589793
 
 double c_coarse_grained_density( double *mepos, double *pos, double *zeta, long int natoms,
                                    double *pbc, long int periodic, double *grad );
@@ -41,7 +42,9 @@ double c_coarse_grained_density( double *mepos, double *pos, double *zeta, long 
         double trplzt = 3*zeta[a];
 
         double dst[DIM];
-        distance = calc_distance(dst, mepos, &(pos[a*DIM]), pbc);
+        calc_distance(dst, mepos, &(pos[a*DIM]), pbc);
+
+        distance = sqrt( sqr(dst[0]) + sqr(dst[1]) + sqr(dst[2]) );
 
         if ( distance > trplzt )
             continue;
