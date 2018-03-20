@@ -1,4 +1,5 @@
 import numpy as np
+from ext import coarse_grained_density
 
 class ILI(object):
     """
@@ -31,6 +32,8 @@ class ILI(object):
         if self.zeta is None:
             self.zeta = np.array([default_zeta[z] for z in self.atoms.get_chemical_symbols()])
 
+        self.zeta = np.array(self.zeta, dtype='float64')
+
     @property
     def surfaceCutoff(self):
         return self._surfaceCutoff
@@ -52,11 +55,27 @@ class ILI(object):
         calculate the coarse grained density at a set of specified input points
         """
 
-        # this one needs to be highly efficient (borrow old routine from C code)
-        # only pass those atoms actually used in surface construction
-        # --> create special array for that!? cached_property?
+        points = points.flatten().astype('float64')
+        natoms = len(self.atoms)
+        pos = self.atoms[self.mask].positions.flatten().astype('float64')
+        zeta = self.zeta[self.mask]
+        pbc = np.diag(atoms.get_cell()).astype('float64')
 
-        return None
+        cgd = []
+
+        for point in points:
+            mepos = point.flatten().astype('float64')
+            grad = np.zeros(3, dtype='float64')
+
+            cgd.append(coarse_grained_density(mepos, pos, zeta, natoms, pbc, 1, grad))
+
+        return np.array(cgd)
+
+        # # this one needs to be highly efficient (borrow old routine from C code)
+        # # only pass those atoms actually used in surface construction
+        # # --> create special array for that!? cached_property?
+#
+        # return None
 
     def distanceToSurface(self, points):
         """
