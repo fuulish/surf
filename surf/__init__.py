@@ -74,12 +74,6 @@ class ILI(object):
 
         return np.array(cgd)
 
-        # # this one needs to be highly efficient (borrow old routine from C code)
-        # # only pass those atoms actually used in surface construction
-        # # --> create special array for that!? cached_property?
-#
-        # return None
-
     def distanceToSurface(self, points):
         """
         calculate the distance to the ILI using equality constraints
