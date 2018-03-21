@@ -23,3 +23,7 @@ prev = np.loadtxt('refdist.dat')
 prev = prev[:,1] * Bohr
 
 np.testing.assert_allclose(dsts, prev, rtol=5)
+
+gsld = np.loadtxt('gsl_distances.txt')
+
+np.testing.assert_allclose(dsts, gsld, rtol=20)

@@ -10,8 +10,9 @@ from Cython.Build import cythonize
 ext_modules = [Extension("surf/_surf",
                          sources=["surf/_surf.pyx", "surf/c_surf.c" ],
                          include_dirs=[numpy.get_include()],
-                         extra_compile_args = ["-fopenmp"],
-                         extra_link_args=['-fopenmp'],),]
+                         extra_compile_args = ['-fopenmp'],
+                         extra_link_args=['-fopenmp'],
+                         libraries=['gsl', 'gslcblas'],),]
 
 setup(name='surf',
       version='0.1',

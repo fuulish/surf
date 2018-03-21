@@ -1,5 +1,5 @@
 import numpy as np
-from _surf import coarse_grained_density
+from _surf import coarse_grained_density, opt_distance_to_surface_gsl
 from ase.units import Bohr
 from scipy.optimize import minimize
 
@@ -88,10 +88,19 @@ class ILI(object):
 
         return cgd
 
-    def distanceToSurface(self, points):
+    def distanceToSurface(self, points, gsl=False):
         """
         calculate the distance to the ILI using equality constraints
         """
+
+        # obtain initial guess from brute-force point search
+        sg = self.surfaceGrid(dx=1.)
+        dst = np.zeros(len(points))
+
+        pos = self.atoms[self.imask].positions.flatten().astype('float64')
+        zeta = self.zeta[self.imask]
+        natoms = len(zeta)
+        pbc = np.diag(self.atoms.get_cell()).astype('float64')
 
         # minimize distance between point and surface
         def func(x, point):
@@ -103,23 +112,23 @@ class ILI(object):
             'fun' : lambda x: self.coarseGrainedDensity([x]) - self.surfaceCutoff,
         })
 
-        # obtain initial guess from brute-force point search
-        sg = self.surfaceGrid(dx=1.)
-
-        dst = np.zeros(len(points))
-
         for i, point in enumerate(points):
 
             distToSurf = self.calculate_distance(point, sg)
-
             x0 = sg[np.argmin(distToSurf)]
 
-            ret = minimize(func, x0, args=(point,), method='SLSQP', constraints=constraints)
+            if gsl:
+                mepos = point.flatten().astype('float64')
+                bnds = np.zeros(3)
+                # TODO: return vector instead of distance!?
+                dst[i] = opt_distance_to_surface_gsl(x0, mepos, pos, zeta, natoms, self.surfaceCutoff, pbc, 1, bnds, 1.e-4, 1e-4)
+            else:
+                ret = minimize(func, x0, args=(point,), method='SLSQP', constraints=constraints)
 
-            if not ret.success:
-                print('Failed to achieve convergence for point #%i: ' %i, point)
+                if not ret.success:
+                    print('Failed to achieve convergence for point #%i: ' %i, point)
 
-            dst[i] = self.calculate_distance(ret.x, point)
+                dst[i] = self.calculate_distance(ret.x, point)
 
         return dst
 

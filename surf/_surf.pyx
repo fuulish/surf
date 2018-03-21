@@ -30,3 +30,26 @@ def coarse_grained_density(
         ):
 
     return c_coarse_grained_density(&mepos[0], &pos[0], &zeta[0], natoms, &pbc[0], periodic, calc_grad, &grad[0])
+
+cdef extern double c_opt_distance_to_surface_gsl( double *init_guess, double *mepos, double *pos,
+                                      double *zeta, long int natoms, double surfcut, double *pbc,
+                                      long int periodic, double *bnds, double xtol, double ctol )
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def opt_distance_to_surface_gsl(
+        np.ndarray[double, ndim=1, mode="c"] init_guess not None,
+        np.ndarray[double, ndim=1, mode="c"] mepos not None,
+        np.ndarray[double, ndim=1, mode="c"] pos not None,
+        np.ndarray[double, ndim=1, mode="c"] zeta not None,
+        long int natoms,
+        double surfcut,
+        np.ndarray[double, ndim=1, mode="c"] pbc not None,
+        long int periodic,
+        np.ndarray[double, ndim=1, mode="c"] bnds not None,
+        double xtol,
+        double ctol
+        ):
+
+    return c_opt_distance_to_surface_gsl( &init_guess[0], &mepos[0], &pos[0],
+           &zeta[0], natoms, surfcut, &pbc[0], periodic, &bnds[0], xtol, ctol)
