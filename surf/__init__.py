@@ -3,6 +3,12 @@ from _surf import coarse_grained_density
 from ase.units import Bohr
 from scipy.optimize import minimize
 
+try:
+    import mcubes
+    mcubes_loaded = True
+except ImportError:
+    mcubes_loaded = False
+
 class ILI(object):
     """
     Instant Liquid Interfaces (ILI) Calculator
@@ -117,17 +123,28 @@ class ILI(object):
 
         return dst
 
-    def surfaceGrid(self, dx=2., refine=True):
+    def surfaceGrid(self, dx=2., refine=True, marching_cubes=False):
         """
         brute-force estimate of surface position
         """
 
-        # generate grid points
-        pbc = np.diag(self.atoms.get_cell()).astype('float64')
+        if marching_cubes and mcubes_loaded:
+            lower = (0, 0, 0)
+            upper = self.pbc
+            stride = np.array((upper - lower) / dx, dtype='int')
+            upper = tuple(upper)
 
-        xg = np.arange(0, pbc[0], dx)
-        yg = np.arange(0, pbc[1], dx)
-        zg = np.arange(0, pbc[2], dx)
+            f = lambda x, y, z: self.coarseGrainedDensity([np.array([x,y,z])])
+            verts, triangles = mcubes.marching_cubes_func(lower, upper, \
+                               stride[0], stride[1], stride[2], f, self.surfaceCutoff)
+
+            return verts
+
+        # generate grid points
+
+        xg = np.arange(0, self.pbc[0], dx)
+        yg = np.arange(0, self.pbc[1], dx)
+        zg = np.arange(0, self.pbc[2], dx)
 
         X, Y = np.meshgrid(xg, yg, indexing='ij')
 
