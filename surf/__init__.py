@@ -52,7 +52,7 @@ class ILI(object):
     def surfaceCutoff(self, value):
         self._surfaceCutoff = value
 
-    def coarseGrainedDensity(self, points):
+    def coarseGrainedDensity(self, points, gradient=False):
         """
         calculate the coarse grained density at a set of specified input points
         """
@@ -63,15 +63,21 @@ class ILI(object):
         natoms = len(zeta)
         pbc = np.diag(self.atoms.get_cell()).astype('float64')
 
-        cgd = []
+        cgd = np.zeros(len(points))
+        grd = np.zeros((len(points), 3))
 
-        for point in points:
+        for i, point in enumerate(points):
             mepos = point.flatten().astype('float64')
             grad = np.zeros(3, dtype='float64')
 
-            cgd.append(coarse_grained_density(mepos, pos, zeta, natoms, pbc, 1, grad))
+            # TODO: only calculate gradient if requested
+            cgd[i] = coarse_grained_density(mepos, pos, zeta, natoms, pbc, 1, grad)
+            grd[i][:] = grad[:]
 
-        return np.array(cgd)
+        if gradient:
+            return grd
+
+        return cgd
 
     def distanceToSurface(self, points):
         """
@@ -79,6 +85,44 @@ class ILI(object):
         """
 
         return None
+
+    def surfaceGrid(self, dx=1.):
+        """
+        brute-force estimate of surface position
+        """
+
+        # generate grid points
+        pbc = np.diag(self.atoms.get_cell()).astype('float64')
+
+        xg = np.arange(0, pbc[0], dx)
+        yg = np.arange(0, pbc[1], dx)
+        zg = np.arange(0, pbc[2], dx)
+
+        X, Y = np.meshgrid(xg, yg, indexing='ij')
+
+        # calculate coarseGrainedDensity along path of z
+
+        surfacePoints = []
+
+        for x, y in zip(X.flatten(), Y.flatten()):
+            pts = np.vstack([np.repeat(x, len(zg)), np.repeat(y, len(zg)), zg]).T
+
+            density = self.coarseGrainedDensity(pts)
+            gradient = self.coarseGrainedDensity(pts, gradient=True)
+
+            nextdens = density + gradient.T * dx
+
+            zind = np.where((nextdens > self.surfaceCutoff).any(axis=0) & \
+                            (density < self.surfaceCutoff))[0]
+            zind = np.append(zind, np.where((nextdens < self.surfaceCutoff).any(axis=0) & \
+                            (density > self.surfaceCutoff))[0])
+
+            # should perform an interpolation to get the actual position of the point
+
+            if len(zind) > 0:
+                surfacePoints.extend(pts[zind])
+
+        return np.array(surfacePoints)
 
     @staticmethod
     def pointsFromCube(cubefile):
