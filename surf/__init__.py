@@ -1,6 +1,7 @@
 import numpy as np
 from _surf import coarse_grained_density
 from ase.units import Bohr
+from scipy.optimize import minimize
 
 class ILI(object):
     """
@@ -34,6 +35,7 @@ class ILI(object):
             self.zeta = np.array([default_zeta[z] for z in self.atoms.get_chemical_symbols()])
 
         self.zeta = np.array(self.zeta, dtype='float64')
+        self.pbc = np.diag(self.atoms.get_cell())
 
     @property
     def surfaceCutoff(self):
@@ -85,7 +87,30 @@ class ILI(object):
         calculate the distance to the ILI using equality constraints
         """
 
-        return None
+        # minimize distance between point and surface
+        def func(x, point):
+            dst = self.calculate_distance_vector(x, point)
+            return (dst**2).sum()
+
+        constraints = ({
+            'type' : 'eq',
+            'fun' : lambda x: self.coarseGrainedDensity([x]) - self.surfaceCutoff,
+        })
+
+        # obtain initial guess from brute-force point search
+        sg = self.surfaceGrid()
+
+        dst = []
+        for point in points:
+
+            distToSurf = self.calculate_distance(point, sg) #np.linalg.norm(point - sg, axis=1)
+
+            x0 = sg[np.argmin(distToSurf)]
+
+            ret = minimize(func, x0, args=(point,), method='SLSQP', constraints=constraints)
+            dst.append(self.calculate_distance(ret.x, point))
+
+        return dst
 
     def surfaceGrid(self, dx=2., refine=True):
         """
@@ -151,6 +176,16 @@ class ILI(object):
         points = np.array(points)
 
         return points
+
+    def calculate_distance_vector(self, x1, x2):
+        dst = x1 - x2
+        dst -= self.pbc * np.round(dst / self.pbc)
+
+        return dst
+
+    def calculate_distance(self, x1, x2):
+        distance = np.array(self.calculate_distance_vector(x1, x2), ndmin=2)
+        return np.linalg.norm(distance, axis=1)
 
 default_zeta = {
     'O' : 2.5, # Angstrom
