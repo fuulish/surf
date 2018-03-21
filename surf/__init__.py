@@ -87,7 +87,7 @@ class ILI(object):
 
         return None
 
-    def surfaceGrid(self, dx=1.):
+    def surfaceGrid(self, dx=2., refine=True):
         """
         brute-force estimate of surface position
         """
@@ -100,8 +100,6 @@ class ILI(object):
         zg = np.arange(0, pbc[2], dx)
 
         X, Y = np.meshgrid(xg, yg, indexing='ij')
-
-        # calculate coarseGrainedDensity along path of z
 
         surfacePoints = []
 
@@ -118,10 +116,20 @@ class ILI(object):
             zind = np.append(zind, np.where((nextdens < self.surfaceCutoff).any(axis=0) & \
                             (density > self.surfaceCutoff))[0])
 
-            # should perform an interpolation to get the actual position of the point
-
             if len(zind) > 0:
-                surfacePoints.extend(pts[zind])
+                # surfacePoints.extend(pts[zind])
+                for i in zind:
+                    point = pts[i]
+
+                    if refine:
+                        # newton-raphson step in each direction
+                        nrstep = (density[i] - self.surfaceCutoff) / gradient[i]
+                        # take the one that passes the surface threshold
+                        mndx = np.argmin(np.abs(nrstep))
+                        # perform step TODO: I though it should have been -= (but doesn't work)
+                        point[mndx] += nrstep[mndx]
+
+                    surfacePoints.append(point)
 
         return np.array(surfacePoints)
 
