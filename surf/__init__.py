@@ -98,16 +98,20 @@ class ILI(object):
         })
 
         # obtain initial guess from brute-force point search
-        sg = self.surfaceGrid()
+        sg = self.surfaceGrid(dx=1.)
 
         dst = []
         for point in points:
 
-            distToSurf = self.calculate_distance(point, sg) #np.linalg.norm(point - sg, axis=1)
+            distToSurf = self.calculate_distance(point, sg)
 
             x0 = sg[np.argmin(distToSurf)]
 
             ret = minimize(func, x0, args=(point,), method='SLSQP', constraints=constraints)
+
+            if not ret.success:
+                print('Failed to achieve convergence for point: ', point)
+
             dst.append(self.calculate_distance(ret.x, point))
 
         return dst
