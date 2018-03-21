@@ -65,13 +65,14 @@ class ILI(object):
 
         cgd = np.zeros(len(points))
         grd = np.zeros((len(points), 3))
+        calc_grad = [0,1][gradient]
 
         for i, point in enumerate(points):
             mepos = point.flatten().astype('float64')
             grad = np.zeros(3, dtype='float64')
 
             # TODO: only calculate gradient if requested
-            cgd[i] = coarse_grained_density(mepos, pos, zeta, natoms, pbc, 1, grad)
+            cgd[i] = coarse_grained_density(mepos, pos, zeta, natoms, pbc, 1, calc_grad, grad)
             grd[i][:] = grad[:]
 
         if gradient:

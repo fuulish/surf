@@ -8,11 +8,12 @@
 #define PI 3.141592653589793
 
 double c_coarse_grained_density( double *mepos, double *pos, double *zeta, long int natoms,
-                                   double *pbc, long int periodic, double *grad );
+                                   double *pbc, long int periodic, long int calc_grad, double *grad );
+
 void calc_distance(double * dst, double * x, double * pos, double * pbc);
 
 double c_coarse_grained_density( double *mepos, double *pos, double *zeta, long int natoms,
-                                   double *pbc, long int periodic, double *grad )
+                                   double *pbc, long int periodic, long int calc_grad, double *grad )
 {
     int a;
     // double prefactor, dummy, cutshft;
@@ -59,7 +60,7 @@ double c_coarse_grained_density( double *mepos, double *pos, double *zeta, long 
         // density += scale * ( prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft );
         density += tmpdens;
 
-        if ( grad != NULL ) {
+        if ( calc_grad ) {
           /* calculate gradient and save result in grad array
            * can make use of tmpdens and distance vector */
 
