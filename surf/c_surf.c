@@ -28,12 +28,12 @@ double c_coarse_grained_density( double *mepos, double *pos, double *zeta, long 
     }
 
 // #ifdef OPENMP
-// #pragma omp parallel for default(none) \
-//     private(a,distance) shared(atoms,pbc,periodic,surface,natoms,mask,zeta,mepos,density,grad) // \
-//         // schedule(guided, surface.n[2])
-//     // schedule(dynamic)
+#pragma omp parallel for default(none) \
+    private(a,distance) shared(pos,pbc,periodic,natoms,zeta,mepos,density,grad,calc_grad) // \
+        // schedule(guided, surface.n[2])
+    // schedule(dynamic)
 // #endif
-//     //this natoms here is already the one accounting for number of atoms in mask only
+    //this natoms here is already the one accounting for number of atoms in mask only
 
     for ( a=0; a<natoms; a++ ) {
 
@@ -56,8 +56,13 @@ double c_coarse_grained_density( double *mepos, double *pos, double *zeta, long 
 
         double tmpdens = prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft;
         // the below formula can be simplified, check here
-#pragma omp atomic update
+
+#pragma omp critical
+{
+
         // density += scale * ( prefactor * exp( sqr( distance ) / (mttsqzeta)) - cutshft );
+
+// #pragma omp atomic update
         density += tmpdens;
 
         if ( calc_grad ) {
@@ -70,6 +75,7 @@ double c_coarse_grained_density( double *mepos, double *pos, double *zeta, long 
           grad[1] += dst[1] * fact * tmpdens;
           grad[2] += dst[2] * fact * tmpdens;
         }
+}
     }
 
     return density;
