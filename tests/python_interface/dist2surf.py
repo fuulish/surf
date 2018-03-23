@@ -13,9 +13,9 @@ atoms.set_pbc([True, True, True])
 atoms.set_cell([36, 36, 100])
 
 mask = [atom.symbol == 'O' for atom in atoms]
-surface = ILI(atoms, mask=mask, surfaceCutoff=0.002223/Bohr**3)
+surface = ILI(atoms, mask=mask, densityCutoff=0.002223/Bohr**3)
 
-dsts = surface.distanceToSurface(atoms[mask].positions)
+dsts = surface.distanceToPoint(atoms[mask].positions)
 
 np.savetxt('distances.txt', dsts)
 

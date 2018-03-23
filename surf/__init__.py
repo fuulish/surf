@@ -21,15 +21,15 @@ class ILI(object):
         (sub)set of atoms used in building the ILI
     zeta : list of floats
         width parameters for exponent used in constructing the ILI
-    surfaceCutoff : float
+    densityCutoff : float
         value of half the bulk density
     """
 
-    def __init__(self, atoms, mask=None, zeta=None, surfaceCutoff=None):
+    def __init__(self, atoms, mask=None, zeta=None, densityCutoff=None):
         self.atoms = atoms
         self.mask = mask
         self.zeta = zeta
-        self._surfaceCutoff = surfaceCutoff
+        self._densityCutoff = densityCutoff
 
         if self.mask is None:
             self.mask = [True]*len(atoms)
@@ -44,21 +44,21 @@ class ILI(object):
         self.pbc = np.diag(self.atoms.get_cell())
 
     @property
-    def surfaceCutoff(self):
-        return self._surfaceCutoff
+    def densityCutoff(self):
+        return self._densityCutoff
 
-    @surfaceCutoff.getter
-    def surfaceCutoff(self):
-        if self._surfaceCutoff is None:
+    @densityCutoff.getter
+    def densityCutoff(self):
+        if self._densityCutoff is None:
 
             cgd = self.coarseGrainedDensity(self.atoms[self.imask].positions)
-            self._surfaceCutoff = np.average(cgd) / 2.
+            self._densityCutoff = np.average(cgd) / 2.
 
-        return self._surfaceCutoff
+        return self._densityCutoff
 
-    @surfaceCutoff.setter
-    def surfaceCutoff(self, value):
-        self._surfaceCutoff = value
+    @densityCutoff.setter
+    def densityCutoff(self, value):
+        self._densityCutoff = value
 
     def coarseGrainedDensity(self, points, gradient=False):
         """
@@ -88,13 +88,13 @@ class ILI(object):
 
         return cgd
 
-    def distanceToSurface(self, points, gsl=False):
+    def distanceToPoint(self, points, gsl=False):
         """
         calculate the distance to the ILI using equality constraints
         """
 
         # obtain initial guess from brute-force point search
-        sg = self.surfaceGrid(dx=1.)
+        sg = self.grid(dx=1.)
         dst = np.zeros(len(points))
 
         if gsl:
@@ -110,7 +110,7 @@ class ILI(object):
 
             constraints = ({
                 'type' : 'eq',
-                'fun' : lambda x: self.coarseGrainedDensity([x]) - self.surfaceCutoff,
+                'fun' : lambda x: self.coarseGrainedDensity([x]) - self.densityCutoff,
             })
 
         for i, point in enumerate(points):
@@ -122,7 +122,7 @@ class ILI(object):
                 mepos = point.flatten().astype('float64')
                 bnds = np.zeros(3)
                 # TODO: return vector instead of distance!?
-                dst[i] = opt_distance_to_surface_gsl(x0, mepos, pos, zeta, natoms, self.surfaceCutoff, pbc, 1, bnds, 1.e-4, 1e-4)
+                dst[i] = opt_distance_to_surface_gsl(x0, mepos, pos, zeta, natoms, self.densityCutoff, pbc, 1, bnds, 1.e-4, 1e-4)
             else:
                 ret = minimize(func, x0, args=(point,), method='SLSQP', constraints=constraints)
 
@@ -133,7 +133,7 @@ class ILI(object):
 
         return dst
 
-    def surfaceGrid(self, dx=2., refine=True, marching_cubes=False):
+    def grid(self, dx=2., refine=True, marching_cubes=False):
         """
         brute-force estimate of surface position
         """
@@ -146,7 +146,7 @@ class ILI(object):
 
             f = lambda x, y, z: self.coarseGrainedDensity([np.array([x,y,z])])
             verts, triangles = mcubes.marching_cubes_func(lower, upper, \
-                               stride[0], stride[1], stride[2], f, self.surfaceCutoff)
+                               stride[0], stride[1], stride[2], f, self.densityCutoff)
 
             return verts
 
@@ -168,10 +168,10 @@ class ILI(object):
 
             nextdens = density + gradient.T * dx
 
-            zind = np.where((nextdens > self.surfaceCutoff).any(axis=0) & \
-                            (density < self.surfaceCutoff))[0]
-            zind = np.append(zind, np.where((nextdens < self.surfaceCutoff).any(axis=0) & \
-                            (density > self.surfaceCutoff))[0])
+            zind = np.where((nextdens > self.densityCutoff).any(axis=0) & \
+                            (density < self.densityCutoff))[0]
+            zind = np.append(zind, np.where((nextdens < self.densityCutoff).any(axis=0) & \
+                            (density > self.densityCutoff))[0])
 
             if len(zind) > 0:
                 # surfacePoints.extend(pts[zind])
@@ -180,7 +180,7 @@ class ILI(object):
 
                     if refine:
                         # newton-raphson step in each direction
-                        nrstep = (density[i] - self.surfaceCutoff) / gradient[i]
+                        nrstep = (density[i] - self.densityCutoff) / gradient[i]
                         # take the one that passes the surface threshold
                         mndx = np.argmin(np.abs(nrstep))
                         # perform step TODO: I though it should have been -= (but doesn't work)

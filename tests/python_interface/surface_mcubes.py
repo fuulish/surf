@@ -24,9 +24,9 @@ surface = ILI(atoms, mask=mask)
 # upper = tuple(upper)
 # 
 # f = lambda x, y, z: surface.coarseGrainedDensity([np.array([x,y,z])])
-# verts, triangles = mcubes.marching_cubes_func(lower, upper, stride[0], stride[1], stride[2], f, surface.surfaceCutoff)
+# verts, triangles = mcubes.marching_cubes_func(lower, upper, stride[0], stride[1], stride[2], f, surface.densityCutoff)
 
-points = surface.surfaceGrid(dx=2., marching_cubes=True)
+points = surface.grid(dx=2., marching_cubes=True)
 
 for point in points: 
     atoms.append(Atom('X', position=point))
