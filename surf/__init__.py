@@ -97,20 +97,21 @@ class ILI(object):
         sg = self.surfaceGrid(dx=1.)
         dst = np.zeros(len(points))
 
-        pos = self.atoms[self.imask].positions.flatten().astype('float64')
-        zeta = self.zeta[self.imask]
-        natoms = len(zeta)
-        pbc = np.diag(self.atoms.get_cell()).astype('float64')
+        if gsl:
+            pos = self.atoms[self.imask].positions.flatten().astype('float64')
+            zeta = self.zeta[self.imask]
+            natoms = len(zeta)
+            pbc = np.diag(self.atoms.get_cell()).astype('float64')
+        else:
+            # minimize distance between point and surface
+            def func(x, point):
+                dst = self.calculate_distance_vector(x, point)
+                return (dst**2).sum()
 
-        # minimize distance between point and surface
-        def func(x, point):
-            dst = self.calculate_distance_vector(x, point)
-            return (dst**2).sum()
-
-        constraints = ({
-            'type' : 'eq',
-            'fun' : lambda x: self.coarseGrainedDensity([x]) - self.surfaceCutoff,
-        })
+            constraints = ({
+                'type' : 'eq',
+                'fun' : lambda x: self.coarseGrainedDensity([x]) - self.surfaceCutoff,
+            })
 
         for i, point in enumerate(points):
 
