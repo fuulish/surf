@@ -1,7 +1,8 @@
 import numpy as np
-from _surf import coarse_grained_density, opt_distance_to_surface_gsl
 from ase.units import Bohr
 from scipy.optimize import minimize
+
+from _surf import coarse_grained_density, opt_distance_to_surface_gsl
 
 try:
     import mcubes
@@ -9,9 +10,9 @@ try:
 except ImportError:
     mcubes_loaded = False
 
+
 class ILI(object):
-    """
-    Instant Liquid Interfaces (ILI) Calculator
+    """Instant Liquid Interfaces (ILI) Calculator
 
     Parameters
     ----------
@@ -61,11 +62,9 @@ class ILI(object):
         self._densityCutoff = value
 
     def coarseGrainedDensity(self, points, gradient=False):
-        """
-        calculate the coarse grained density at a set of specified input points
-        """
+        """Calculate the coarse grained density at a set of specified input points."""
 
-        points = points #.flatten().astype('float64')
+        points = points   # .flatten().astype('float64')
         pos = self.atoms[self.imask].positions.flatten().astype('float64')
         zeta = self.zeta[self.imask]
         natoms = len(zeta)
@@ -73,7 +72,7 @@ class ILI(object):
 
         cgd = np.zeros(len(points))
         grd = np.zeros((len(points), 3))
-        calc_grad = [0,1][gradient]
+        calc_grad = [0, 1][gradient]
 
         for i, point in enumerate(points):
             mepos = point.flatten().astype('float64')
@@ -89,9 +88,7 @@ class ILI(object):
         return cgd
 
     def distanceToPoint(self, points, gsl=False):
-        """
-        calculate the distance to the ILI using equality constraints
-        """
+        """Calculate the distance to the ILI using equality constraints."""
 
         # obtain initial guess from brute-force point search
         sg = self.grid(dx=1.)
@@ -109,8 +106,8 @@ class ILI(object):
                 return (dst**2).sum()
 
             constraints = ({
-                'type' : 'eq',
-                'fun' : lambda x: self.coarseGrainedDensity([x]) - self.densityCutoff,
+                'type': 'eq',
+                'fun': lambda x: self.coarseGrainedDensity([x]) - self.densityCutoff,
             })
 
         for i, point in enumerate(points):
@@ -127,16 +124,14 @@ class ILI(object):
                 ret = minimize(func, x0, args=(point,), method='SLSQP', constraints=constraints)
 
                 if not ret.success:
-                    print('Failed to achieve convergence for point #%i: ' %i, point)
+                    print('Failed to achieve convergence for point #%i: ' % i, point)
 
                 dst[i] = self.calculate_distance(ret.x, point)
 
         return dst
 
     def grid(self, dx=2., refine=True, marching_cubes=False):
-        """
-        brute-force estimate of surface position
-        """
+        """Brute-force estimate of surface position."""
 
         if marching_cubes and mcubes_loaded:
             lower = (0, 0, 0)
@@ -144,9 +139,10 @@ class ILI(object):
             stride = np.array((upper - lower) / dx, dtype='int')
             upper = tuple(upper)
 
-            f = lambda x, y, z: self.coarseGrainedDensity([np.array([x,y,z])])
-            verts, triangles = mcubes.marching_cubes_func(lower, upper, \
-                               stride[0], stride[1], stride[2], f, self.densityCutoff)
+            f = lambda x, y, z: self.coarseGrainedDensity([np.array([x, y, z])])
+            verts, triangles = mcubes.marching_cubes_func(
+                                   lower, upper,
+                                   stride[0], stride[1], stride[2], f, self.densityCutoff)
 
             return verts
 
@@ -168,10 +164,10 @@ class ILI(object):
 
             nextdens = density + gradient.T * dx
 
-            zind = np.where((nextdens > self.densityCutoff).any(axis=0) & \
+            zind = np.where((nextdens > self.densityCutoff).any(axis=0) &
                             (density < self.densityCutoff))[0]
-            zind = np.append(zind, np.where((nextdens < self.densityCutoff).any(axis=0) & \
-                            (density > self.densityCutoff))[0])
+            zind = np.append(zind, np.where((nextdens < self.densityCutoff).any(axis=0) &
+                                            (density > self.densityCutoff))[0])
 
             if len(zind) > 0:
                 # surfacePoints.extend(pts[zind])
@@ -192,18 +188,18 @@ class ILI(object):
 
     @staticmethod
     def pointsFromCube(cubefile):
-        xc, yc, zc = cubefile.coord_grid(0.,0.,0.)
+        xc, yc, zc = cubefile.coord_grid(0.0, 0.0, 0.0)
 
-        xc = xc[:,0,0].astype('float64')
-        yc = yc[0,:,0].astype('float64')
-        zc = zc[0,0,:].astype('float64')
+        xc = xc[:, 0, 0].astype('float64')
+        yc = yc[0, :, 0].astype('float64')
+        zc = zc[0, 0, :].astype('float64')
 
         X, Y, Z = np.meshgrid(xc, yc, zc, indexing='ij')
 
         points = []
 
         for x, y, z in zip(X.flatten(), Y.flatten(), Z.flatten()):
-            points.append(np.array([x,y,z])*Bohr)
+            points.append(np.array([x, y, z])*Bohr)
 
         points = np.array(points)
 
@@ -219,7 +215,8 @@ class ILI(object):
         distance = np.array(self.calculate_distance_vector(x1, x2), ndmin=2)
         return np.linalg.norm(distance, axis=1)
 
+
 default_zeta = {
-    'O' : 2.5, # Angstrom
-    'H' : 0.,
-    }
+    'O': 2.5,   # Angstrom
+    'H': 0.0,
+}

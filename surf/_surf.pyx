@@ -1,8 +1,10 @@
+"""Python wrappers around C functions using Cython."""
 
 import cython
 import numpy as np
 cimport numpy as np
 from libc.math cimport round, pow
+
 
 DTYPE = np.float32
 ctypedef np.float32_t DTYPE_float
@@ -13,8 +15,10 @@ ctypedef np.float64_t DTYPE_double
 ITYPE = np.int
 ctypedef np.int_t DTYPE_int
 
-cdef extern double c_coarse_grained_density( double *mepos, double *pos, double *zeta, long int natoms,
-                                   double *pbc, long int periodic, long int calc_grad, double *grad );
+
+cdef extern double c_coarse_grained_density(double *mepos, double *pos, double *zeta, long int natoms,
+                                   double *pbc, long int periodic, long int calc_grad, double *grad);
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -31,9 +35,11 @@ def coarse_grained_density(
 
     return c_coarse_grained_density(&mepos[0], &pos[0], &zeta[0], natoms, &pbc[0], periodic, calc_grad, &grad[0])
 
-cdef extern double c_opt_distance_to_surface_gsl( double *init_guess, double *mepos, double *pos,
+
+cdef extern double c_opt_distance_to_surface_gsl(double *init_guess, double *mepos, double *pos,
                                       double *zeta, long int natoms, double surfcut, double *pbc,
-                                      long int periodic, double *bnds, double xtol, double ctol )
+                                      long int periodic, double *bnds, double xtol, double ctol)
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -51,5 +57,5 @@ def opt_distance_to_surface_gsl(
         double ctol
         ):
 
-    return c_opt_distance_to_surface_gsl( &init_guess[0], &mepos[0], &pos[0],
+    return c_opt_distance_to_surface_gsl(&init_guess[0], &mepos[0], &pos[0],
            &zeta[0], natoms, surfcut, &pbc[0], periodic, &bnds[0], xtol, ctol)
