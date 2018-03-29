@@ -126,7 +126,7 @@ class ILI(object):
 
         return dst
 
-    def grid(self, dx=2., refine=True, marching_cubes=False):
+    def grid(self, dx=2.0, refine=True, marching_cubes=False):
         """Brute-force estimate of surface position."""
 
         if marching_cubes and mcubes_loaded:
