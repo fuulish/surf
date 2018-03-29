@@ -44,8 +44,7 @@ class ILI(object):
         self.zeta = np.array(self.zeta, dtype='float64')
         self.pbc = np.diag(self.atoms.get_cell())
 
-    @property
-    def density_cutoff(self):
+    def __get_density_cutoff(self):
         if self._density_cutoff is None:
 
             cgd = self.coarseGrainedDensity(self.atoms[self.imask].positions)
@@ -53,9 +52,10 @@ class ILI(object):
 
         return self._density_cutoff
 
-    @density_cutoff.setter
-    def density_cutoff(self, value):
+    def __set_density_cutoff(self, value):
         self._density_cutoff = value
+
+    density_cutoff = property(__get_density_cutoff, __set_density_cutoff)
 
     def coarseGrainedDensity(self, points, gradient=False):
         """Calculate the coarse grained density at a set of specified input points."""
