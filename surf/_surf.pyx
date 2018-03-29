@@ -6,16 +6,6 @@ cimport numpy as np
 from libc.math cimport round, pow
 
 
-DTYPE = np.float32
-ctypedef np.float32_t DTYPE_float
-
-DTYPE = np.float64
-ctypedef np.float64_t DTYPE_double
-
-ITYPE = np.int
-ctypedef np.int_t DTYPE_int
-
-
 cdef extern double c_coarse_grained_density(double *mepos, double *pos, double *zeta, long int natoms,
                                    double *pbc, long int periodic, long int calc_grad, double *grad);
 
