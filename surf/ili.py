@@ -46,10 +46,6 @@ class ILI(object):
 
     @property
     def density_cutoff(self):
-        return self._density_cutoff
-
-    @density_cutoff.getter
-    def density_cutoff(self):
         if self._density_cutoff is None:
 
             cgd = self.coarseGrainedDensity(self.atoms[self.imask].positions)
