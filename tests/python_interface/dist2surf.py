@@ -1,29 +1,31 @@
 #!/usr/bin/env python
 
 import numpy as np
-from surf import ILI
-from ase.io import read, write
+from ase.io import read
 from ase.units import Bohr
-from ase import Atoms, Atom
 
-from cube import Cube
+from surf import ILI
 
-atoms = read('conf.xyz')
-atoms.set_pbc([True, True, True])
-atoms.set_cell([36, 36, 100])
 
-mask = [atom.symbol == 'O' for atom in atoms]
-surface = ILI(atoms, mask=mask, densityCutoff=0.002223/Bohr**3)
+def test_dist2surf():
 
-dsts = surface.distanceToPoint(atoms[mask].positions)
+    atoms = read('conf.xyz')
+    atoms.set_pbc([True, True, True])
+    atoms.set_cell([36, 36, 100])
 
-np.savetxt('distances.txt', dsts)
+    mask = [atom.symbol == 'O' for atom in atoms]
+    ili = ILI(atoms, mask=mask, densityCutoff=0.002223/Bohr**3)
 
-prev = np.loadtxt('refdist.dat')
-prev = prev[:,1] * Bohr
+    dsts = ili.distanceToPoint(atoms[mask].positions)
+    dsts_gsl = ili.distanceToPoint(atoms[mask].positions, gsl=True)
 
-np.testing.assert_allclose(dsts, prev, rtol=5)
+    np.testing.assert_allclose(dsts, dsts_gsl, rtol=20)
 
-gsld = np.loadtxt('gsl_distances.txt')
+    # np.savetxt('distances.txt', dsts)
+    # np.savetxt('distances_gsl.txt', dsts_gsl)
 
-np.testing.assert_allclose(dsts, gsld, rtol=20)
+    dsts_ref = np.loadtxt('refdist.dat')
+    dsts_ref = dsts_ref[:, 1] * Bohr
+
+    np.testing.assert_allclose(dsts, dsts_ref, rtol=5)
+    np.testing.assert_allclose(dsts_gsl, dsts_ref, rtol=5)
