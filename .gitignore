@@ -4,6 +4,9 @@ tests/0_
 src/new-stuff.c
 out_*
 
+*.pyc
+surf/__pycache__
+
 # OS generated files
 .DS_Store
 .DS_Store?
