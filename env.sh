@@ -1,0 +1,14 @@
+ENV_BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# might be useful?
+#export PATH=$ENV_BASE_DIR/bin:$PATH
+#export INCLUDE=$ENV_BASE_DIR/include:$INCLUDE
+#export C_INCLUDE_PATH=$ENV_BASE_DIR/include:$C_INCLUDE_PATH
+#export CPLUS_INCLUDE_PATH=$ENV_BASE_DIR/include:$CPLUS_INCLUDE_PATH
+#export LIBRARY_PATH=$ENV_BASE_DIR/lib:$LIBRARY_PATH
+#export LD_LIBRARY_PATH=$ENV_BASE_DIR/lib:$LD_LIBRARY_PATH
+
+export PYTHONPATH=$ENV_BASE_DIR:$PYTHONPATH
+
+unset ENV_BASE_DIR
+
