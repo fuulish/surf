@@ -4,6 +4,12 @@ tests/0_
 src/new-stuff.c
 out_*
 
+# Cython output
+surf/_surf.c
+surf/_surf.cpython*
+
+
+# cached Python byte code
 *.pyc
 surf/__pycache__
 
