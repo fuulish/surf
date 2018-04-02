@@ -7,7 +7,7 @@ from distutils.extension import Extension
 from Cython.Build import cythonize
 
 
-ext_modules = [Extension("surf/_surf",
+ext_modules = [Extension("surf._surf",
                          sources=["surf/_surf.pyx", "surf/c_surf.c" ],
                          include_dirs=[numpy.get_include()],
                          extra_compile_args = ['-fopenmp'],
