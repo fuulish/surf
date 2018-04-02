@@ -14,7 +14,7 @@ def test_dist2surf():
     atoms.set_cell([36, 36, 100])
 
     mask = [atom.symbol == 'O' for atom in atoms]
-    ili = ILI(atoms, mask=mask, densityCutoff=0.002223/Bohr**3)
+    ili = ILI(atoms, mask=mask, density_cutoff=0.002223/Bohr**3)
 
     dsts = ili.distanceToPoint(atoms[mask].positions)
     dsts_gsl = ili.distanceToPoint(atoms[mask].positions, gsl=True)
