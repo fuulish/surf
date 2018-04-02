@@ -2,7 +2,7 @@ import numpy as np
 from ase.units import Bohr
 from scipy.optimize import minimize
 
-from _surf import coarse_grained_density, opt_distance_to_surface_gsl
+from ._surf import coarse_grained_density, opt_distance_to_surface_gsl
 
 try:
     import mcubes
