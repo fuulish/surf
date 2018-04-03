@@ -29,3 +29,6 @@ def test_dist2surf():
 
     np.testing.assert_allclose(dsts, dsts_ref, rtol=5)
     np.testing.assert_allclose(dsts_gsl, dsts_ref, rtol=5)
+
+
+test_dist2surf()
