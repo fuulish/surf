@@ -9,9 +9,10 @@ surf/_surf.c
 surf/_surf.cpython*
 
 
-# cached Python byte code
+# cached Python byte code and test stuff
 *.pyc
 surf/__pycache__
+.pytest_cache
 
 # OS generated files
 .DS_Store
