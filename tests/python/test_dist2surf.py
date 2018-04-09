@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import numpy as np
 from ase.io import read
 from ase.units import Bohr
@@ -7,9 +5,9 @@ from ase.units import Bohr
 from surf import ILI
 
 
-def test_dist2surf():
+def test_dist2surf(shared_datadir):
 
-    atoms = read('conf.xyz')
+    atoms = read(shared_datadir / 'conf.xyz')
     atoms.set_pbc([True, True, True])
     atoms.set_cell([36, 36, 100])
 
@@ -21,9 +19,8 @@ def test_dist2surf():
 
     np.testing.assert_allclose(dsts, dsts_gsl, rtol=20)
 
-    # TODO: get data from tests directory, not current directory
-    #dsts_ref = np.loadtxt('refdist.dat')
-    #dsts_ref = dsts_ref[:, 1] * Bohr
+    dsts_ref = np.loadtxt(shared_datadir / 'refdist.dat')
+    dsts_ref = dsts_ref[:, 1] * Bohr
 
-    #np.testing.assert_allclose(dsts, dsts_ref, rtol=5)
-    #np.testing.assert_allclose(dsts_gsl, dsts_ref, rtol=5)
+    np.testing.assert_allclose(dsts, dsts_ref, rtol=5)
+    np.testing.assert_allclose(dsts_gsl, dsts_ref, rtol=5)
