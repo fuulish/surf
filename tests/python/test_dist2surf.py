@@ -19,7 +19,7 @@ def test_dist2surf(shared_datadir):
 
     np.testing.assert_allclose(dsts, dsts_gsl, rtol=20)
 
-    dsts_ref = np.loadtxt(shared_datadir / 'refdist.dat')
+    dsts_ref = np.loadtxt(str(shared_datadir / 'refdist.dat'))
     dsts_ref = dsts_ref[:, 1] * Bohr
 
     np.testing.assert_allclose(dsts, dsts_ref, rtol=5)
